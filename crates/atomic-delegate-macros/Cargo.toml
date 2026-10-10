@@ -1,0 +1,32 @@
+[package]
+name = "atomic-delegate-macros"
+version.workspace = true
+edition = "2024"
+description = "Attribute macro that turns empty-bodied inherent methods into delegates into methods/<type>/<method>.rs"
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+lele-snake-case.workspace = true
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+arithmetic_side_effects = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+exit = "deny"
+as_conversions = "deny"

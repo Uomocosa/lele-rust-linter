@@ -23,7 +23,7 @@ preview it needs, and how to write the test. The rules below are generated from
 Run the inventory for the crate:
 
 ```bash
-cargo run --manifest-path ../lele_bevy_lint/Cargo.toml -- --scan-folder src,examples --ui-inventory
+lele-bevy-lint --scan-folder src,examples --ui-inventory
 ```
 
 Each row is a file with UI. `markers` lists the components declared in that
@@ -120,8 +120,8 @@ single numbered caption, so before/after images stay together.
 ## 6. Run commands
 
 ```bash
-devenv tasks run lele:bevy-lint 2>&1    # the rules
-devenv tasks run lele:nextest 2>&1
+lele-bevy-lint                    # the rules (installed from github.com/Uomocosa/lele-rust-linter)
+just test                         # all targets (or: cargo nextest run --all-targets --all-features)
 cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview --run-ignored all -- --nocapture
 ```
 

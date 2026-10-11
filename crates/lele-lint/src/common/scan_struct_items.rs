@@ -1,25 +1,25 @@
 use std::path::Path;
 
-use crate::Diagnostic;
+use crate::RuleViolation;
 
 #[must_use]
 pub(crate) fn scan_struct_items(
     items: &[syn::Item],
     file_path: &Path,
-    check: impl Fn(&syn::ItemStruct, &Path, &mut Vec<Diagnostic>),
-) -> Vec<Diagnostic> {
+    check: impl Fn(&syn::ItemStruct, &Path) -> Vec<RuleViolation>,
+) -> Vec<RuleViolation> {
     fn recursion(
         items: &[syn::Item],
         file_path: &Path,
-        check: &impl Fn(&syn::ItemStruct, &Path, &mut Vec<Diagnostic>),
-        diags: &mut Vec<Diagnostic>,
+        check: &impl Fn(&syn::ItemStruct, &Path) -> Vec<RuleViolation>,
+        out: &mut Vec<RuleViolation>,
     ) {
         for item in items {
             match item {
-                syn::Item::Struct(struct_def) => check(struct_def, file_path, diags),
+                syn::Item::Struct(struct_def) => out.extend(check(struct_def, file_path)),
                 syn::Item::Mod(module) => {
                     if let Some((_, inner)) = &module.content {
-                        recursion(inner, file_path, check, diags);
+                        recursion(inner, file_path, check, out);
                     }
                 }
                 _ => {}
@@ -27,30 +27,28 @@ pub(crate) fn scan_struct_items(
         }
     }
 
-    let mut diags = Vec::new();
-    recursion(items, file_path, &check, &mut diags);
-    diags
+    let mut out = Vec::new();
+    recursion(items, file_path, &check, &mut out);
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
-    use crate::Diagnostic;
+    use crate::RuleViolation;
 
     use super::scan_struct_items;
 
     #[test]
     fn test_usage() {
         let file = syn::parse_str::<syn::File>("mod inner { pub struct A(pub u64); }").unwrap();
-        let found = scan_struct_items(&file.items, Path::new("x.rs"), |_, _, diags| {
-            diags.push(Diagnostic {
-                file: std::path::PathBuf::from("x.rs"),
-                line: 1,
-                col: 0,
-                code: "E018",
-                message: String::new(),
-            });
+        let found = scan_struct_items(&file.items, Path::new("x.rs"), |_, _| {
+            vec![RuleViolation::file(
+                std::path::PathBuf::from("x.rs"),
+                "E018",
+                String::new(),
+            )]
         });
         assert_eq!(found.len(), 1);
     }

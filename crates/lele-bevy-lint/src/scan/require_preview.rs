@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use lele_lint::Diagnostic;
 use lele_lint::Origin;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 use crate::scan;
 
@@ -14,8 +14,8 @@ pub fn require_preview(
     file: &syn::File,
     kind: scan::PreviewKind,
     code: &'static str,
-    missing: impl FnOnce() -> Diagnostic,
-) -> Vec<Diagnostic> {
+    missing: impl FnOnce() -> RuleViolation,
+) -> Vec<RuleViolation> {
     let Some(preview) = scan::collect_previews(file)
         .into_iter()
         .find(|preview| preview.kind == kind)
@@ -49,7 +49,7 @@ mod tests {
             scan::PreviewKind::Png,
             "E029",
             || {
-                scan::diag(
+                scan::site_violation(
                     &project,
                     Origin::Src,
                     Path::new("a.rs"),
@@ -59,7 +59,7 @@ mod tests {
                 )
             },
         );
-        assert_eq!(found.first().map(|diag| diag.code), Some("E029"));
+        assert_eq!(found.first().map(|violation| violation.code), Some("E029"));
     }
 
     #[test]
@@ -81,7 +81,7 @@ mod tests {
             scan::PreviewKind::Png,
             "E029",
             || {
-                scan::diag(
+                scan::site_violation(
                     &project,
                     Origin::Src,
                     Path::new("a.rs"),

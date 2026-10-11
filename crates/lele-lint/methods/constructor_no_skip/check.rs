@@ -1,13 +1,13 @@
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::constructor_no_skip::ConstructorNoSkip,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for (rel_path, file) in &project.parsed_files {
         for item in &file.items {
@@ -33,18 +33,16 @@ pub fn check(
                     continue;
                 };
 
-                diags.push(Diagnostic {
-                    file: project.src_dir.join(rel_path),
-                    line: 1,
-                    col: 0,
-                    code: checkers::constructor_no_skip::ConstructorNoSkip::CODE,
-                    message: format!("{blurb} must not have #[rustfmt::skip]",),
-                });
+                violations.push(RuleViolation::file(
+                    project.src_dir.join(rel_path),
+                    checkers::constructor_no_skip::ConstructorNoSkip::CODE,
+                    format!("{blurb} must not have #[rustfmt::skip]",),
+                ));
             }
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: type name string extraction

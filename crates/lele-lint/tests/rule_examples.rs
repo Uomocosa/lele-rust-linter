@@ -6,6 +6,7 @@ use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
 use lele_lint::Checker;
 use lele_lint::ExampleFile;
+use lele_lint::Location;
 use lele_lint::Project;
 
 const DEFAULT_CARGO_TOML: &str = r#"[package]
@@ -77,7 +78,11 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
         .flat_map(|c| c.check(&project))
         .map(|d| {
             let file = d.file.strip_prefix(&root).unwrap_or(&d.file);
-            format!("{} {}:{} {}", d.code, file.display(), d.line, d.message)
+            let line = match d.location {
+                Location::File => 1,
+                Location::Site { line, .. } => line,
+            };
+            format!("{} {}:{} {}", d.code, file.display(), line, d.message)
         })
         .collect();
     lines.sort();

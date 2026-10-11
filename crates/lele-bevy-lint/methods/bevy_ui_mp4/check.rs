@@ -1,12 +1,12 @@
-use lele_lint::Diagnostic;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 use crate::checkers;
 use crate::scan;
 
-pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<Diagnostic> {
+pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::collect(project);
-    let mut diags = Vec::new();
+    let mut violations = Vec::new();
 
     for source in project.sources() {
         let rel_path = source.relative_path;
@@ -19,7 +19,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
             continue;
         };
 
-        diags.extend(scan::require_preview(
+        violations.extend(scan::require_preview(
             project,
             source.origin,
             rel_path,
@@ -27,7 +27,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
             scan::PreviewKind::Mp4,
             checkers::bevy_ui_mp4::BevyUiMp4::CODE,
             || {
-                scan::diag(
+                scan::site_violation(
                     project,
                     source.origin,
                     rel_path,
@@ -43,7 +43,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
         ));
     }
 
-    diags
+    violations
 }
 
 #[cfg(test)]
@@ -64,8 +64,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::bevy_ui_mp4::BevyUiMp4, &project);
-        assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].code, "E037");
+        let violations = check(&checkers::bevy_ui_mp4::BevyUiMp4, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, "E037");
     }
 }

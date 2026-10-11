@@ -7,23 +7,23 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::BoundaryEntry;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::boundary_imports::BoundaryImports,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     if project.boundaries.is_empty() {
-        return diags;
+        return violations;
     }
-    let base = config_base(project);
+    let base = project.config_base();
     let prefix = base_prefix(project, &base);
     let stem_map = src_stem_map(project);
     let files = collect_file_uses(project);
     for boundary in &project.boundaries {
-        validate_boundary(boundary, &base, &mut diags);
+        violations.extend(validate_boundary(boundary, &base));
         if boundary.cannot_use.is_empty() {
             continue;
         }
@@ -31,19 +31,10 @@ pub fn check(
             if !file_in_boundary(&file.crate_rel, &prefix, &boundary.folders, &stem_map) {
                 continue;
             }
-            report_uses(file, boundary, &mut diags);
+            violations.extend(report_uses(file, boundary));
         }
     }
-    diags
-}
-
-// needed helper: workspace-relative boundaries resolve against the config dir
-fn config_base(project: &Project) -> PathBuf {
-    if project.config_dir.as_os_str().is_empty() {
-        project.root.clone()
-    } else {
-        project.config_dir.clone()
-    }
+    violations
 }
 
 // needed helper: crate path relative to the config dir (empty when they coincide)
@@ -104,16 +95,17 @@ fn file_in_boundary(
 }
 
 // needed helper: validate the boundary declaration itself
-fn validate_boundary(boundary: &BoundaryEntry, base: &Path, diags: &mut Vec<Diagnostic>) {
+fn validate_boundary(boundary: &BoundaryEntry, base: &Path) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     if boundary.folders.is_empty() {
-        diags.push(config_diag(
+        violations.push(config_violation(
             base,
             &format!("boundary `{}` has no folders", boundary.name),
         ));
     }
     for folder in &boundary.folders {
         if !base.join(folder).is_dir() {
-            diags.push(config_diag(
+            violations.push(config_violation(
                 base,
                 &format!(
                     "boundary `{}` names folder `{}` which does not exist",
@@ -124,7 +116,7 @@ fn validate_boundary(boundary: &BoundaryEntry, base: &Path, diags: &mut Vec<Diag
         }
     }
     if boundary.cannot_use.is_empty() && boundary.require.is_none() {
-        diags.push(config_diag(
+        violations.push(config_violation(
             base,
             &format!(
                 "boundary `{}` needs a non-empty `cannot_use` or a `require`",
@@ -132,17 +124,16 @@ fn validate_boundary(boundary: &BoundaryEntry, base: &Path, diags: &mut Vec<Diag
             ),
         ));
     }
+    violations
 }
 
 // needed helper: a boundary config error is reported on `lele.toml` line 1
-fn config_diag(base: &Path, message: &str) -> Diagnostic {
-    Diagnostic {
-        file: base.join("lele.toml"),
-        line: 1,
-        col: 0,
-        code: checkers::boundary_imports::BoundaryImports::CODE,
-        message: message.to_string(),
-    }
+fn config_violation(base: &Path, message: &str) -> RuleViolation {
+    RuleViolation::file(
+        base.join("lele.toml"),
+        checkers::boundary_imports::BoundaryImports::CODE,
+        message.to_string(),
+    )
 }
 
 // needed helper: one path use (import or expression path) in a file
@@ -200,7 +191,8 @@ fn file_use(file: PathBuf, crate_rel: PathBuf, parsed: &syn::File) -> FileUse {
 }
 
 // needed helper: report every forbidden path used by a file
-fn report_uses(file: &FileUse, boundary: &BoundaryEntry, diags: &mut Vec<Diagnostic>) {
+fn report_uses(file: &FileUse, boundary: &BoundaryEntry) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for hit in &file.hits {
         if is_local(&hit.path) {
             continue;
@@ -208,12 +200,18 @@ fn report_uses(file: &FileUse, boundary: &BoundaryEntry, diags: &mut Vec<Diagnos
         let Some(reported) = forbidden_hit(hit, &boundary.cannot_use) else {
             continue;
         };
-        diags.push(use_diag(&file.file, hit.line, &reported, boundary));
+        violations.push(use_violation(&file.file, hit.line, &reported, boundary));
     }
+    violations
 }
 
-// needed helper: build the diagnostic message for one forbidden use
-fn use_diag(file: &Path, line: usize, reported: &str, boundary: &BoundaryEntry) -> Diagnostic {
+// needed helper: build the violation for one forbidden use
+fn use_violation(
+    file: &Path,
+    line: usize,
+    reported: &str,
+    boundary: &BoundaryEntry,
+) -> RuleViolation {
     let name = &boundary.name;
     let folders = boundary
         .folders
@@ -222,13 +220,13 @@ fn use_diag(file: &Path, line: usize, reported: &str, boundary: &BoundaryEntry) 
         .collect::<Vec<_>>()
         .join(", ");
     let why = &boundary.why;
-    Diagnostic {
-        file: file.to_path_buf(),
+    RuleViolation::site(
+        file.to_path_buf(),
         line,
-        col: 0,
-        code: checkers::boundary_imports::BoundaryImports::CODE,
-        message: format!("`{reported}` is not allowed in boundary \"{name}\" ({folders}) — {why}"),
-    }
+        0,
+        checkers::boundary_imports::BoundaryImports::CODE,
+        format!("`{reported}` is not allowed in boundary \"{name}\" ({folders}) — {why}"),
+    )
 }
 
 // needed helper: `crate`, `self`, `super` paths are local, never forbidden

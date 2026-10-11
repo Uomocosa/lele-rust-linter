@@ -2,58 +2,52 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_collection_newtype::NoCollectionNewtype,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let file_path = project.absolute_path(source.origin, source.relative_path);
-        diags.extend(common::scan_struct_items(
+        violations.extend(common::scan_struct_items(
             &source.file.items,
             &file_path,
             check_struct,
         ));
     }
 
-    diags
+    violations
 }
 
 // needed helper: single-field collection inner-type validation
-fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path, diags: &mut Vec<Diagnostic>) {
+fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleViolation> {
     if struct_def.fields.len() != 1 {
-        return;
+        return Vec::new();
     }
     let syn::Fields::Unnamed(fields) = &struct_def.fields else {
-        return;
+        return Vec::new();
     };
     let Some(field) = fields.unnamed.first() else {
-        return;
+        return Vec::new();
     };
     if common::has_data_shape_derive(struct_def) {
-        return;
+        return Vec::new();
     }
     let Some(collection) = collection_name(&field.ty) else {
-        return;
+        return Vec::new();
     };
     if has_unsigned_element(&field.ty) {
-        return;
+        return Vec::new();
     }
     let name = struct_def.ident.to_string();
     let singular = singular_name(&name);
-    diags.push(Diagnostic {
-        file: file_path.to_path_buf(),
-        line: 1,
-        col: 0,
-        code: checkers::no_collection_newtype::NoCollectionNewtype::CODE,
-        message: format!(
+    vec![RuleViolation::file(file_path.to_path_buf(), checkers::no_collection_newtype::NoCollectionNewtype::CODE, format!(
             "{name} wraps {collection}<T>; define singular {singular}(T) with Deref and use Vec<{singular}> at call sites"
-        ),
-    });
+        ))]
 }
 
 // needed helper: collection path-segment matching (bare and path-suffixed)
@@ -186,42 +180,37 @@ mod tests {
     #[test]
     fn test_usage() {
         let s = parse("pub struct ExampleNames(pub Vec<String>);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("Vec<ExampleName>"));
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("Vec<ExampleName>"));
     }
 
     #[test]
     fn test_usage_singular_newtype_passes() {
         let s = parse("pub struct ExampleName(pub String);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert!(diags.is_empty());
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
     }
 
     #[test]
     fn test_usage_map_newtype_is_rejected() {
         let s = parse("pub struct Scores(pub HashMap<String, u32>);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert_eq!(diags.len(), 1);
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
     }
 
     #[test]
     fn test_usage_multi_field_vec_passes() {
         let s = parse("pub struct Player { pub names: Vec<String> }");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert!(diags.is_empty());
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
     }
 
     #[test]
     fn test_usage_serde_exempt() {
         let s = parse("#[derive(Deserialize)] pub struct Tags(pub Vec<String>);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert!(diags.is_empty());
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -235,25 +224,22 @@ mod tests {
     #[test]
     fn test_usage_borrowed_slice_rejected() {
         let s = parse("pub struct ExampleNames<'a>(pub &'a [String]);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert_eq!(diags.len(), 1);
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
     }
 
     #[test]
     fn test_usage_mut_slice_rejected() {
         let s = parse("pub struct ExampleNames<'a>(pub &'a mut [String]);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert_eq!(diags.len(), 1);
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
     }
 
     #[test]
     fn test_usage_boxed_slice_rejected() {
         let s = parse("pub struct ExampleNames(pub Box<[String]>);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert_eq!(diags.len(), 1);
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
     }
 
     #[test]
@@ -264,17 +250,15 @@ mod tests {
             "pub struct Words(pub Vec<u32>);",
         ] {
             let s = parse(code);
-            let mut diags = Vec::new();
-            check_struct(&s, Path::new("x.rs"), &mut diags);
-            assert!(diags.is_empty());
+            let violations = check_struct(&s, Path::new("x.rs"));
+            assert!(violations.is_empty());
         }
     }
 
     #[test]
     fn test_usage_unsigned_slice_exempt() {
         let s = parse("pub struct Bytes<'a>(pub &'a [u8]);");
-        let mut diags = Vec::new();
-        check_struct(&s, Path::new("x.rs"), &mut diags);
-        assert!(diags.is_empty());
+        let violations = check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
     }
 }

@@ -6,14 +6,14 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_super_imports::NoSuperImports,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -25,20 +25,14 @@ pub fn check(
         }
         for hit in hits {
             let (import, replacement) = suggestion(rel_path, &hit.path);
-            diags.push(Diagnostic {
-                file: project.absolute_path(source.origin, rel_path),
-                line: hit.line,
-                col: 0,
-                code: checkers::no_super_imports::NoSuperImports::CODE,
-                message: format!(
+            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_super_imports::NoSuperImports::CODE, format!(
                     "`{}` used outside `#[cfg(test)]` — write `{replacement}` instead and add `{import}` at the top of the file",
                     hit.path
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: collected super path hit data
@@ -191,10 +185,10 @@ mod tests {
             PathBuf::from("checkers/probe.rs"),
             syn::parse_str("use super::probe_check;\n").unwrap(),
         );
-        let diags = check(&NoSuperImports, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("use crate::checkers;"));
-        assert!(diags[0].message.contains("checkers::probe_check"));
+        let violations = check(&NoSuperImports, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("use crate::checkers;"));
+        assert!(violations[0].message.contains("checkers::probe_check"));
     }
 
     #[test]
@@ -204,9 +198,9 @@ mod tests {
             PathBuf::from("probe.rs"),
             syn::parse_str("use super::sibling;\n").unwrap(),
         );
-        let diags = check(&NoSuperImports, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("use crate::sibling;"));
+        let violations = check(&NoSuperImports, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("use crate::sibling;"));
     }
 }
 

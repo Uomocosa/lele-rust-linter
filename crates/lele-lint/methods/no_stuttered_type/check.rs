@@ -2,14 +2,14 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_stuttered_type::NoStutteredType,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -28,18 +28,12 @@ pub fn check(
             continue;
         };
         let suggested = common::to_pascal_case(&suffix);
-        diags.push(Diagnostic {
-            file: project.absolute_path(source.origin, rel_path),
-            line: 1,
-            col: 0,
-            code: checkers::no_stuttered_type::NoStutteredType::CODE,
-            message: format!(
+        violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_stuttered_type::NoStutteredType::CODE, format!(
                 "type `{name}` repeats parent module `{dir}` — rename to `{suggested}` (`{dir}::{suggested}`)"
-            ),
-        });
+            )));
     }
 
-    diags
+    violations
 }
 
 // needed helper: parent directory name; crate-root files have no parent module
@@ -117,10 +111,10 @@ mod tests {
             "freenet/freenet_client.rs",
             "pub struct FreenetClient(pub String);",
         )]);
-        let diags = super::check(&NoStutteredType, &project);
-        assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].code, "E027");
-        assert!(diags[0].message.contains("`Client`"));
+        let violations = super::check(&NoStutteredType, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, "E027");
+        assert!(violations[0].message.contains("`Client`"));
     }
 
     #[test]
@@ -129,8 +123,8 @@ mod tests {
             ("cli/cli.rs", "pub struct Cli;"),
             ("roster/roster.rs", "pub struct Roster;"),
         ]);
-        let diags = super::check(&NoStutteredType, &project);
-        assert!(diags.is_empty());
+        let violations = super::check(&NoStutteredType, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -140,8 +134,8 @@ mod tests {
             ("plugin/p2p_plugin.rs", "pub struct P2PPlugin;"),
             ("relay/letter_request.rs", "pub struct LetterRequest;"),
         ]);
-        let diags = super::check(&NoStutteredType, &project);
-        assert!(diags.is_empty());
+        let violations = super::check(&NoStutteredType, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -150,8 +144,8 @@ mod tests {
             "net_id/network_id.rs",
             "pub struct NetworkId(pub u64);",
         )]);
-        let diags = super::check(&NoStutteredType, &project);
-        assert!(diags.is_empty());
+        let violations = super::check(&NoStutteredType, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -160,8 +154,8 @@ mod tests {
             ("freenet_client.rs", "pub struct FreenetClient;"),
             ("freenet/hidden.rs", "struct Hidden;"),
         ]);
-        let diags = super::check(&NoStutteredType, &project);
-        assert!(diags.is_empty());
+        let violations = super::check(&NoStutteredType, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]

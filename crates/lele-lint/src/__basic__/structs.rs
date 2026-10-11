@@ -15,6 +15,12 @@ pub struct LeleSection {
     pub enforce_config: Option<toml::Value>,
 }
 
+#[derive(Deserialize)]
+pub struct LeleToml {
+    #[serde(default)]
+    pub lele: LeleSection,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BoundaryEntry {
@@ -42,15 +48,6 @@ pub struct AllowWhitelistEntry {
     pub allow: String,
     pub file: std::path::PathBuf,
     pub reason: String,
-}
-
-#[derive(Debug)]
-pub struct Diagnostic {
-    pub file: std::path::PathBuf,
-    pub line: usize,
-    pub col: usize,
-    pub code: &'static str,
-    pub message: String,
 }
 
 #[derive(Debug, Clone)]

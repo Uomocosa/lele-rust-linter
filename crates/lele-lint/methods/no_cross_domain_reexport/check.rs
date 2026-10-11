@@ -2,14 +2,14 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_cross_domain_reexport::NoCrossDomainReexport,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for (mod_rs_path, info) in &project.module_info {
         if common::is_crate_root(mod_rs_path) {
@@ -27,23 +27,20 @@ pub fn check(
                         .find(|e| e.relative_path == *mod_rs_path)
                         .map(|e| e.absolute_path.clone());
 
-                    diags.push(Diagnostic {
-                        file: module_file
-                            .unwrap_or_else(|| project.root.join("src").join(mod_rs_path)),
-                        line: 1,
-                        col: 0,
-                        code: checkers::no_cross_domain_reexport::NoCrossDomainReexport::CODE,
-                        message: format!(
+                    violations.push(RuleViolation::file(
+                        module_file.unwrap_or_else(|| project.root.join("src").join(mod_rs_path)),
+                        checkers::no_cross_domain_reexport::NoCrossDomainReexport::CODE,
+                        format!(
                             "cross-domain re-export `pub use {}` in mod.rs, move to lib.rs",
                             reexported_path
                         ),
-                    });
+                    ));
                 }
             }
         }
     }
 
-    diags
+    violations
 }
 
 fn reexport_target_domain(segments: &[String]) -> Option<String> {

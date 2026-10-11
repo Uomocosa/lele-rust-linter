@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
-use lele_lint::Diagnostic;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 fn fixture_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -11,7 +11,7 @@ fn fixture_path(name: &str) -> PathBuf {
         .join(name)
 }
 
-fn run_checkers(path: &str) -> Result<Vec<Diagnostic>, Box<dyn std::error::Error>> {
+fn run_checkers(path: &str) -> Result<Vec<RuleViolation>, Box<dyn std::error::Error>> {
     let mut p = Project::discover(Some(&fixture_path(path)), None)?;
     let config = Config::load(&p.root).unwrap_or_default();
     p.apply_layout(&config)?;
@@ -21,17 +21,19 @@ fn run_checkers(path: &str) -> Result<Vec<Diagnostic>, Box<dyn std::error::Error
 
 #[test]
 fn compliant_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>> {
-    let diags = run_checkers("compliant_crate")?;
-    if !diags.is_empty() {
-        return Err(format!("expected no violations in compliant crate, got {diags:?}").into());
+    let violations = run_checkers("compliant_crate")?;
+    if !violations.is_empty() {
+        return Err(
+            format!("expected no violations in compliant crate, got {violations:?}").into(),
+        );
     }
     Ok(())
 }
 
 #[test]
 fn violation_crate_catches_all_errors() -> Result<(), Box<dyn std::error::Error>> {
-    let diags = run_checkers("violation_crate")?;
-    let codes: Vec<&str> = diags.iter().map(|d| d.code).collect();
+    let violations = run_checkers("violation_crate")?;
+    let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
 
     let expected = [
         "E001", // atomic_file (orphan method file has no parent type)
@@ -65,17 +67,17 @@ fn violation_crate_catches_all_errors() -> Result<(), Box<dyn std::error::Error>
 
 #[test]
 fn methods_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>> {
-    let diags = run_checkers("methods_crate")?;
-    if !diags.is_empty() {
-        return Err(format!("expected no violations in methods crate, got {diags:?}").into());
+    let violations = run_checkers("methods_crate")?;
+    if !violations.is_empty() {
+        return Err(format!("expected no violations in methods crate, got {violations:?}").into());
     }
     Ok(())
 }
 
 #[test]
 fn methods_violation_crate_catches_layout_errors() -> Result<(), Box<dyn std::error::Error>> {
-    let diags = run_checkers("methods_violation_crate")?;
-    let codes: Vec<&str> = diags.iter().map(|d| d.code).collect();
+    let violations = run_checkers("methods_violation_crate")?;
+    let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
 
     for code in ["E030", "E031", "E032"] {
         if !codes.contains(&code) {

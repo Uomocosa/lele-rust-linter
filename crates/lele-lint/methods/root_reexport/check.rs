@@ -3,17 +3,20 @@ use std::path::PathBuf;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::root_reexport::RootReexport, project: &Project) -> Vec<Diagnostic> {
+pub fn check(
+    _self: &checkers::root_reexport::RootReexport,
+    project: &Project,
+) -> Vec<RuleViolation> {
     let lib = match project.parsed_files.get(&PathBuf::from("lib.rs")) {
         Some(lib) => lib,
         None => return Vec::new(),
     };
     let pub_mods = public_modules(lib);
     let reexported = root_reexports(lib);
-    let mut diags = Vec::new();
+    let mut violations = Vec::new();
 
     for (rel_path, file) in &project.parsed_files {
         if rel_path.components().count() != 1 {
@@ -30,29 +33,21 @@ pub fn check(_self: &checkers::root_reexport::RootReexport, project: &Project) -
             continue;
         }
         for missing in missing_reexports(stem, file, &reexported) {
-            diags.push(Diagnostic {
-                file: project.src_dir.join(rel_path),
-                line: missing.line,
-                col: 0,
-                code: checkers::root_reexport::RootReexport::CODE,
-                message: format!(
+            violations.push(RuleViolation::site(project.src_dir.join(rel_path), missing.line, 0, checkers::root_reexport::RootReexport::CODE, format!(
                     "public type `{}` in root module `{stem}` is not re-exported at the crate root — add `pub use {stem}::{};` to lib.rs",
                     missing.ty, missing.ty
-                ),
-            });
+                )));
         }
         for missing in missing_fn_flatten(stem, file, lib) {
-            diags.push(Diagnostic {
-                file: project.src_dir.join("lib.rs"),
-                line: 1,
-                col: 0,
-                code: checkers::root_reexport::RootReexport::CODE,
-                message: missing,
-            });
+            violations.push(RuleViolation::file(
+                project.src_dir.join("lib.rs"),
+                checkers::root_reexport::RootReexport::CODE,
+                missing,
+            ));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: SHAPE-F fn flatten

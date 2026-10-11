@@ -2,14 +2,14 @@ use syn::spanned::Spanned;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_dunder_tests::NoDunderTests,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -21,18 +21,12 @@ pub fn check(
             let Some(line) = cfg_test_line(item) else {
                 continue;
             };
-            diags.push(Diagnostic {
-                file: project.absolute_path(source.origin, rel_path),
-                line,
-                col: 0,
-                code: checkers::no_dunder_tests::NoDunderTests::CODE,
-                message: "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
-                    .to_string(),
-            });
+            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), line, 0, checkers::no_dunder_tests::NoDunderTests::CODE, "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
+                    .to_string()));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: cfg(test) item start line, if the item is a test
@@ -75,9 +69,9 @@ mod tests {
             "discovery/__basic__/newtypes.rs",
             "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
         )]);
-        let diags = check(&NoDunderTests, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("__basic__"));
+        let violations = check(&NoDunderTests, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("__basic__"));
     }
 
     #[test]

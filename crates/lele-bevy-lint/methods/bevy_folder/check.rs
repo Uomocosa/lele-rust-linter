@@ -4,9 +4,9 @@ use derive_more::{Deref, DerefMut};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 
-use lele_lint::Diagnostic;
 use lele_lint::Origin;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 use crate::checkers;
 use crate::scan;
@@ -20,12 +20,12 @@ const SYSTEM_PARAM_NAMES: [&str; 6] = [
     "MessageReader",
 ];
 
-pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Vec<Diagnostic> {
+pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Vec<RuleViolation> {
     let registered: HashSet<String> = project
         .sources()
         .flat_map(|source| registered_systems(source.file))
         .collect();
-    let mut diags = Vec::new();
+    let mut violations = Vec::new();
 
     for source in project.sources() {
         if matches!(source.origin, Origin::Examples) {
@@ -57,7 +57,7 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
                 continue;
             }
 
-            diags.push(scan::diag(
+            violations.push(scan::site_violation(
                 project,
                 source.origin,
                 source.relative_path,
@@ -71,7 +71,7 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
         }
     }
 
-    diags
+    violations
 }
 
 fn is_bevy_system_param(arg: &syn::FnArg) -> bool {

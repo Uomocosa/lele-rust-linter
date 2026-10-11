@@ -6,14 +6,14 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::single_caller_type::SingleCallerType,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     let defined_types = collect_defined_types(&project.parsed_files);
     let defined_names: HashSet<String> = defined_types.iter().map(|(n, _)| n.clone()).collect();
     let embedded = collect_embedded_type_names(&project.parsed_files);
@@ -47,20 +47,14 @@ pub fn check(
             .collect();
 
         if let [caller] = callers.as_slice() {
-            diags.push(Diagnostic {
-                file: project.src_dir.join(rel_path),
-                line: 1,
-                col: 0,
-                code: checkers::single_caller_type::SingleCallerType::CODE,
-                message: format!(
+            violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::single_caller_type::SingleCallerType::CODE, format!(
                     "type `{name}` has exactly one caller in `{}` and no atomic-delegate methods — define it in the caller's file instead of its own file",
                     caller.display()
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: type definition collection across all files

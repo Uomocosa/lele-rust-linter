@@ -1,10 +1,10 @@
 use atomic_delegate_macros::atomic_delegate;
 use lele_lint::Category;
 use lele_lint::Checker;
-use lele_lint::Diagnostic;
 use lele_lint::ExampleFile;
 use lele_lint::Project;
 use lele_lint::RuleDoc;
+use lele_lint::RuleViolation;
 
 pub struct BevyUiMp4;
 
@@ -53,7 +53,7 @@ impl Checker for BevyUiMp4 {
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
     #[atomic_delegate(BevyUiMp4)]
-    fn check(&self, project: &Project) -> Vec<Diagnostic> {}
+    fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 
 #[rustfmt::skip]

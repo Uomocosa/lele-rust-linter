@@ -1,16 +1,16 @@
 use syn::spanned::Spanned;
 
 use crate::checkers;
-use crate::Diagnostic;
 use crate::Origin;
 use crate::Project;
+use crate::RuleViolation;
 
 const MAX_PRIVATE_HELPERS: usize = 2;
 
 const ANNOTATION: &str = "// needed helper:";
 
-pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         if matches!(source.origin, Origin::Examples) {
@@ -39,40 +39,28 @@ pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> 
         let private_count = count_unannotated_private_helpers(file, &text);
 
         if private_count > MAX_PRIVATE_HELPERS {
-            diags.push(Diagnostic {
-                file: absolute.clone(),
-                line: 1,
-                col: 0,
-                code: checkers::helper_count::HelperCount::CODE,
-                message: format!(
+            violations.push(RuleViolation::file(absolute.clone(), checkers::helper_count::HelperCount::CODE, format!(
                     "{} unannotated helper functions (max {}). Annotate context-specific helpers with `{}` on the line above each function; extract reusable ones into atomic delegate files",
                     private_count,
                     MAX_PRIVATE_HELPERS,
                     ANNOTATION
-                ),
-            });
+                )));
         }
 
         let pub_like_fns = collect_pub_like_top_level_fns(file);
 
         if pub_like_fns.len() > 1 {
             for func in &pub_like_fns {
-                diags.push(Diagnostic {
-                    file: absolute.clone(),
-                    line: func.sig.fn_token.span().start().line,
-                    col: 0,
-                    code: checkers::helper_count::HelperCount::CODE,
-                    message: format!(
+                violations.push(RuleViolation::site(absolute.clone(), func.sig.fn_token.span().start().line, 0, checkers::helper_count::HelperCount::CODE, format!(
                         "{} public/pub(crate) top-level functions in this file (fn `{}` among them); only the file's single core function may be pub/pub(crate) — extract the others into their own files",
                         pub_like_fns.len(),
                         func.sig.ident
-                    ),
-                });
+                    )));
             }
         }
     }
 
-    diags
+    violations
 }
 
 fn count_unannotated_private_helpers(file: &syn::File, source: &str) -> usize {

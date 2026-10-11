@@ -6,14 +6,14 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::AllowWhitelistEntry;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_allow_attributes::NoAllowAttributes,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
@@ -21,12 +21,12 @@ pub fn check(
             file: project.absolute_path(source.origin, rel_path),
             crate_rel: Path::new("src").join(rel_path),
             clippy_allow_whitelist: &project.clippy_allow_whitelist,
-            diags: Vec::new(),
+            violations: Vec::new(),
         };
         finder.visit_file(file);
-        diags.extend(finder.diags);
+        violations.extend(finder.violations);
     }
-    diags
+    violations
 }
 
 fn lint_paths(attr: &syn::Attribute) -> Vec<String> {
@@ -50,7 +50,7 @@ struct AllowFinder<'a> {
     file: PathBuf,
     crate_rel: PathBuf,
     clippy_allow_whitelist: &'a [AllowWhitelistEntry],
-    diags: Vec<Diagnostic>,
+    violations: Vec<RuleViolation>,
 }
 
 impl AllowFinder<'_> {
@@ -80,15 +80,9 @@ impl<'ast> Visit<'ast> for AllowFinder<'_> {
             return;
         }
         let start = attr.span().start();
-        self.diags.push(Diagnostic {
-            file: self.file.clone(),
-            line: start.line,
-            col: start.column,
-            code: checkers::no_allow_attributes::NoAllowAttributes::CODE,
-            message: format!(
+        self.violations.push(RuleViolation::site(self.file.clone(), start.line, start.column, checkers::no_allow_attributes::NoAllowAttributes::CODE, format!(
                 "`{kind}` attribute is banned — add an [[lele.lint.clippy_allow_whitelist]] entry with the exact `allow` lint path, `file` and a non-empty `reason` in lele.toml to whitelist it"
-            ),
-        });
+            )));
     }
 }
 

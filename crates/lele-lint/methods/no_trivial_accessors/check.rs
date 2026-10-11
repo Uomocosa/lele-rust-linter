@@ -2,14 +2,14 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::checkers;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_trivial_accessors::NoTrivialAccessors,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -37,28 +37,16 @@ pub fn check(
                         }
                         if let Some(field) = is_trivial_accessor(method, &pub_fields) {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            diags.push(Diagnostic {
-                                file: project.absolute_path(source.origin, rel_path),
-                                line: 1,
-                                col: 0,
-                                code: checkers::no_trivial_accessors::NoTrivialAccessors::CODE,
-                                message: format!(
+                            violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial accessor `{}` reads {vis} field `{field}`, make field public/pub(crate) and access directly",
                                     method.sig.ident
-                                ),
-                            });
+                                )));
                         } else if let Some(field) = is_trivial_setter(method, &pub_fields) {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            diags.push(Diagnostic {
-                                file: project.absolute_path(source.origin, rel_path),
-                                line: 1,
-                                col: 0,
-                                code: checkers::no_trivial_accessors::NoTrivialAccessors::CODE,
-                                message: format!(
+                            violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial setter `{}` assigns {vis} field `{field}`, make field public/pub(crate) and assign directly",
                                     method.sig.ident
-                                ),
-                            });
+                                )));
                         }
                     }
                 }
@@ -66,7 +54,7 @@ pub fn check(
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: visible field collection — pub + all Visibility::Restricted

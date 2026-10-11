@@ -1,5 +1,5 @@
-use lele_lint::Diagnostic;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 use crate::checkers;
 use crate::scan;
@@ -7,8 +7,8 @@ use crate::scan;
 pub fn check(
     _self: &checkers::bevy_plugin_scene::BevyPluginScene,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.sources() {
         let rel_path = source.relative_path;
@@ -17,7 +17,7 @@ pub fn check(
             continue;
         }
 
-        diags.extend(scan::require_preview(
+        violations.extend(scan::require_preview(
             project,
             source.origin,
             rel_path,
@@ -25,7 +25,7 @@ pub fn check(
             scan::PreviewKind::Scene,
             checkers::bevy_plugin_scene::BevyPluginScene::CODE,
             || {
-                scan::diag(
+                scan::site_violation(
                     project,
                     source.origin,
                     rel_path,
@@ -39,7 +39,7 @@ pub fn check(
         ));
     }
 
-    diags
+    violations
 }
 
 #[cfg(test)]
@@ -64,8 +64,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::bevy_plugin_scene::BevyPluginScene, &project);
-        assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].code, "E038");
+        let violations = check(&checkers::bevy_plugin_scene::BevyPluginScene, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, "E038");
     }
 }

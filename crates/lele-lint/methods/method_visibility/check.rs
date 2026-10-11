@@ -3,17 +3,17 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Entry;
 use crate::EntryKind;
 use crate::ModuleInfoMap;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::method_visibility::MethodVisibility,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     let dir_groups = group_entries_by_parent_dir(&project.entries);
 
@@ -37,36 +37,28 @@ pub fn check(
             if let Some(declared_pub) =
                 declared_as_pub_mod(&project.module_info, parent_dir, method_mod_name)
             {
-                diags.push(Diagnostic {
-                    file: declared_pub,
-                    line: 1,
-                    col: 0,
-                    code: checkers::method_visibility::MethodVisibility::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(declared_pub, checkers::method_visibility::MethodVisibility::CODE, format!(
                         "method file `{}` of struct `{}` must be declared with `mod` (private), not `pub mod`",
                         file_name, struct_name
-                    ),
-                });
+                    )));
             }
 
             if let Some(reexported_at) =
                 reexported_in_pub_use(&project.module_info, parent_dir, method_mod_name)
             {
-                diags.push(Diagnostic {
-                    file: reexported_at,
-                    line: 1,
-                    col: 0,
-                    code: checkers::method_visibility::MethodVisibility::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(
+                    reexported_at,
+                    checkers::method_visibility::MethodVisibility::CODE,
+                    format!(
                         "method file `{}` of struct `{}` must not appear in a `pub use` re-export",
                         file_name, struct_name
                     ),
-                });
+                ));
             }
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: method-file classification (no type definition)

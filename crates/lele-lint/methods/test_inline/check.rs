@@ -1,30 +1,24 @@
 use crate::checkers;
-use crate::Diagnostic;
 use crate::EntryKind;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::test_inline::TestInline, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(_self: &checkers::test_inline::TestInline, project: &Project) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for entry in &project.entries {
         if entry.kind != EntryKind::Directory {
             continue;
         }
         if has_tests_component(&entry.relative_path) {
-            diags.push(Diagnostic {
-                file: entry.absolute_path.clone(),
-                line: 1,
-                col: 0,
-                code: checkers::test_inline::TestInline::CODE,
-                message: format!(
+            violations.push(RuleViolation::file(entry.absolute_path.clone(), checkers::test_inline::TestInline::CODE, format!(
                     "unit tests must be in the same file as the primary item — delete `{}` and move the tests inline",
                     entry.relative_path.display()
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 fn has_tests_component(path: &std::path::Path) -> bool {

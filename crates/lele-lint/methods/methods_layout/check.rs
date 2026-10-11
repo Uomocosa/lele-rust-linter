@@ -2,15 +2,15 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::EntryKind;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::methods_layout::MethodsLayout,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     let declared = common::collect_declared(project);
 
     for (type_snake, declared_type) in &declared {
@@ -19,7 +19,7 @@ pub fn check(
             match project.methods_parsed_files.get(&rel) {
                 Some(file) => {
                     if !defines_pub_fn(file, method) {
-                        diags.push(diag(
+                        violations.push(file_violation(
                             project,
                             &rel,
                             format!(
@@ -28,7 +28,7 @@ pub fn check(
                         ));
                     } else if pub_fn_block(file, method).is_some_and(|block| block.stmts.len() <= 1)
                     {
-                        diags.push(diag(
+                        violations.push(file_violation(
                             project,
                             &rel,
                             format!(
@@ -37,7 +37,7 @@ pub fn check(
                         ));
                     }
                     if !common::has_test_usage(file) {
-                        diags.push(diag(
+                        violations.push(file_violation(
                             project,
                             &rel,
                             format!(
@@ -46,7 +46,7 @@ pub fn check(
                         ));
                     }
                 }
-                None => diags.push(diag(
+                None => violations.push(file_violation(
                     project,
                     &rel,
                     format!(
@@ -60,7 +60,7 @@ pub fn check(
         let expected = common::type_index_content(&declared_type.methods);
         if project.methods_parsed_files.contains_key(&mod_rel) {
             if read_methods_file(project, &mod_rel).as_deref() != Some(expected.as_str()) {
-                diags.push(diag(
+                violations.push(file_violation(
                     project,
                     &mod_rel,
                     format!(
@@ -69,7 +69,7 @@ pub fn check(
                 ));
             }
         } else {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 &mod_rel,
                 format!("missing `methods/{type_snake}/mod.rs` — run `lele_lint --sync-methods`"),
@@ -91,7 +91,7 @@ pub fn check(
             .get(&parent)
             .is_some_and(|declared_type| declared_type.methods.contains(&stem))
         {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 rel,
                 format!(
@@ -106,14 +106,14 @@ pub fn check(
         let expected = common::root_index_content(&declared);
         if project.methods_parsed_files.contains_key(root_mod) {
             if read_methods_file(project, root_mod).as_deref() != Some(expected.as_str()) {
-                diags.push(diag(
+                violations.push(file_violation(
                     project,
                     root_mod,
                     "`methods/mod.rs` is out of date — run `lele_lint --sync-methods`".to_string(),
                 ));
             }
         } else {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 root_mod,
                 "missing `methods/mod.rs` — run `lele_lint --sync-methods`".to_string(),
@@ -121,22 +121,16 @@ pub fn check(
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: build a diagnostic anchored to a methods-relative path
-fn diag(project: &Project, rel: &Path, message: String) -> Diagnostic {
+fn file_violation(project: &Project, rel: &Path, message: String) -> RuleViolation {
     let file = project
         .methods_dir
         .as_ref()
         .map_or_else(|| rel.to_path_buf(), |dir| dir.join(rel));
-    Diagnostic {
-        file,
-        line: 1,
-        col: 0,
-        code: checkers::methods_layout::MethodsLayout::CODE,
-        message,
-    }
+    RuleViolation::file(file, checkers::methods_layout::MethodsLayout::CODE, message)
 }
 
 // needed helper: does the parsed file expose `pub fn <name>`
@@ -218,8 +212,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&MethodsLayout, &project);
-        let body = diags
+        let violations = check(&MethodsLayout, &project);
+        let body = violations
             .iter()
             .find(|d| d.message.contains("methods/widget/spin.rs"))
             .expect("missing-body diagnostic");
@@ -241,12 +235,12 @@ mod tests {
             PathBuf::from("widget/spin.rs"),
             syn::parse_str("pub fn spin(w: &mut Widget) { w.spin_once() }\n").unwrap(),
         );
-        let diags = check(&MethodsLayout, &project);
+        let violations = check(&MethodsLayout, &project);
         assert!(
-            diags
+            violations
                 .iter()
                 .any(|d| d.message.contains("body has ≤1 statement")),
-            "expected inline diagnostic, got {diags:?}"
+            "expected inline diagnostic, got {violations:?}"
         );
     }
 
@@ -267,8 +261,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&MethodsLayout, &project);
-        assert!(!diags
+        let violations = check(&MethodsLayout, &project);
+        assert!(!violations
             .iter()
             .any(|d| d.message.contains("body has ≤1 statement")));
     }
@@ -283,8 +277,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&MethodsLayout, &project);
-        let body = diags
+        let violations = check(&MethodsLayout, &project);
+        let body = violations
             .iter()
             .find(|d| d.message.contains("methods/foo/check.rs"))
             .expect("missing-mirror diagnostic for trait shell method");

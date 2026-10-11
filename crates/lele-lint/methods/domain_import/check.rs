@@ -2,12 +2,15 @@ use syn::spanned::Spanned;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::DunderPath;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::domain_import::DomainImport, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(
+    _self: &checkers::domain_import::DomainImport,
+    project: &Project,
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -15,19 +18,19 @@ pub fn check(_self: &checkers::domain_import::DomainImport, project: &Project) -
         for item in &file.items {
             if let syn::Item::Use(item_use) = item {
                 if let Some(msg) = check_import(item_use, &project.dunder_paths) {
-                    diags.push(Diagnostic {
-                        file: project.absolute_path(source.origin, rel_path),
-                        line: find_use_line(item_use),
-                        col: 0,
-                        code: checkers::domain_import::DomainImport::CODE,
-                        message: msg,
-                    });
+                    violations.push(RuleViolation::site(
+                        project.absolute_path(source.origin, rel_path),
+                        find_use_line(item_use),
+                        0,
+                        checkers::domain_import::DomainImport::CODE,
+                        msg,
+                    ));
                 }
             }
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: import style validation
@@ -95,6 +98,7 @@ mod tests {
     use crate::common;
     use crate::Entry;
     use crate::EntryKind;
+    use crate::Location;
     use crate::Project;
 
     #[test]
@@ -165,9 +169,9 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("probe.rs"), syn::parse_str(source).unwrap());
-        let diags = check(&DomainImport, &project);
-        assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].line, 2);
+        let violations = check(&DomainImport, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].location, Location::Site { line: 2, col: 0 });
     }
 }
 

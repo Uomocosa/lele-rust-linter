@@ -5,27 +5,27 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::constants_placement::ConstantsPlacement,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     let defined = collect_defined_consts(&project.parsed_files);
     let defined_names: HashSet<String> = defined.keys().cloned().collect();
     let usages = collect_const_usages(&project.parsed_files, &defined_names);
 
     for (name, rel_path) in &defined {
         if let Some(users) = usages.get(name) {
-            check_fn_file_const(name, rel_path, project, &mut diags);
-            check_lift_to_ancestor(name, rel_path, users, project, &mut diags);
-            check_lower_to_subdir(name, rel_path, users, project, &mut diags);
+            violations.extend(check_fn_file_const(name, rel_path, project));
+            violations.extend(check_lift_to_ancestor(name, rel_path, users, project));
+            violations.extend(check_lower_to_subdir(name, rel_path, users, project));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: `pub`/`pub(crate)` const/static definition collection
@@ -84,18 +84,13 @@ impl<'ast> Visit<'ast> for ConstUseVisitor<'_> {
 }
 
 // needed helper: const-in-fn-file detection (must live in sibling constants.rs)
-fn check_fn_file_const(
-    name: &str,
-    rel_path: &Path,
-    project: &Project,
-    diags: &mut Vec<Diagnostic>,
-) {
+fn check_fn_file_const(name: &str, rel_path: &Path, project: &Project) -> Vec<RuleViolation> {
     let file_name = rel_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
     if file_name == "constants.rs" || file_name == "mod.rs" || file_name == "lib.rs" {
-        return;
+        return Vec::new();
     }
     let Some(file) = project.parsed_files.get(rel_path) else {
-        return;
+        return Vec::new();
     };
     let has_pub_fn = file
         .items
@@ -103,18 +98,17 @@ fn check_fn_file_const(
         .any(|item| matches!(item, syn::Item::Fn(f) if common::is_exposed(&f.vis)));
     if has_pub_fn {
         let sibling = sibling_constants(rel_path, project);
-        diags.push(Diagnostic {
-            file: project.src_dir.join(rel_path),
-            line: 1,
-            col: 0,
-            code: checkers::constants_placement::ConstantsPlacement::CODE,
-            message: format!(
+        return vec![RuleViolation::file(
+            project.src_dir.join(rel_path),
+            checkers::constants_placement::ConstantsPlacement::CODE,
+            format!(
                 "const `{name}` lives in fn-file `{}` — move it to `{}` (nearest constants.rs)",
                 rel_path.display(),
                 sibling.display(),
             ),
-        });
+        )];
     }
+    Vec::new()
 }
 
 // needed helper: lift detection when users span top-level dirs
@@ -123,24 +117,18 @@ fn check_lift_to_ancestor(
     rel_path: &Path,
     users: &HashSet<PathBuf>,
     project: &Project,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let ancestor = common_ancestor_dir(users);
     let def_dir = parent_dir(rel_path);
     if ancestor.is_empty() && !def_dir.is_empty() {
         let target = constants_target(project, &PathBuf::new());
-        diags.push(Diagnostic {
-            file: project.src_dir.join(rel_path),
-            line: 1,
-            col: 0,
-            code: checkers::constants_placement::ConstantsPlacement::CODE,
-            message: format!(
+        return vec![RuleViolation::file(project.src_dir.join(rel_path), checkers::constants_placement::ConstantsPlacement::CODE, format!(
                 "const `{name}` is used across top-level dirs but lives in `{}` — lift it to `src/{}`",
                 rel_path.display(),
                 target.display(),
-            ),
-        });
+            ))];
     }
+    Vec::new()
 }
 
 // needed helper: lower detection when root const is used in one subdir only
@@ -149,27 +137,24 @@ fn check_lower_to_subdir(
     rel_path: &Path,
     users: &HashSet<PathBuf>,
     project: &Project,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     if rel_path.components().count() != 1 {
-        return;
+        return Vec::new();
     }
     let ancestor = common_ancestor_dir(users);
     if ancestor.as_os_str().is_empty() {
-        return;
+        return Vec::new();
     }
     let target = constants_target(project, &ancestor);
-    diags.push(Diagnostic {
-        file: project.src_dir.join(rel_path),
-        line: 1,
-        col: 0,
-        code: checkers::constants_placement::ConstantsPlacement::CODE,
-        message: format!(
+    vec![RuleViolation::file(
+        project.src_dir.join(rel_path),
+        checkers::constants_placement::ConstantsPlacement::CODE,
+        format!(
             "const `{name}` lives at root but is only used under `{}` — lower it to `{}`",
             ancestor.display(),
             target.display(),
         ),
-    });
+    )]
 }
 
 // needed helper: constants.rs target path for a domain directory

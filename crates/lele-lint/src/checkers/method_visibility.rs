@@ -1,9 +1,9 @@
 use crate::Category;
 use crate::Checker;
-use crate::Diagnostic;
 use crate::ExampleFile;
 use crate::Project;
 use crate::RuleDoc;
+use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 
 pub struct MethodVisibility;
@@ -155,7 +155,7 @@ impl Checker for MethodVisibility {
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
     #[atomic_delegate(MethodVisibility)]
-    fn check(&self, project: &Project) -> Vec<Diagnostic> {}
+    fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 
 #[rustfmt::skip]

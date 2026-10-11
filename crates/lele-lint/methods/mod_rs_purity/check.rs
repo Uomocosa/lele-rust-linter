@@ -2,11 +2,14 @@ use syn::spanned::Spanned;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::mod_rs_purity::ModRsPurity, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(
+    _self: &checkers::mod_rs_purity::ModRsPurity,
+    project: &Project,
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -22,17 +25,17 @@ pub fn check(_self: &checkers::mod_rs_purity::ModRsPurity, project: &Project) ->
             let Some(message) = violation_message(item) else {
                 continue;
             };
-            diags.push(Diagnostic {
-                file: project.absolute_path(source.origin, rel_path),
-                line: item.span().start().line,
-                col: 0,
-                code: checkers::mod_rs_purity::ModRsPurity::CODE,
+            violations.push(RuleViolation::site(
+                project.absolute_path(source.origin, rel_path),
+                item.span().start().line,
+                0,
+                checkers::mod_rs_purity::ModRsPurity::CODE,
                 message,
-            });
+            ));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: mod.rs item violation classification

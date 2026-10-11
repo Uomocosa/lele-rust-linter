@@ -1,16 +1,8 @@
 use std::path::Path;
 
-use serde::Deserialize;
-
 use crate::Config;
 use crate::Error;
-use crate::LeleSection;
-
-#[derive(Deserialize)]
-struct LeleToml {
-    #[serde(default)]
-    lele: LeleSection,
-}
+use crate::LeleToml;
 
 pub fn load_file(path: &Path) -> Result<Config, Error> {
     let content = std::fs::read_to_string(path).map_err(Error::Io)?;

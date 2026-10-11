@@ -6,14 +6,14 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::no_stuttered_path::NoStutteredPath,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     let root_stems = root_module_stems(project);
 
     for source in project.content_sources() {
@@ -28,20 +28,14 @@ pub fn check(
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            diags.push(Diagnostic {
-                file: project.absolute_path(source.origin, rel_path),
-                line: hit.line,
-                col: 0,
-                code: checkers::no_stuttered_path::NoStutteredPath::CODE,
-                message: format!(
+            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_stuttered_path::NoStutteredPath::CODE, format!(
                     "stuttered path `{}` adds no information — import `{}` once and use `{}` directly",
                     hit.path, hit.ty, hit.ty
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: root `src/*.rs` file stems — only these modules flatten to `crate::Type`

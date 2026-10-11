@@ -1,13 +1,13 @@
-use lele_lint::Diagnostic;
 use lele_lint::Origin;
 use lele_lint::Project;
+use lele_lint::RuleViolation;
 
 use crate::checkers;
 use crate::scan;
 
-pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<Diagnostic> {
+pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::collect(project);
-    let mut diags = Vec::new();
+    let mut violations = Vec::new();
 
     for source in project.sources() {
         let rel_path = source.relative_path;
@@ -18,7 +18,7 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<Diagno
 
         let previews = scan::collect_previews(file);
         let Some(preview) = previews.iter().find(|p| p.kind == scan::PreviewKind::Png) else {
-            diags.push(scan::diag(
+            violations.push(scan::site_violation(
                 project,
                 source.origin,
                 rel_path,
@@ -32,7 +32,7 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<Diagno
             continue;
         };
 
-        diags.extend(scan::require_ignored(
+        violations.extend(scan::require_ignored(
             project,
             source.origin,
             rel_path,
@@ -40,10 +40,16 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<Diagno
             checkers::bevy_ui::BevyUi::CODE,
         ));
 
-        substance_check(project, source.origin, rel_path, file, preview, &mut diags);
+        violations.extend(substance_check(
+            project,
+            source.origin,
+            rel_path,
+            file,
+            preview,
+        ));
     }
 
-    diags
+    violations
 }
 
 // needed helper: the preview must touch a component declared in this file
@@ -53,20 +59,19 @@ fn substance_check(
     rel_path: &std::path::Path,
     file: &syn::File,
     preview: &scan::Preview,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let components = scan::declared_components(file);
     if components.is_empty() {
-        return;
+        return Vec::new();
     }
     if preview
         .idents
         .iter()
         .any(|ident| components.contains(ident))
     {
-        return;
+        return Vec::new();
     }
-    diags.push(scan::diag(
+    vec![scan::site_violation(
         project,
         origin,
         rel_path,
@@ -77,7 +82,7 @@ fn substance_check(
             preview.name,
             components.join(", ")
         ),
-    ));
+    )]
 }
 
 #[cfg(test)]
@@ -94,9 +99,9 @@ mod tests {
             PathBuf::from("ui/root.rs"),
             syn::parse_str("pub fn setup(s: &mut S) { s.spawn((Node,)); }").unwrap(),
         );
-        let diags = check(&checkers::bevy_ui::BevyUi, &project);
-        assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].code, "E029");
+        let violations = check(&checkers::bevy_ui::BevyUi, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, "E029");
     }
 
     #[test]

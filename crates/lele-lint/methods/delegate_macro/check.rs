@@ -3,16 +3,16 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 const RESERVED_DELEGATE_METHODS: &[&str] = &["new"];
 
 pub fn check(
     _self: &checkers::delegate_macro::DelegateMacro,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for (rel_path, file) in &project.parsed_files {
         let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
             continue;
@@ -22,7 +22,7 @@ pub fn check(
         };
         let annotated_inherent = annotated_inherent_blocks(file, &primary);
         if annotated_inherent > 1 {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 rel_path,
                 format!(
@@ -44,14 +44,14 @@ pub fn check(
                     continue;
                 }
                 if common::has_atomic_delegates(&impl_block.attrs) {
-                    check_delegated_methods(
-                        project, rel_path, &primary, impl_block, &mut seen, &mut diags,
-                    );
+                    violations.extend(check_delegated_methods(
+                        project, rel_path, &primary, impl_block, &mut seen,
+                    ));
                     continue;
                 }
-                check_fn_shells(
-                    project, rel_path, &primary, impl_block, &mut seen, &mut diags,
-                );
+                violations.extend(check_fn_shells(
+                    project, rel_path, &primary, impl_block, &mut seen,
+                ));
                 let migratable = migratable_idents(impl_block);
                 if migratable.is_empty() {
                     continue;
@@ -62,7 +62,7 @@ pub fn check(
                     .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
                     .collect::<Vec<_>>()
                     .join(", ");
-                diags.push(diag(
+                violations.push(file_violation(
                     project,
                     rel_path,
                     format!(
@@ -79,15 +79,15 @@ pub fn check(
             }
 
             if common::has_atomic_delegates(&impl_block.attrs) {
-                check_delegated_methods(
-                    project, rel_path, &primary, impl_block, &mut seen, &mut diags,
-                );
+                violations.extend(check_delegated_methods(
+                    project, rel_path, &primary, impl_block, &mut seen,
+                ));
                 continue;
             }
 
-            check_fn_shells(
-                project, rel_path, &primary, impl_block, &mut seen, &mut diags,
-            );
+            violations.extend(check_fn_shells(
+                project, rel_path, &primary, impl_block, &mut seen,
+            ));
 
             if all_methods_are_real_reserved(impl_block) {
                 continue;
@@ -104,7 +104,7 @@ pub fn check(
                 .join(", ");
             let real = real_idents(impl_block);
             if real.is_empty() {
-                diags.push(diag(
+                violations.push(file_violation(
                     project,
                     rel_path,
                     format!(
@@ -117,7 +117,7 @@ pub fn check(
                     .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(", ");
-                diags.push(diag(
+                violations.push(file_violation(
                     project,
                     rel_path,
                     format!(
@@ -127,28 +127,26 @@ pub fn check(
             }
         }
     }
-    diags
+    violations
 }
 
-// needed helper: build an E032 diagnostic anchored to a src file
-fn diag(project: &Project, rel_path: &Path, message: String) -> Diagnostic {
-    Diagnostic {
-        file: project.src_dir.join(rel_path),
-        line: 1,
-        col: 0,
-        code: checkers::delegate_macro::DelegateMacro::CODE,
+// needed helper: build an E032 violation anchored to a src file
+fn file_violation(project: &Project, rel_path: &Path, message: String) -> RuleViolation {
+    RuleViolation::file(
+        project.src_dir.join(rel_path),
+        checkers::delegate_macro::DelegateMacro::CODE,
         message,
-    }
+    )
 }
 
-// needed helper: duplicate-shell diagnostic for a twice-declared (type, method)
-fn duplicate_diag(
+// needed helper: per-function atomic shell violation for a twice-declared (type, method)
+fn duplicate_violation(
     project: &Project,
     rel_path: &Path,
     primary: &str,
     ident: &syn::Ident,
-) -> Diagnostic {
-    diag(
+) -> RuleViolation {
+    file_violation(
         project,
         rel_path,
         format!("`{ident}` is declared twice for `{primary}` (duplicate `#[atomic_delegates]` shell) — merge into one block"),
@@ -236,12 +234,12 @@ fn check_delegated_methods(
     primary: &str,
     impl_block: &syn::ItemImpl,
     seen: &mut HashSet<String>,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for method in fn_methods(impl_block) {
         let ident = &method.sig.ident;
         if is_reserved(ident) {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 rel_path,
                 format!(
@@ -250,7 +248,7 @@ fn check_delegated_methods(
             ));
         }
         if common::has_atomic_fn(&method.attrs) {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 rel_path,
                 format!(
@@ -259,9 +257,10 @@ fn check_delegated_methods(
             ));
         }
         if !seen.insert(format!("{primary}::{ident}")) {
-            diags.push(duplicate_diag(project, rel_path, primary, ident));
+            violations.push(duplicate_violation(project, rel_path, primary, ident));
         }
     }
+    violations
 }
 
 // needed helper: reserved + duplicate checks for per-function atomic shells
@@ -271,15 +270,15 @@ fn check_fn_shells(
     primary: &str,
     impl_block: &syn::ItemImpl,
     seen: &mut HashSet<String>,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for method in fn_methods(impl_block) {
         if !common::has_atomic_fn(&method.attrs) {
             continue;
         }
         let ident = &method.sig.ident;
         if is_reserved(ident) {
-            diags.push(diag(
+            violations.push(file_violation(
                 project,
                 rel_path,
                 format!(
@@ -288,9 +287,10 @@ fn check_fn_shells(
             ));
         }
         if !seen.insert(format!("{primary}::{ident}")) {
-            diags.push(duplicate_diag(project, rel_path, primary, ident));
+            violations.push(duplicate_violation(project, rel_path, primary, ident));
         }
     }
+    violations
 }
 
 // needed helper: reserved delegate method name check
@@ -357,9 +357,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("methods/foo/check.rs"));
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("methods/foo/check.rs"));
 
         let mut real = Project::default();
         real.parsed_files.insert(
@@ -382,8 +382,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert!(diags.iter().any(|d| d.message.contains("duplicate")));
+        let violations = check(&DelegateMacro, &project);
+        assert!(violations.iter().any(|d| d.message.contains("duplicate")));
     }
 
     #[test]
@@ -396,12 +396,12 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
+        let violations = check(&DelegateMacro, &project);
         assert!(
-            diags
+            violations
                 .iter()
                 .any(|d| d.message.contains("merge into one block")),
-            "expected merge diagnostic, got {diags:?}"
+            "expected merge diagnostic, got {violations:?}"
         );
     }
 
@@ -443,8 +443,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert!(diags.iter().any(|d| d.message.contains("constructor")));
+        let violations = check(&DelegateMacro, &project);
+        assert!(violations.iter().any(|d| d.message.contains("constructor")));
     }
 
     #[test]
@@ -470,8 +470,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert!(diags.iter().any(|d| d.message.contains("redundant")));
+        let violations = check(&DelegateMacro, &project);
+        assert!(violations.iter().any(|d| d.message.contains("redundant")));
     }
 
     #[test]
@@ -484,10 +484,10 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("split"));
-        assert!(diags[0].message.contains("methods/foo/run.rs"));
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("split"));
+        assert!(violations[0].message.contains("methods/foo/run.rs"));
     }
 
     #[test]
@@ -513,9 +513,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("methods/foo/check.rs"));
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("methods/foo/check.rs"));
     }
 
     #[test]
@@ -528,9 +528,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("#[atomic_delegate("));
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("#[atomic_delegate("));
     }
 
     #[test]
@@ -543,10 +543,10 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&DelegateMacro, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("methods/foo/run.rs"));
-        assert!(diags[0].message.contains("methods/foo/stop.rs"));
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("methods/foo/run.rs"));
+        assert!(violations[0].message.contains("methods/foo/stop.rs"));
     }
 }
 

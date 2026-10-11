@@ -6,45 +6,30 @@ use clap::Parser;
 use lele_lint::checkers::build_checkers;
 use lele_lint::explain;
 use lele_lint::print_checker_list;
-use lele_lint::print_diagnostics;
 use lele_lint::rules_markdown;
+use lele_lint::run_checkers;
 use lele_lint::sync_methods;
+use lele_lint::CommonArgs;
 use lele_lint::Config;
-use lele_lint::ErrorFormat;
 use lele_lint::Project;
 
 #[derive(Parser)]
 #[command(name = "lele_lint", about = "Enforce lele-syntax-rs conventions")]
 struct Args {
-    #[arg(short, long, value_enum, default_value_t = ErrorFormat::Clippy)]
-    error_format: ErrorFormat,
-
-    #[arg(long)]
-    checker_list: bool,
-
-    #[arg(long, value_name = "CODE")]
-    explain: Option<String>,
+    #[command(flatten)]
+    common: CommonArgs,
 
     #[arg(long = "rules-md")]
     rules_md: bool,
 
-    #[arg(long, value_name = "PATH")]
-    config: Option<PathBuf>,
-
-    #[arg(long = "scan-folder", value_name = "FOLDERS", value_delimiter = ',')]
-    scan_folder: Option<Vec<PathBuf>>,
-
     #[arg(long = "sync-methods")]
     sync_methods: bool,
-
-    #[arg(value_name = "PATH")]
-    path: Option<PathBuf>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    if args.checker_list {
+    if args.common.checker_list {
         let checkers = build_checkers();
         print_checker_list(&checkers);
         return;
@@ -55,7 +40,7 @@ fn main() {
         return;
     }
 
-    if let Some(code) = args.explain {
+    if let Some(code) = args.common.explain {
         let Some(text) = explain(&build_checkers(), &code) else {
             eprintln!("lele_lint: no rule with code or name `{code}`");
             process::exit(1);
@@ -64,7 +49,10 @@ fn main() {
         return;
     }
 
-    let mut project = match Project::discover(args.path.as_deref(), args.scan_folder.as_deref()) {
+    let mut project = match Project::discover(
+        args.common.path.as_deref(),
+        args.common.scan_folder.as_deref(),
+    ) {
         Ok(p) => p,
         Err(e) => {
             eprintln!("lele_lint: {e}", e = e);
@@ -72,7 +60,7 @@ fn main() {
         }
     };
 
-    let config = match resolve_config(args.config.as_deref(), &project.root) {
+    let config = match resolve_config(args.common.config.as_deref(), &project.root) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("lele_lint: lele.toml: {e}");
@@ -108,17 +96,7 @@ fn main() {
 
     let checkers = build_checkers();
 
-    let mut all_diags = Vec::new();
-    for checker in &checkers {
-        let diags = checker.check(&project);
-        all_diags.extend(diags);
-    }
-
-    print_diagnostics(&all_diags, args.error_format);
-
-    if !all_diags.is_empty() {
-        process::exit(1);
-    }
+    process::exit(run_checkers(&project, &checkers, args.common.error_format));
 }
 
 // needed helper: a workspace keeps one lele.toml; prefer --config, else CWD, else the crate's own

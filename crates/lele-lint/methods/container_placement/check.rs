@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Role {
@@ -50,11 +50,11 @@ impl Role {
 pub fn check(
     _self: &checkers::container_placement::ContainerPlacement,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     let Some(folder) = common::dunder_dir(&project.dunder_paths) else {
-        return diags;
+        return violations;
     };
 
     for source in project.content_sources() {
@@ -62,13 +62,13 @@ pub fn check(
         let file = source.file;
         let file_path = project.absolute_path(source.origin, rel_path);
         if common::in_dunder_dir(rel_path, &project.dunder_paths) {
-            check_container_file(rel_path, file, project, &file_path, &mut diags);
+            violations.extend(check_container_file(rel_path, file, project, &file_path));
         } else {
-            check_free_file(rel_path, file, &folder, &file_path, &mut diags);
+            violations.extend(check_free_file(rel_path, file, &folder, &file_path));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: role named by a container file stem (reverse of `Role::file`)
@@ -84,42 +84,41 @@ fn check_container_file(
     file: &syn::File,
     project: &Project,
     file_path: &Path,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
-        return;
+        return Vec::new();
     };
     if stem == "mod.rs" || common::is_dunder_file_path(rel_path, &project.dunder_paths) {
-        return;
+        return Vec::new();
     }
     let Some(role) = role_of_stem(stem) else {
-        return;
+        return Vec::new();
     };
 
+    let mut violations = Vec::new();
     for item in &file.items {
         let Some(name) = exposed_name(item) else {
             continue;
         };
         if has_behavior(file, &name) {
-            push(
-                diags,
+            violations.push(file_violation(
                 file_path,
                 format!(
                     "`{name}` has impls; `{stem}.rs` holds behavior-free items only — move it to `{name}.rs`"
                 ),
-            );
+            ));
             continue;
         }
         let natural = classify(item);
         if natural != Some(role) {
             let hint = natural.map_or("a non-container item".to_string(), |r| r.file().to_string());
-            push(
-                diags,
+            violations.push(file_violation(
                 file_path,
                 format!("`{name}` is a {hint}; move it to `{hint}`"),
-            );
+            ));
         }
     }
+    violations
 }
 
 // needed helper: free-file qualification -> container placement diagnostics
@@ -128,16 +127,16 @@ fn check_free_file(
     file: &syn::File,
     folder: &str,
     file_path: &Path,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
-        return;
+        return Vec::new();
     };
     if stem == "mod.rs" || stem == "lib.rs" {
-        return;
+        return Vec::new();
     }
     let target = container_dir(rel_path, folder);
 
+    let mut violations = Vec::new();
     for item in &file.items {
         let Some(name) = exposed_name(item) else {
             continue;
@@ -151,27 +150,25 @@ fn check_free_file(
         if role == Role::Const {
             continue;
         }
-        push(
-            diags,
+        violations.push(file_violation(
             file_path,
             format!(
                 "`{name}` is a behavior-free {}; move it to `{}`",
                 role.file(),
                 target.join(role.file()).display(),
             ),
-        );
+        ));
     }
+    violations
 }
 
-// needed helper: diagnostic construction
-fn push(diags: &mut Vec<Diagnostic>, file_path: &Path, message: String) {
-    diags.push(Diagnostic {
-        file: file_path.to_path_buf(),
-        line: 1,
-        col: 0,
-        code: checkers::container_placement::ContainerPlacement::CODE,
+// needed helper: whole-file container-placement finding
+fn file_violation(file_path: &Path, message: String) -> RuleViolation {
+    RuleViolation::file(
+        file_path.to_path_buf(),
+        checkers::container_placement::ContainerPlacement::CODE,
         message,
-    });
+    )
 }
 
 // needed helper: exposed (pub/pub(crate)) primary item name
@@ -311,10 +308,10 @@ mod tests {
             "discovery/game.rs",
             "#[derive(Debug)] pub struct Game(pub String);\n",
         )]);
-        let diags = check(&ContainerPlacement, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("newtypes.rs"));
-        assert!(diags[0].message.contains("discovery/__basic__"));
+        let violations = check(&ContainerPlacement, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("newtypes.rs"));
+        assert!(violations[0].message.contains("discovery/__basic__"));
     }
 
     #[test]
@@ -323,8 +320,8 @@ mod tests {
             "discovery/__basic__/newtypes.rs",
             "#[derive(Debug, Clone)] pub struct Game(pub String);\n",
         )]);
-        let diags = check(&ContainerPlacement, &project);
-        assert!(diags.is_empty());
+        let violations = check(&ContainerPlacement, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -333,9 +330,9 @@ mod tests {
             "discovery/__basic__/newtypes.rs",
             "#[derive(Debug)] pub struct Game(pub String);\nimpl Game { pub fn name(&self) -> &str { \"\" } }\n",
         )]);
-        let diags = check(&ContainerPlacement, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("has impls"));
+        let violations = check(&ContainerPlacement, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("has impls"));
     }
 
     #[test]

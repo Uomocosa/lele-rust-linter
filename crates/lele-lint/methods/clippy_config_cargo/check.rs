@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use crate::checkers;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 const REQUIRED_LINTS: &[&str] = &[
     "unwrap_used",
@@ -23,57 +23,43 @@ const REQUIRED_LINTS: &[&str] = &[
 pub fn check(
     _self: &checkers::clippy_config_cargo::ClippyConfigCargo,
     project: &Project,
-) -> Vec<Diagnostic> {
+) -> Vec<RuleViolation> {
     let cargo_path = project.root.join("Cargo.toml");
     let content = match std::fs::read_to_string(&cargo_path) {
         Ok(c) => c,
         Err(_) => {
-            return vec![Diagnostic {
-                file: cargo_path,
-                line: 1,
-                col: 0,
-                code: checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
-                message: "Cargo.toml not found or unreadable — add [lints.clippy] with minimum clippy config".to_string(),
-            }];
+            return vec![RuleViolation::file(cargo_path, checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "Cargo.toml not found or unreadable — add [lints.clippy] with minimum clippy config".to_string())];
         }
     };
     let value: toml::Value = match content.parse() {
         Ok(v) => v,
         Err(e) => {
-            return vec![Diagnostic {
-                file: cargo_path,
-                line: 1,
-                col: 0,
-                code: checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
-                message: format!("Cargo.toml parse error: {e}"),
-            }];
+            return vec![RuleViolation::file(
+                cargo_path,
+                checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
+                format!("Cargo.toml parse error: {e}"),
+            )];
         }
     };
     let clippy_table = resolve_clippy_table(&value, project, &cargo_path);
     match clippy_table {
         Some(table) => {
-            let mut diags = Vec::new();
+            let mut violations = Vec::new();
             for key in ["pedantic", "nursery"] {
                 match table.get(key) {
                     Some(v) if is_deny_with_priority(v, true) => {}
-                    _ => diags.push(diag_for_key(&cargo_path, key, "must be { level = \"deny\", priority = -1 }")),
+                    _ => violations.push(violation_for_key(&cargo_path, key, "must be { level = \"deny\", priority = -1 }")),
                 }
             }
             for key in REQUIRED_LINTS {
                 match table.get(*key) {
                     Some(v) if is_deny_with_priority(v, false) => {}
-                    _ => diags.push(diag_for_key(&cargo_path, key, "must be \"deny\"")),
+                    _ => violations.push(violation_for_key(&cargo_path, key, "must be \"deny\"")),
                 }
             }
-            diags
+            violations
         }
-        None => vec![Diagnostic {
-            file: cargo_path.clone(),
-            line: 1,
-            col: 0,
-            code: checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
-            message: "missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)".to_string(),
-        }],
+        None => vec![RuleViolation::file(cargo_path.clone(), checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)".to_string())],
     }
 }
 
@@ -173,16 +159,12 @@ fn is_deny_with_priority(value: &toml::Value, require_priority: bool) -> bool {
 }
 
 // needed helper:
-fn diag_for_key(path: &PathBuf, key: &str, expected: &str) -> Diagnostic {
-    Diagnostic {
-        file: path.clone(),
-        line: 1,
-        col: 0,
-        code: checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
-        message: format!(
-            "Cargo.toml [lints.clippy].{key} {expected} — minimum clippy config requires it"
-        ),
-    }
+fn violation_for_key(path: &PathBuf, key: &str, expected: &str) -> RuleViolation {
+    RuleViolation::file(
+        path.clone(),
+        checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
+        format!("Cargo.toml [lints.clippy].{key} {expected} — minimum clippy config requires it"),
+    )
 }
 
 #[cfg(test)]

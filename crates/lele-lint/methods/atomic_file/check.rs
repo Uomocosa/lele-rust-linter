@@ -4,11 +4,11 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::atomic_file::AtomicFile, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(_self: &checkers::atomic_file::AtomicFile, project: &Project) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     let known_stems = known_type_stems(project);
     let declared = common::collect_declared(project);
 
@@ -16,51 +16,49 @@ pub fn check(_self: &checkers::atomic_file::AtomicFile, project: &Project) -> Ve
         if common::is_exempt_source_path(rel_path, &project.dunder_paths) {
             continue;
         }
-
-        let pub_items = collect_pub_items(file);
-        let Some(primary) = pub_items.first() else {
-            continue;
-        };
-
-        let file_stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-
-        check_filename_match(
-            &primary.name,
-            file_stem,
+        violations.extend(check_delegate_shape(
             rel_path,
+            file,
             project,
             &known_stems,
-            &mut diags,
-        );
-
-        let rest = pub_items.get(1..).unwrap_or(&[]);
-        for extra in rest {
-            let suggested_file = format!("{}_{}.rs", file_stem, extra.name);
-            diags.push(Diagnostic {
-                file: project.src_dir.join(rel_path),
-                line: 1,
-                col: 0,
-                code: checkers::atomic_file::AtomicFile::CODE,
-                message: format!(
-                    "only one public item per file — move `pub {} {}` to `{}`",
-                    extra.kind.kind_str(),
-                    extra.name,
-                    suggested_file
-                ),
-            });
-        }
-
-        check_fn_file_purity(file, file_stem, rel_path, project, &mut diags);
+            &declared,
+        ));
+        violations.extend(check_atomic_file(file, rel_path, project, &known_stems));
     }
 
-    for (rel_path, file) in &project.parsed_files {
-        if common::is_exempt_source_path(rel_path, &project.dunder_paths) {
-            continue;
-        }
-        check_delegate_shape(rel_path, file, project, &known_stems, &declared, &mut diags);
-    }
+    violations
+}
 
-    diags
+// needed helper: filename, single-public-item, and fn-file purity checks for one file
+fn check_atomic_file(
+    file: &syn::File,
+    rel_path: &Path,
+    project: &Project,
+    known_stems: &HashSet<String>,
+) -> Vec<RuleViolation> {
+    let pub_items = collect_pub_items(file);
+    let Some(primary) = pub_items.first() else {
+        return Vec::new();
+    };
+    let file_stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+
+    let mut violations =
+        check_filename_match(&primary.name, file_stem, rel_path, project, known_stems);
+    for extra in pub_items.get(1..).unwrap_or(&[]) {
+        let suggested_file = format!("{}_{}.rs", file_stem, extra.name);
+        violations.push(RuleViolation::file(
+            project.src_dir.join(rel_path),
+            checkers::atomic_file::AtomicFile::CODE,
+            format!(
+                "only one public item per file — move `pub {} {}` to `{}`",
+                extra.kind.kind_str(),
+                extra.name,
+                suggested_file
+            ),
+        ));
+    }
+    violations.extend(check_fn_file_purity(file, file_stem, rel_path, project));
+    violations
 }
 
 // needed helper: `<type>_<rest>.rs` must map to a declared delegate (or be renamed)
@@ -70,25 +68,24 @@ fn check_delegate_shape(
     project: &Project,
     known_stems: &HashSet<String>,
     declared: &BTreeMap<String, common::DeclaredType>,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
-        return;
+        return Vec::new();
     };
     if common::primary_type_name(file, file_stem).is_some() {
-        return;
+        return Vec::new();
     }
     let Some(type_snake) = common::longest_type_prefix(file_stem, known_stems) else {
-        return;
+        return Vec::new();
     };
     let Some(rest) = file_stem
         .strip_prefix(type_snake)
         .and_then(|tail| tail.strip_prefix('_'))
     else {
-        return;
+        return Vec::new();
     };
     if rest.is_empty() {
-        return;
+        return Vec::new();
     }
     let type_name = common::to_pascal_case(type_snake);
     let is_delegate = declared
@@ -103,13 +100,11 @@ fn check_delegate_shape(
             "filename mismatch — `{file_stem}.rs` looks like a method file for `{type_name}` but `{rest}` is not an atomic delegate; rename to `{rest}.rs`"
         )
     };
-    diags.push(Diagnostic {
-        file: project.src_dir.join(rel_path),
-        line: 1,
-        col: 0,
-        code: checkers::atomic_file::AtomicFile::CODE,
+    vec![RuleViolation::file(
+        project.src_dir.join(rel_path),
+        checkers::atomic_file::AtomicFile::CODE,
         message,
-    });
+    )]
 }
 
 // needed helper: SHAPE-F fn-file purity
@@ -118,15 +113,15 @@ fn check_fn_file_purity(
     file_stem: &str,
     rel_path: &Path,
     project: &Project,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let has_pub_fn = file
         .items
         .iter()
         .any(|item| matches!(item, syn::Item::Fn(f) if common::is_exposed(&f.vis)));
     if !has_pub_fn {
-        return;
+        return Vec::new();
     }
+    let mut violations = Vec::new();
     for item in &file.items {
         let (name, kind) = match item {
             syn::Item::Struct(s) if common::is_exposed(&s.vis) => (s.ident.to_string(), "struct"),
@@ -143,16 +138,11 @@ fn check_fn_file_purity(
         } else {
             &format!("`{}.rs`", common::to_snake_case(&name))
         };
-        diags.push(Diagnostic {
-            file: project.src_dir.join(rel_path),
-            line: 1,
-            col: 0,
-            code: checkers::atomic_file::AtomicFile::CODE,
-            message: format!(
+        violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_file::AtomicFile::CODE, format!(
                 "SHAPE-F fn-file `{file_stem}.rs` must hold only the fn — move exposed `{kind} {name}` to {home} (O2-extraction)"
-            ),
-        });
+            )));
     }
+    violations
 }
 
 struct PubItem {
@@ -212,29 +202,26 @@ fn check_filename_match(
     rel_path: &Path,
     project: &Project,
     known_stems: &HashSet<String>,
-    diags: &mut Vec<Diagnostic>,
-) {
+) -> Vec<RuleViolation> {
     let expected = common::to_snake_case(name);
 
     if expected == file_stem {
-        return;
+        return Vec::new();
     }
 
     if file_stem.contains('_') && common::longest_type_prefix(file_stem, known_stems).is_some() {
         if let Some((_prefix, suffix)) = file_stem.rsplit_once('_') {
             if expected.ends_with(suffix) {
-                return;
+                return Vec::new();
             }
         }
     }
 
-    diags.push(Diagnostic {
-        file: project.src_dir.join(rel_path),
-        line: 1,
-        col: 0,
-        code: checkers::atomic_file::AtomicFile::CODE,
-        message: format!("filename mismatch — `{file_stem}.rs` should be `{expected}.rs`"),
-    });
+    vec![RuleViolation::file(
+        project.src_dir.join(rel_path),
+        checkers::atomic_file::AtomicFile::CODE,
+        format!("filename mismatch — `{file_stem}.rs` should be `{expected}.rs`"),
+    )]
 }
 
 // needed helper: known primary-type file stems in the project
@@ -292,28 +279,24 @@ mod tests {
         let known: HashSet<String> = HashSet::from(["lele_config".to_string()]);
         let empty: HashSet<String> = HashSet::new();
 
-        let mut diags = Vec::new();
-        check_filename_match(
+        let violations = check_filename_match(
             "load",
             "lele_config_load",
             Path::new("lele_config_load.rs"),
             &project,
             &known,
-            &mut diags,
         );
-        assert!(diags.is_empty());
+        assert!(violations.is_empty());
 
-        let mut diags = Vec::new();
-        check_filename_match(
+        let violations = check_filename_match(
             "load",
             "config_load",
             Path::new("config_load.rs"),
             &project,
             &empty,
-            &mut diags,
         );
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("filename mismatch"));
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("filename mismatch"));
 
         assert!(common::longest_type_prefix("freenet_client_connect", &known).is_none());
         let with_prefix: HashSet<String> = HashSet::from(["freenet_client".to_string()]);
@@ -335,16 +318,10 @@ mod tests {
         };
         let file: syn::File =
             syn::parse_str("pub struct Cache { pub x: u32 }\npub fn discover() {}\n").unwrap();
-        let mut diags = Vec::new();
-        check_fn_file_purity(
-            &file,
-            "discover",
-            Path::new("discover.rs"),
-            &project,
-            &mut diags,
-        );
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("SHAPE-F"));
+        let violations =
+            check_fn_file_purity(&file, "discover", Path::new("discover.rs"), &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("SHAPE-F"));
     }
 
     #[test]
@@ -359,15 +336,9 @@ mod tests {
         };
         let file: syn::File =
             syn::parse_str("struct Cache { x: u32 }\npub fn discover() {}\n").unwrap();
-        let mut diags = Vec::new();
-        check_fn_file_purity(
-            &file,
-            "discover",
-            Path::new("discover.rs"),
-            &project,
-            &mut diags,
-        );
-        assert!(diags.is_empty());
+        let violations =
+            check_fn_file_purity(&file, "discover", Path::new("discover.rs"), &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -382,16 +353,10 @@ mod tests {
         };
         let file: syn::File =
             syn::parse_str("pub const MAX: usize = 8;\npub fn discover() {}\n").unwrap();
-        let mut diags = Vec::new();
-        check_fn_file_purity(
-            &file,
-            "discover",
-            Path::new("discover.rs"),
-            &project,
-            &mut diags,
-        );
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("constants.rs"));
+        let violations =
+            check_fn_file_purity(&file, "discover", Path::new("discover.rs"), &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("constants.rs"));
     }
 
     fn shape_project(files: &[(&str, &str)]) -> Project {
@@ -419,12 +384,12 @@ mod tests {
                 "pub(crate) fn parse_source_files() {}\n",
             ),
         ]);
-        let diags = check(&AtomicFile, &project);
+        let violations = check(&AtomicFile, &project);
         assert!(
-            diags
+            violations
                 .iter()
                 .any(|d| d.message.contains("rename to `parse_source_files.rs`")),
-            "expected rename diagnostic, got {diags:?}"
+            "expected rename diagnostic, got {violations:?}"
         );
     }
 
@@ -437,24 +402,24 @@ mod tests {
             ),
             ("project_discover.rs", "pub fn discover() {}\n"),
         ]);
-        let diags = check(&AtomicFile, &project);
+        let violations = check(&AtomicFile, &project);
         assert!(
-            diags.iter().any(|d| d
+            violations.iter().any(|d| d
                 .message
                 .contains("must live at `methods/project/discover.rs`")),
-            "expected mislocated diagnostic, got {diags:?}"
+            "expected mislocated diagnostic, got {violations:?}"
         );
     }
 
     #[test]
     fn test_usage_type_file_with_underscore_stem_is_clean() {
         let project = shape_project(&[("player_id.rs", "pub struct PlayerId(pub u64);\n")]);
-        let diags = check(&AtomicFile, &project);
+        let violations = check(&AtomicFile, &project);
         assert!(
-            !diags
+            !violations
                 .iter()
                 .any(|d| d.message.contains("looks like a method file")),
-            "unexpected method-file diagnostic, got {diags:?}"
+            "unexpected method-file diagnostic, got {violations:?}"
         );
     }
 }

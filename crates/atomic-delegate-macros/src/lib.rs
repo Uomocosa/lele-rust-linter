@@ -173,7 +173,7 @@ mod tests {
     fn test_usage_expands_single_fn() {
         let attr = quote!(ConstantsPlacement);
         let input = quote! {
-            fn check(&self, project: &Project) -> Vec<Diagnostic> {}
+            fn check(&self, project: &Project) -> Vec<RuleViolation> {}
         };
         let expanded = expand_fn(attr, input).unwrap().to_string();
         assert!(

@@ -3,38 +3,40 @@ use std::path::PathBuf;
 use syn::visit::Visit;
 
 use crate::checkers;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::no_positional::NoPositional, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(
+    _self: &checkers::no_positional::NoPositional,
+    project: &Project,
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
     for source in project.content_sources() {
         let file_path = project.absolute_path(source.origin, source.relative_path);
         let mut visitor = PositionalVisitor {
             file_path,
-            diags: &mut diags,
+            violations: Vec::new(),
         };
         visitor.visit_file(source.file);
+        violations.extend(visitor.violations);
     }
-    diags
+    violations
 }
 
 // needed helper: reports every positional field access in the file
-struct PositionalVisitor<'a> {
+struct PositionalVisitor {
     file_path: PathBuf,
-    diags: &'a mut Vec<Diagnostic>,
+    violations: Vec<RuleViolation>,
 }
 
-impl<'ast> Visit<'ast> for PositionalVisitor<'_> {
+impl<'ast> Visit<'ast> for PositionalVisitor {
     fn visit_expr_field(&mut self, node: &'ast syn::ExprField) {
         if matches!(node.member, syn::Member::Unnamed(_)) {
-            self.diags.push(Diagnostic {
-                file: self.file_path.clone(),
-                line: 1,
-                col: 0,
-                code: checkers::no_positional::NoPositional::CODE,
-                message: "positional field access is not allowed, use named fields".to_string(),
-            });
+            self.violations.push(RuleViolation::file(
+                self.file_path.clone(),
+                checkers::no_positional::NoPositional::CODE,
+                "positional field access is not allowed, use named fields".to_string(),
+            ));
         }
         syn::visit::visit_expr_field(self, node);
     }
@@ -47,38 +49,38 @@ mod tests {
     use syn::visit::Visit;
 
     use super::PositionalVisitor;
-    use crate::Diagnostic;
+    use crate::RuleViolation;
 
-    fn diags_for(source: &str) -> Vec<Diagnostic> {
+    fn violations_for(source: &str) -> Vec<RuleViolation> {
         let file: syn::File = syn::parse_str(source).unwrap();
-        let mut diags = Vec::new();
         let mut visitor = PositionalVisitor {
             file_path: PathBuf::from("probe.rs"),
-            diags: &mut diags,
+            violations: Vec::new(),
         };
         visitor.visit_file(&file);
-        diags
+        visitor.violations
     }
 
     #[test]
     fn test_usage() {
-        let diags = diags_for(
+        let violations = violations_for(
             "pub struct Pos(pub String, pub u32);\npub fn f(p: &Pos) -> &String { &p.0 }\n",
         );
-        assert_eq!(diags.len(), 1);
+        assert_eq!(violations.len(), 1);
     }
 
     #[test]
     fn test_usage_catches_nested_access() {
-        let diags = diags_for(
+        let violations = violations_for(
             "pub struct Pos(pub String);\npub fn f(p: &Pos) -> String { g(p.0, h().1) }\n",
         );
-        assert_eq!(diags.len(), 2);
+        assert_eq!(violations.len(), 2);
     }
 
     #[test]
     fn test_usage_ignores_floats_in_macros() {
-        let diags = diags_for("pub fn f() -> f64 { let x = 0.0; println!(\"{x}\"); x }\n");
-        assert!(diags.is_empty());
+        let violations =
+            violations_for("pub fn f() -> f64 { let x = 0.0; println!(\"{x}\"); x }\n");
+        assert!(violations.is_empty());
     }
 }

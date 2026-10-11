@@ -1,16 +1,8 @@
 use std::path::Path;
 
-use serde::Deserialize;
-
 use crate::Config;
 use crate::Error;
-use crate::LeleSection;
-
-#[derive(Deserialize)]
-struct LeleToml {
-    #[serde(default)]
-    lele: LeleSection,
-}
+use crate::LeleToml;
 
 pub fn load(project_root: &Path) -> Result<Config, Error> {
     let config_path = project_root.join("lele.toml");

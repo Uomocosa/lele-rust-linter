@@ -7,7 +7,7 @@ no knowledge of Bevy. Running `lele_bevy_lint` at all *is* "bevy mode"; there
 is no separate flag or config toggle to enable it.
 
 `lele_bevy_lint` depends on `lele_lint` as a path dependency and reuses its
-`Checker`/`Project`/`Config`/`Diagnostic` types and CLI shape —
+`Checker`/`Project`/`Config`/`RuleViolation` types and CLI shape —
 it is a second, independent set of checkers over the same `Project`
 representation, not a fork.
 

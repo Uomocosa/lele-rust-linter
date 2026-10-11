@@ -1,9 +1,9 @@
 use crate::Category;
 use crate::Checker;
-use crate::Diagnostic;
 use crate::ExampleFile;
 use crate::Project;
 use crate::RuleDoc;
+use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 
 pub struct RootReexport;
@@ -85,7 +85,7 @@ impl Checker for RootReexport {
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
     #[atomic_delegate(RootReexport)]
-    fn check(&self, project: &Project) -> Vec<Diagnostic> {}
+    fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 
 #[rustfmt::skip]

@@ -4,11 +4,14 @@ use syn::visit::Visit;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
-pub fn check(_self: &checkers::no_crate_paths::NoCratePaths, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(
+    _self: &checkers::no_crate_paths::NoCratePaths,
+    project: &Project,
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
@@ -22,20 +25,14 @@ pub fn check(_self: &checkers::no_crate_paths::NoCratePaths, project: &Project) 
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            diags.push(Diagnostic {
-                file: project.absolute_path(source.origin, rel_path),
-                line: hit.line,
-                col: 0,
-                code: checkers::no_crate_paths::NoCratePaths::CODE,
-                message: format!(
+            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_crate_paths::NoCratePaths::CODE, format!(
                     "`{}` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead",
                     hit.path
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: AST visitor collecting `crate::` paths outside `use` items

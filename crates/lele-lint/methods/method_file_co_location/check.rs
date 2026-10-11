@@ -4,14 +4,14 @@ use std::path::{Path, PathBuf};
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::method_file_co_location::MethodFileCoLocation,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     let type_dirs = build_type_map(project);
     let known_stems: HashSet<String> = type_dirs.keys().cloned().collect();
@@ -37,33 +37,21 @@ pub fn check(
                     .map(|dir| dir.display().to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                diags.push(Diagnostic {
-                    file: project.src_dir.join(rel_path),
-                    line: 1,
-                    col: 0,
-                    code: checkers::method_file_co_location::MethodFileCoLocation::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "method file `{}` must be co-located with `{type_snake}.rs`; found in: {candidates}",
                         rel_path.display()
-                    ),
-                });
+                    )));
             }
         } else if let Some(suffix) = file_stem.rsplit('_').next() {
             if file_stem.contains('_') && pub_fn_names(file).iter().any(|n| n == suffix) {
-                diags.push(Diagnostic {
-                    file: project.src_dir.join(rel_path),
-                    line: 1,
-                    col: 0,
-                    code: checkers::method_file_co_location::MethodFileCoLocation::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "orphan method file `{file_stem}.rs` — no parent type found; rename to `{suffix}.rs` or `<type>_{suffix}.rs` with a `<type>.rs` defining the type",
-                    ),
-                });
+                    )));
             }
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: public free-function names in a file
@@ -192,9 +180,9 @@ mod tests {
             ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
             ("config_load.rs", "pub fn load() {}"),
         ]);
-        let diags = check(&MethodFileCoLocation, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("orphan method file"));
+        let violations = check(&MethodFileCoLocation, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("orphan method file"));
     }
 
     #[test]
@@ -203,8 +191,8 @@ mod tests {
             ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
             ("load.rs", "pub fn load() {}"),
         ]);
-        let diags = check(&MethodFileCoLocation, &project);
-        assert!(diags.is_empty());
+        let violations = check(&MethodFileCoLocation, &project);
+        assert!(violations.is_empty());
     }
 
     #[test]
@@ -213,7 +201,7 @@ mod tests {
             "to_snake_case.rs",
             "pub fn to_snake_case(input: &str) -> String { input.to_string() }",
         )]);
-        let diags = check(&MethodFileCoLocation, &project);
-        assert!(diags.is_empty());
+        let violations = check(&MethodFileCoLocation, &project);
+        assert!(violations.is_empty());
     }
 }

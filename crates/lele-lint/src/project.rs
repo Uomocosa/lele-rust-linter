@@ -51,6 +51,13 @@ impl Project {
     pub fn get_parsed(&self, rel_path: &Path) -> Option<&syn::File> {
         self.parsed_files.get(rel_path)
     }
+    pub fn config_base(&self) -> PathBuf {
+        if self.config_dir.as_os_str().is_empty() {
+            self.root.clone()
+        } else {
+            self.config_dir.clone()
+        }
+    }
     pub fn absolute_path(&self, origin: Origin, rel_path: &Path) -> PathBuf {
         match origin {
             Origin::Src => self.src_dir.join(rel_path),

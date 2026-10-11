@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
+use lele_lint::Location;
 use lele_lint::Project;
 
 const FIXTURES: [&str; 4] = [
@@ -26,11 +27,15 @@ fn render(fixture: &str) -> Result<String, Box<dyn std::error::Error>> {
         .flat_map(|c| c.check(&project))
         .map(|d| {
             let file = d.file.strip_prefix(&root).unwrap_or(&d.file);
+            let (line, col) = match d.location {
+                Location::File => (1, 0),
+                Location::Site { line, col } => (line, col),
+            };
             format!(
                 "{}:{}:{} {} {}",
                 file.display(),
-                d.line,
-                d.col,
+                line,
+                col,
                 d.code,
                 d.message
             )
@@ -57,7 +62,7 @@ fn bless(path: &Path, actual: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Diagnostics for every fixture must match `tests/golden/<fixture>.txt` exactly.
+/// Violations for every fixture must match `tests/golden/<fixture>.txt` exactly.
 /// Run with `LELE_BLESS=1` to rewrite the golden files after an intended change.
 #[test]
 fn fixtures_match_golden_files() -> Result<(), Box<dyn std::error::Error>> {

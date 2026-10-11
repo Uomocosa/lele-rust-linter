@@ -6,6 +6,12 @@ pub enum EntryKind {
     Directory,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Location {
+    File,
+    Site { line: usize, col: usize },
+}
+
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Requirement {

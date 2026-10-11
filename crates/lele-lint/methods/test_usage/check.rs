@@ -2,15 +2,15 @@ use std::path::Path;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::DunderPath;
 use crate::Origin;
 use crate::Project;
+use crate::RuleViolation;
 
 const OPT_OUT: &str = "// no test_usage necessary";
 
-pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for source in project.content_sources() {
         if matches!(source.origin, Origin::Examples) {
@@ -27,20 +27,14 @@ pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<
         }
 
         if !common::has_test_usage(source.file) {
-            diags.push(Diagnostic {
-                file: absolute,
-                line: 1,
-                col: 0,
-                code: checkers::test_usage::TestUsage::CODE,
-                message: format!(
+            violations.push(RuleViolation::file(absolute, checkers::test_usage::TestUsage::CODE, format!(
                     "file `{}` must contain a `#[cfg(test)] mod tests {{ fn test_usage() {{ ... }} }}` block, or add `{OPT_OUT}` as its last line to opt out",
                     rel_path.display()
-                ),
-            });
+                )));
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: opt-out comment lookup on disk

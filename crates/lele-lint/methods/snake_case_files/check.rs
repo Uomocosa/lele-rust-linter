@@ -1,15 +1,15 @@
 // needed helper: parsing utilities
 
 use crate::checkers;
-use crate::Diagnostic;
 use crate::EntryKind;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::snake_case_files::SnakeCaseFiles,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for entry in &project.entries {
         let name = extract_name(&entry.relative_path, entry.kind == EntryKind::Directory);
@@ -23,22 +23,16 @@ pub fn check(
                 } else {
                     "filename"
                 };
-                diags.push(Diagnostic {
-                    file: entry.absolute_path.clone(),
-                    line: 1,
-                    col: 0,
-                    code: checkers::snake_case_files::SnakeCaseFiles::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(entry.absolute_path.clone(), checkers::snake_case_files::SnakeCaseFiles::CODE, format!(
                         "{kind} `{name}` is not snake_case — rename it to use lowercase letters, digits, and underscores",
                         kind = kind,
                         name = name
-                    ),
-                });
+                    )));
             }
         }
     }
 
-    diags
+    violations
 }
 
 fn extract_name(path: &std::path::Path, is_dir: bool) -> Option<&str> {

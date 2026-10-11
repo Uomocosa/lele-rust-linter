@@ -2,14 +2,14 @@ use syn::spanned::Spanned;
 
 use crate::checkers;
 use crate::common;
-use crate::Diagnostic;
 use crate::Project;
+use crate::RuleViolation;
 
 pub fn check(
     _self: &checkers::atomic_delegates::AtomicDelegates,
     project: &Project,
-) -> Vec<Diagnostic> {
-    let mut diags = Vec::new();
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
 
     for (rel_path, file) in &project.parsed_files {
         let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
@@ -60,15 +60,9 @@ pub fn check(
 
             if !methods_over_three.is_empty() && !is_trait_impl {
                 let names = names_str(&methods_over_three);
-                diags.push(Diagnostic {
-                    file: project.src_dir.join(rel_path),
-                    line: 1,
-                    col: 0,
-                    code: checkers::atomic_delegates::AtomicDelegates::CODE,
-                    message: format!(
+                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
                         "method(s) `{names}` have >3 statements — extract each into `<type>_<method>.rs`"
-                    ),
-                });
+                    )));
                 continue;
             }
 
@@ -94,16 +88,10 @@ pub fn check(
                 {
                     for method in &one_liners {
                         if common::is_delegate_call(&method.block) && !is_one_line_body(method) {
-                            diags.push(Diagnostic {
-                                file: project.src_dir.join(rel_path),
-                                line: 1,
-                                col: 0,
-                                code: checkers::atomic_delegates::AtomicDelegates::CODE,
-                                message: format!(
+                            violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
                                     "one-liner method `{}` body must be on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
-                                ),
-                            });
+                                )));
                         }
                     }
                 } else if !common::is_default_impl(impl_block) {
@@ -134,19 +122,17 @@ pub fn check(
                             ctors.join(", ")
                         )
                     };
-                    diags.push(Diagnostic {
-                        file: project.src_dir.join(rel_path),
-                        line: 1,
-                        col: 0,
-                        code: checkers::atomic_delegates::AtomicDelegates::CODE,
+                    violations.push(RuleViolation::file(
+                        project.src_dir.join(rel_path),
+                        checkers::atomic_delegates::AtomicDelegates::CODE,
                         message,
-                    });
+                    ));
                 }
             }
         }
     }
 
-    diags
+    violations
 }
 
 // needed helper: method presence check in impl block
@@ -197,9 +183,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::atomic_delegates::AtomicDelegates, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("#[rustfmt::skip]"));
+        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("#[rustfmt::skip]"));
     }
 
     #[test]
@@ -223,9 +209,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::atomic_delegates::AtomicDelegates, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("move the constructor"));
+        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("move the constructor"));
     }
 
     #[test]
@@ -238,9 +224,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::atomic_delegates::AtomicDelegates, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("#[rustfmt::skip]"));
+        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("#[rustfmt::skip]"));
     }
 
     #[test]
@@ -253,9 +239,9 @@ mod tests {
             )
             .unwrap(),
         );
-        let diags = check(&checkers::atomic_delegates::AtomicDelegates, &project);
-        assert_eq!(diags.len(), 1);
-        assert!(diags[0].message.contains("must be on one line"));
+        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("must be on one line"));
     }
 
     #[test]

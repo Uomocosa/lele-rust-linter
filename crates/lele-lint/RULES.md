@@ -2563,6 +2563,7 @@ pub struct Room(pub String);
 - [E006 `test_usage`](#e006-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
 - [E007 `test_inline`](#e007-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 - [E034 `no_dunder_tests`](#e034-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
+- [E041 `test_is_not_helper`](#e041-test_is_not_helper): A `#[test]` fn is not a helper — it carries no `// needed helper:` line.
 
 ### E006 `test_usage`
 
@@ -2765,6 +2766,35 @@ pub struct Item {
     pub name: String,
     pub price: u32,
 }
+```
+
+### E041 `test_is_not_helper`
+
+A `#[test]` fn is not a helper — it carries no `// needed helper:` line.
+
+**Why:** Tests are entry points, not shared fixtures; annotating them hides the real helpers.
+
+**Bad** (reports E041):
+
+`src/timeline/tests.rs`
+
+```rust
+#[test]
+// needed helper: fixture shared by the tests in this file
+fn test_usage() {}
+
+// no test_usage necessary
+```
+
+**Good:**
+
+`src/timeline/tests.rs`
+
+```rust
+#[test]
+fn test_usage() {}
+
+// no test_usage necessary
 ```
 
 ## Style

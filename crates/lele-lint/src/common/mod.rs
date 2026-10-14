@@ -28,6 +28,7 @@ mod self_type_last;
 mod single_path_call_segments;
 mod to_pascal_case;
 
+mod annotated_as_helper;
 mod collect_declared;
 mod comment_scan;
 mod file_cfgs;
@@ -46,6 +47,7 @@ pub(crate) use basic::type_aliases::ModuleCfgMap;
 
 pub(crate) use to_pascal_case::to_pascal_case;
 
+pub(crate) use annotated_as_helper::annotated_as_helper;
 pub(crate) use collect_declared::collect_declared;
 pub(crate) use comment_scan::find_comments;
 pub(crate) use default_dunder_paths::default_dunder_paths;

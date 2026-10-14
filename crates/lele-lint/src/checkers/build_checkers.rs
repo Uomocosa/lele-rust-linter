@@ -10,6 +10,7 @@ pub fn build_checkers() -> Vec<Box<dyn Checker>> {
     checkers::no_cross_domain_reexport::NoCrossDomainReexport::register(&mut checkers);
     checkers::no_dunder_tests::NoDunderTests::register(&mut checkers);
     checkers::test_inline::TestInline::register(&mut checkers);
+    checkers::test_is_not_helper::TestIsNotHelper::register(&mut checkers);
     checkers::test_usage::TestUsage::register(&mut checkers);
     checkers::no_positional::NoPositional::register(&mut checkers);
     checkers::no_stuttered_path::NoStutteredPath::register(&mut checkers);

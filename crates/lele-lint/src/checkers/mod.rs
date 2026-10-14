@@ -30,6 +30,7 @@ pub(crate) mod single_caller_type;
 pub(crate) mod single_field_newtype;
 pub(crate) mod snake_case_files;
 pub(crate) mod test_inline;
+pub(crate) mod test_is_not_helper;
 pub(crate) mod test_usage;
 
 pub use build_checkers::build_checkers;

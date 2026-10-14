@@ -33,4 +33,5 @@ pub mod single_caller_type;
 pub mod single_field_newtype;
 pub mod snake_case_files;
 pub mod test_inline;
+pub mod test_is_not_helper;
 pub mod test_usage;

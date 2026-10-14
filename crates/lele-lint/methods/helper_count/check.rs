@@ -1,6 +1,7 @@
 use syn::spanned::Spanned;
 
 use crate::checkers;
+use crate::common;
 use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
@@ -69,24 +70,15 @@ fn count_unannotated_private_helpers(file: &syn::File, source: &str) -> usize {
     file.items
         .iter()
         .filter_map(|item| match item {
-            syn::Item::Fn(func) if matches!(func.vis, syn::Visibility::Inherited) => Some(func),
+            syn::Item::Fn(func)
+                if matches!(func.vis, syn::Visibility::Inherited)
+                    && !common::has_attr(&func.attrs, "test") =>
+            {
+                Some(func)
+            }
             _ => None,
         })
-        .filter(|func| {
-            let line = func.sig.fn_token.span().start().line;
-            let mut idx = line.saturating_sub(1);
-
-            while idx > 0 {
-                idx = idx.saturating_sub(1);
-                let candidate = lines.get(idx).map(|l| l.trim()).unwrap_or("");
-                if candidate.is_empty() || candidate.starts_with("#[") {
-                    continue;
-                }
-                return !candidate.starts_with(ANNOTATION);
-            }
-
-            true
-        })
+        .filter(|func| !common::annotated_as_helper(&lines, func.sig.fn_token.span().start().line))
         .count()
 }
 
@@ -147,6 +139,18 @@ fn helper_a() {}",
             "pub(crate) fn walk() {}
 pub(super) fn parse_all() {}
 fn helper_a() {}",
+        );
+        assert_eq!(count_unannotated_private_helpers(&file, &source), 1);
+    }
+
+    #[test]
+    fn test_usage_ignores_test_fns() {
+        let (file, source) = parse(
+            "fn helper_a() {}
+#[test]
+fn test_one() {}
+#[test]
+fn test_two() {}",
         );
         assert_eq!(count_unannotated_private_helpers(&file, &source), 1);
     }

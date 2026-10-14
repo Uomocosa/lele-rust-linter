@@ -17,6 +17,7 @@ Install the toolchain and the two dev tools — no nix, no container, no setup s
 rustup toolchain install nightly    # rust-toolchain.toml pins channel + components
 cargo install cargo-nextest         # test runner used by `just test`
 cargo install just                  # task runner
+cargo binstall prek                 # hook runner (`prek install` via `just setup`)
 ```
 
 `rust-toolchain.toml` provisions the nightly channel, `rustc`/`cargo`/`clippy`/`rustfmt`.
@@ -32,14 +33,16 @@ just fmt        # cargo fmt -- --check
 just test       # cargo nextest run --all-targets --all-features
 just lint       # run lele-lint over each crate (one root lele.toml)
 just sync-methods
-just hooks      # git config core.hooksPath .githooks
-just ci         # build + fmt + clippy + lint + test
+just setup      # one-time per clone: install the prek git hooks
+just check      # run the full gate (same as CI)
+just ci         # build + check
 ```
 
 ## Git hooks
 
 ```sh
-just hooks      # one-time: point git at .githooks/
+just setup      # one-time per clone: install the prek git hooks
+just check      # run the full gate (same as CI)
 ```
 
-`.githooks/pre-commit` runs `fmt`, `clippy`, `lint` and `test` via `just`.
+`prek.toml` runs `fmt`, `clippy` and `lint` on pre-commit and `test` on pre-push, via `just`.

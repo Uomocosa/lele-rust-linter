@@ -27,10 +27,12 @@ sync-methods:
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-lint
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-bevy-lint
 
-# --- git hooks -------------------------------------------------------------
-hooks:
-    git config core.hooksPath .githooks
-    chmod +x .githooks/*
+# --- prek hooks (commit/push gate; tasks above) -------------------------------
+setup:
+    prek install -t pre-commit -t pre-push
+
+check:
+    prek run --all-files
 
 # --- aggregate -------------------------------------------------------------
-ci: build fmt clippy lint test
+ci: build check

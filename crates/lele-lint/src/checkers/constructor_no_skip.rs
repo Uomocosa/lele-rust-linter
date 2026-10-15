@@ -10,7 +10,7 @@ pub struct ConstructorNoSkip;
 
 impl ConstructorNoSkip {
     pub const NAME: &'static str = "constructor_no_skip";
-    pub const CODE: &'static str = "E013";
+    pub const CODE: &'static str = "LELE013";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "`impl Default` and real constructors are never `#[rustfmt::skip]`.",

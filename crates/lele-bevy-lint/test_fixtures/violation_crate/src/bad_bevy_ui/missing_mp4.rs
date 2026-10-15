@@ -1,4 +1,4 @@
-// Spawns UI and drives it over time, but only ships a png preview (E037).
+// Spawns UI and drives it over time, but only ships a png preview (LELEBEVY037).
 
 pub struct Spawner;
 
@@ -12,14 +12,27 @@ pub fn tick(time: Res<Time>) {
 
 #[cfg(test)]
 mod tests {
-    use lele_bevy_preview::{run, scene::Scene};
+    use lele_bevy_preview::run;
+    use lele_bevy_preview::scene::{Kind, Scene, State};
+
+    fn build(app: &mut App) {
+        app.add_systems(Startup, super::setup);
+    }
+
+    fn rest(_world: &mut World) {}
 
     #[test]
-    #[ignore = "headed recording"]
     fn missing_mp4_ui_png_preview() {
         let scene = Scene {
             name: String::from("missing_mp4"),
+            kind: Kind::System,
+            build,
+            states: vec![State {
+                label: String::from("rest"),
+                apply: rest,
+            }],
+            timeline: None,
         };
-        let _ = run(&scene, &Config::default(), "violation_crate");
+        run(&scene, &Config::default(), "violation_crate").expect("preview");
     }
 }

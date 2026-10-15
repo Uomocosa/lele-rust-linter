@@ -10,7 +10,7 @@ pub struct ModRsPurity;
 
 impl ModRsPurity {
     pub const NAME: &'static str = "mod_rs_purity";
-    pub const CODE: &'static str = "E019";
+    pub const CODE: &'static str = "LELE019";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "`mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.",

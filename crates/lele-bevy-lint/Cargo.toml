@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 lele-lint.workspace = true
+lele-snake-case.workspace = true
 atomic-delegate-macros.workspace = true
 clap.workspace = true
 derive_more.workspace = true

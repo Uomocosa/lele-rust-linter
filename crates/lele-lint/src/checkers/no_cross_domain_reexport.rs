@@ -10,7 +10,7 @@ pub struct NoCrossDomainReexport;
 
 impl NoCrossDomainReexport {
     pub const NAME: &'static str = "no_cross_domain_reexport";
-    pub const CODE: &'static str = "E004";
+    pub const CODE: &'static str = "LELE004";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.",

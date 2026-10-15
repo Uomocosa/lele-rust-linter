@@ -6,15 +6,16 @@ use crate::checkers;
 
 const FRONTMATTER: &str = r"---
 name: bevy-ui-preview
-description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (E029/E037/E038/E039), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
+description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (@@CODES@@), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
 ---
 
 ";
 
 const BODY: &str = r#"# Bevy UI previews
 
-Every UI file must ship an ignored preview test that routes through
-`lele_bevy_preview::run(...)`. This skill tells you where your UI lives, which
+Every UI file must ship a preview test that routes through
+`lele_bevy_preview::run(...)`. Previews run in the default test suite
+(`just test`) and changed artifacts are sent to Telegram. This skill tells you where your UI lives, which
 preview it needs, and how to write the test. The rules below are generated from
 `lele_bevy_lint`, so they cannot drift from the linter.
 
@@ -33,16 +34,21 @@ reads, and `png`/`mp4`/`scene` whether a preview exists. Every `-` is a gap.
 ## 2. Which preview do I need?
 
 - spawns UI (`Node`, `Text`, `ImageNode`, `Sprite`, `Text2d`, `Mesh2d`,
-  `MeshMaterial2d`) -> an ignored `*_ui_png_preview`
-- also reads a time/input driver (`Res<Time>`, `delta_secs`, `elapsed_secs`,
-  `delta`, `Timer`, `Animatable`, `AnimatableUi`, `AnimationClip`,
-  `AnimationPlayer`, `tween`, `keyframe`, `keyframes`, `Interaction`,
-  `ButtonInput`, `MouseButton`, `KeyCode`) -> an ignored `*_ui_mp4_preview`
-- defines `impl Plugin` and its domain spawns UI -> an ignored
+  `MeshMaterial2d`, `Button`) -> a `*_ui_png_preview`
+- also reads a time driver (`Res<Time>`, `delta_secs`, `elapsed_secs`, `delta`,
+  `Timer`, `Animatable`, `AnimatableUi`, `AnimationClip`, `AnimationPlayer`,
+  `tween`, `keyframe`, `keyframes`) -> a `*_ui_mp4_preview`
+- restyles UI with `&mut` on a styling component (`BackgroundColor`,
+  `BorderColor`, `TextColor`, `Text`, `TextFont`, `Node`, `Visibility`,
+  `ImageNode`, `Sprite`, `Outline`) without spawning: an input/state change
+  (`Interaction`, `ButtonInput`, `MouseButton`, `KeyCode`) needs a
+  `*_ui_png_preview` with two `State`s (before, after); a time-driven change
+  needs a `*_ui_mp4_preview`
+- defines `impl Plugin` and its domain spawns UI -> a
   `*_ui_scene_preview`
 
-Preview tests are `#[ignore]`d so the default test suite stays GPU-free; run
-them with `--run-ignored all`.
+Preview tests are plain `#[test]`s: do not `#[ignore]` them. They render
+headless (lavapipe) inside `just test`, so every run re-checks them.
 
 ## 3. The test template
 
@@ -69,7 +75,6 @@ mod tests {
     fn empty_lobby(_world: &mut World) {}
 
     #[test]
-    #[ignore = "headed preview"]
     fn spawn_root_ui_png_preview() {
         run(
             &Scene {
@@ -122,7 +127,7 @@ single numbered caption, so before/after images stay together.
 ```bash
 lele-bevy-lint                    # the rules (installed from github.com/Uomocosa/lele-rust-linter)
 just test                         # all targets (or: cargo nextest run --all-targets --all-features)
-cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview --run-ignored all -- --nocapture
+cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview -- --nocapture
 ```
 
 ## Rules
@@ -131,9 +136,11 @@ cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview --run-ignored a
 
 #[must_use]
 pub fn skill_markdown() -> String {
-    let mut out = String::from(FRONTMATTER);
+    let checkers = checkers::build_checkers();
+    let codes: Vec<&str> = checkers.iter().map(|checker| checker.code()).collect();
+    let mut out = FRONTMATTER.replace("@@CODES@@", &codes.join("/"));
     out.push_str(BODY);
-    for checker in checkers::build_checkers() {
+    for checker in &checkers {
         out.push_str(&render_rule(checker.as_ref()));
         let _ = writeln!(out);
     }
@@ -143,17 +150,30 @@ pub fn skill_markdown() -> String {
 #[cfg(test)]
 mod tests {
     use super::skill_markdown;
-    use crate::DRIVER_TOKENS;
+    use crate::INPUT_DRIVERS;
+    use crate::STYLING_COMPONENTS;
+    use crate::TIME_DRIVERS;
     use crate::VISUAL_IDENTS;
+    use crate::checkers;
 
     #[test]
     fn test_usage() {
         let text = skill_markdown();
         assert!(text.starts_with("---"));
         assert!(text.contains("name: bevy-ui-preview"));
-        assert!(text.contains("### E029 `bevy_ui`"));
-        assert!(text.contains("### E039 `preview_routing`"));
-        for token in VISUAL_IDENTS.iter().chain(DRIVER_TOKENS.iter()) {
+        for checker in checkers::build_checkers() {
+            assert!(
+                text.contains(&format!("### {} `{}`", checker.code(), checker.name())),
+                "skill is missing the section for {}",
+                checker.name()
+            );
+        }
+        let tokens = VISUAL_IDENTS
+            .iter()
+            .chain(TIME_DRIVERS.iter())
+            .chain(INPUT_DRIVERS.iter())
+            .chain(STYLING_COMPONENTS.iter());
+        for token in tokens {
             assert!(text.contains(*token), "skill body drifted: missing {token}");
         }
     }

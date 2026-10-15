@@ -1,4 +1,3 @@
-use derive_more::{Deref, DerefMut};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 
@@ -7,47 +6,46 @@ use crate::scan;
 const PNG_SUFFIX: &str = "_ui_png_preview";
 const MP4_SUFFIX: &str = "_ui_mp4_preview";
 const SCENE_SUFFIX: &str = "_ui_scene_preview";
-const PREVIEW_CRATE: &str = "lele_bevy_preview";
-const RUN_FN: &str = "run";
 
 #[must_use]
 pub fn collect_previews(file: &syn::File) -> Vec<scan::Preview> {
-    let uses_crate = mentions_preview_crate(file);
     let mut previews = Vec::new();
     let mut finder = PreviewFinder {
         previews: &mut previews,
-        uses_crate,
+        is_run_imported: scan::imports_harness_run(file),
+        module_fns: module_fns_of(&file.items),
     };
     finder.visit_file(file);
     previews
 }
 
-// needed helper: matches one preview fn into a Preview record
-struct PreviewFinder<'a> {
+// needed helper: matches one preview fn into a Preview record, scoped to its module's fns
+struct PreviewFinder<'a, 'ast> {
     previews: &'a mut Vec<scan::Preview>,
-    uses_crate: bool,
+    is_run_imported: bool,
+    module_fns: scan::ModuleFns<'ast>,
 }
 
-impl<'ast> Visit<'ast> for PreviewFinder<'_> {
+impl<'ast> Visit<'ast> for PreviewFinder<'_, 'ast> {
+    fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
+        let Some((_, items)) = &node.content else {
+            return;
+        };
+        let outer = std::mem::replace(&mut self.module_fns, module_fns_of(items));
+        syn::visit::visit_item_mod(self, node);
+        self.module_fns = outer;
+    }
+
     fn visit_item_fn(&mut self, node: &'ast syn::ItemFn) {
         let name = node.sig.ident.to_string();
         if let Some(kind) = kind_of(&name) {
-            let mut idents = Vec::new();
-            let mut runs = false;
-            {
-                let mut body = BodyScanner {
-                    idents: &mut idents,
-                    runs: &mut runs,
-                };
-                body.visit_block(&node.block);
-            }
             self.previews.push(scan::Preview {
                 name,
                 kind,
                 line: node.sig.fn_token.span().start().line,
-                is_ignored: has_ignored(&node.attrs),
-                is_routed_through_harness: runs && self.uses_crate,
-                idents,
+                is_test: node.attrs.iter().any(|attr| attr.path().is_ident("test")),
+                harness: scan::harness_call(&node.block, self.is_run_imported),
+                scene: scan::scene_usage(&node.block, &self.module_fns),
             });
         }
         syn::visit::visit_item_fn(self, node);
@@ -67,114 +65,49 @@ fn kind_of(name: &str) -> Option<scan::PreviewKind> {
     }
 }
 
-// needed helper: `#[ignore]` presence on a test fn
-fn has_ignored(attrs: &[syn::Attribute]) -> bool {
-    attrs.iter().any(|attr| {
-        attr.path()
-            .segments
-            .last()
-            .is_some_and(|segment| segment.ident == "ignore")
-    })
-}
-
-// needed helper: does the file name `lele_bevy_preview` anywhere (use or path)?
-fn mentions_preview_crate(file: &syn::File) -> bool {
-    let mut found = false;
-    let mut visitor = CrateMention(&mut found);
-    visitor.visit_file(file);
-    found
-}
-
-// needed helper: scans paths and use-trees for the harness crate name
-#[derive(Deref, DerefMut)]
-struct CrateMention<'a>(&'a mut bool);
-
-impl<'ast> Visit<'ast> for CrateMention<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        if node.segments.iter().any(|s| s.ident == PREVIEW_CRATE) {
-            ***self = true;
-        }
-        syn::visit::visit_path(self, node);
-    }
-
-    fn visit_use_tree(&mut self, node: &'ast syn::UseTree) {
-        match node {
-            syn::UseTree::Path(path) => {
-                if path.ident == PREVIEW_CRATE {
-                    ***self = true;
-                }
-                self.visit_use_tree(&path.tree);
-            }
-            syn::UseTree::Name(name) => {
-                if name.ident == PREVIEW_CRATE {
-                    ***self = true;
-                }
-            }
-            syn::UseTree::Rename(rename) => {
-                if rename.ident == PREVIEW_CRATE {
-                    ***self = true;
-                }
-            }
-            syn::UseTree::Group(group) => {
-                for tree in &group.items {
-                    self.visit_use_tree(tree);
-                }
-            }
-            syn::UseTree::Glob(_) => {}
-        }
-    }
-}
-
-// needed helper: collects path idents and detects a `run(...)` call in a preview body
-struct BodyScanner<'a> {
-    idents: &'a mut Vec<String>,
-    runs: &'a mut bool,
-}
-
-impl<'ast> Visit<'ast> for BodyScanner<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        for segment in &node.segments {
-            self.idents.push(segment.ident.to_string());
-        }
-        syn::visit::visit_path(self, node);
-    }
-
-    fn visit_expr_call(&mut self, node: &'ast syn::ExprCall) {
-        if let syn::Expr::Path(path) = &*node.func
-            && path.path.segments.last().is_some_and(|s| s.ident == RUN_FN)
-        {
-            *self.runs = true;
-        }
-        syn::visit::visit_expr_call(self, node);
-    }
+// needed helper: the fns declared directly in one module, by name
+fn module_fns_of(items: &[syn::Item]) -> scan::ModuleFns<'_> {
+    items
+        .iter()
+        .filter_map(|item| match item {
+            syn::Item::Fn(func) => Some((func.sig.ident.to_string(), func)),
+            _ => None,
+        })
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::collect_previews;
+    use crate::scan;
 
     #[test]
     fn test_usage() {
         let file = syn::parse_str(
-            "use lele_bevy_preview::{run, scene::Scene};
-             #[derive(Component)] pub struct Root;
+            "pub fn spawn_root(mut c: Commands) { c.spawn((Node,)); }
              #[cfg(test)]
              mod tests {
+                 use lele_bevy_preview::{run, scene::Scene};
+                 fn build(app: &mut App) { app.add_systems(Startup, super::spawn_root); }
                  #[test]
-                 #[ignore = \"headed\"]
                  fn spawn_root_ui_png_preview() {
-                     let _ = Root;
-                     let scene = Scene { name: String::from(\"s\") };
-                     let _ = run(&scene, &Config::default(), \"x\");
+                     let scene = Scene { build, states: vec![State { label, apply: rest }] };
+                     run(&scene, &Config::default(), \"x\").expect(\"preview\");
                  }
              }",
         )
         .unwrap();
         let previews = collect_previews(&file);
         assert_eq!(previews.len(), 1);
-        assert!(previews[0].is_ignored);
-        assert!(previews[0].is_routed_through_harness);
-        assert!(previews[0].idents.iter().any(|ident| ident == "Root"));
+        assert!(previews[0].is_test);
+        assert_eq!(previews[0].harness, scan::HarnessCall::Checked);
+        assert!(
+            previews[0]
+                .scene
+                .build_uses
+                .contains(&"spawn_root".to_string())
+        );
+        assert_eq!(previews[0].scene.state_count, 1);
     }
 
     #[test]
@@ -182,7 +115,6 @@ mod tests {
         let file = syn::parse_str(
             "#[cfg(test)]
              mod tests {
-                 #[test]
                  fn wheel_ui_png_preview() {
                      let _ = run(&x, &y, \"z\");
                  }
@@ -191,6 +123,7 @@ mod tests {
         .unwrap();
         let previews = collect_previews(&file);
         assert_eq!(previews.len(), 1);
-        assert!(!previews[0].is_routed_through_harness);
+        assert!(!previews[0].is_test);
+        assert_eq!(previews[0].harness, scan::HarnessCall::Missing);
     }
 }

@@ -10,7 +10,7 @@ pub struct HelperCount;
 
 impl HelperCount {
     pub const NAME: &'static str = "helper_count";
-    pub const CODE: &'static str = "E015";
+    pub const CODE: &'static str = "LELE015";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.",

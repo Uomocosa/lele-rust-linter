@@ -10,7 +10,7 @@ pub struct ClippyConfigClippy;
 
 impl ClippyConfigClippy {
     pub const NAME: &'static str = "clippy_config_clippy";
-    pub const CODE: &'static str = "E022";
+    pub const CODE: &'static str = "LELE022";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Config,
         summary: "`clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.",

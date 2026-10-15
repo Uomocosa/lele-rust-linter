@@ -10,7 +10,7 @@ pub struct NoStutteredType;
 
 impl NoStutteredType {
     pub const NAME: &'static str = "no_stuttered_type";
-    pub const CODE: &'static str = "E027";
+    pub const CODE: &'static str = "LELE027";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).",

@@ -2,10 +2,15 @@
 
 The lele-rs convention linters and the crates they are built on.
 
+`lele-bevy-lint` is a separate binary, not a `lele-lint` flag: running it *is* "bevy mode".
+It reuses `lele-lint`'s `Checker`/`Project`/`Config`/`RuleViolation` types — a second set of
+checkers over the same `Project`, not a fork. Per-rule rationale lives in each rule's `why`
+(`crates/lele-bevy-lint/RULES.md`, generated); there is no separate design doc to drift.
+
 | Crate | Role |
 |---|---|
-| `lele-lint` | `lele-lint` binary — enforces the lele-syntax-rs structural rules (`E0xx`) |
-| `lele-bevy-lint` | `lele-bevy-lint` binary — Bevy-specific rules (`E029`/`E037`/`E038`/`E039`) |
+| `lele-lint` | `lele-lint` binary — the lele-syntax-rs structural rules (`lele-lint --checker-list`) |
+| `lele-bevy-lint` | `lele-bevy-lint` binary — Bevy-specific rules (`lele-bevy-lint --checker-list`) |
 | `atomic-delegate-macros` | `#[atomic_delegates]` proc-macro |
 | `lele-snake-case` | Shared `PascalCase -> snake_case` conversion |
 

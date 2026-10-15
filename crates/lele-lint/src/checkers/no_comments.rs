@@ -10,7 +10,7 @@ pub struct NoComments;
 
 impl NoComments {
     pub const NAME: &'static str = "no_comments";
-    pub const CODE: &'static str = "E031";
+    pub const CODE: &'static str = "LELE031";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Style,
         summary: "No comments in `src/` or `methods/`, except `// needed helper: <why>` and a final `// no test_usage necessary`.",

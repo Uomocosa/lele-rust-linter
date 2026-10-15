@@ -3,6 +3,7 @@ pub(crate) mod bevy_folder;
 pub(crate) mod bevy_plugin_scene;
 pub(crate) mod bevy_ui;
 pub(crate) mod bevy_ui_mp4;
+pub(crate) mod bevy_ui_restyle;
 mod build_checkers;
 pub(crate) mod preview_routing;
 

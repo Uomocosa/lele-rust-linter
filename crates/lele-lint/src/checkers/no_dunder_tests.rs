@@ -10,7 +10,7 @@ pub struct NoDunderTests;
 
 impl NoDunderTests {
     pub const NAME: &'static str = "no_dunder_tests";
-    pub const CODE: &'static str = "E034";
+    pub const CODE: &'static str = "LELE034";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "No `#[cfg(test)]` inside `__basic__/` containers.",

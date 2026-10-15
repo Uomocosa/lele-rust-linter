@@ -10,10 +10,10 @@ pub struct BevyPluginScene;
 
 impl BevyPluginScene {
     pub const NAME: &'static str = "bevy_plugin_scene";
-    pub const CODE: &'static str = "E038";
+    pub const CODE: &'static str = "LELEBEVY038";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
-        summary: "A file defining a `Plugin` whose build spawns UI must ship an ignored `*_ui_scene_preview` test.",
+        summary: "A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.",
         why: "A plugin is the assembly point for a whole screen; its scene preview proves the assembled screen renders.",
         bad: &[ExampleFile {
             path: "src/discovery/ui/default_ui_plugin.rs",
@@ -38,13 +38,33 @@ impl Plugin for DefaultUiPlugin {
 
 #[cfg(test)]
 mod tests {
-    use lele_bevy_preview::{run, scene::Scene};
+    use lele_bevy_preview::run;
+    use lele_bevy_preview::scene::{Kind, Scene, State};
+
+    fn build(app: &mut App) {
+        app.add_plugins(super::DefaultUiPlugin);
+    }
+
+    fn rest(_world: &mut World) {}
+
+    fn scene() -> Scene {
+        Scene {
+            name: String::from("default_ui_plugin"),
+            kind: Kind::Plugin,
+            build,
+            states: vec![State { label: String::from("rest"), apply: rest }],
+            timeline: None,
+        }
+    }
 
     #[test]
-    #[ignore = "headed scene"]
+    fn default_ui_plugin_ui_png_preview() {
+        run(&scene(), &Config::default(), "x").expect("preview");
+    }
+
+    #[test]
     fn default_ui_plugin_ui_scene_preview() {
-        let scene = Scene { name: String::from("default_ui_plugin") };
-        let _ = run(&scene, &Config::default(), "x");
+        run(&scene(), &Config::default(), "x").expect("preview");
     }
 }
 "#,

@@ -1,4 +1,4 @@
-use crate::scan::basic::enums::PreviewKind;
+use crate::scan::basic::enums::{HarnessCall, PreviewKind};
 
 pub struct FoundVisual {
     pub visual: String,
@@ -6,11 +6,22 @@ pub struct FoundVisual {
     pub owner: String,
 }
 
+#[derive(Default)]
+pub struct SceneUsage {
+    pub build_uses: Vec<String>,
+    pub state_count: usize,
+}
+
+pub struct Restyle {
+    pub system: String,
+    pub line: usize,
+}
+
 pub struct Preview {
     pub name: String,
     pub kind: PreviewKind,
     pub line: usize,
-    pub is_ignored: bool,
-    pub is_routed_through_harness: bool,
-    pub idents: Vec<String>,
+    pub is_test: bool,
+    pub harness: HarnessCall,
+    pub scene: SceneUsage,
 }

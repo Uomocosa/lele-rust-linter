@@ -10,7 +10,7 @@ pub struct ConstantsPlacement;
 
 impl ConstantsPlacement {
     pub const NAME: &'static str = "constants_placement";
-    pub const CODE: &'static str = "E026";
+    pub const CODE: &'static str = "LELE026";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.",

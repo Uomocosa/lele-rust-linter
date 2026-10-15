@@ -10,7 +10,7 @@ pub struct NoCratePaths;
 
 impl NoCratePaths {
     pub const NAME: &'static str = "no_crate_paths";
-    pub const CODE: &'static str = "E020";
+    pub const CODE: &'static str = "LELE020";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "`crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).",

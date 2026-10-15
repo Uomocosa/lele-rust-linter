@@ -10,7 +10,7 @@ pub struct NoCollectionNewtype;
 
 impl NoCollectionNewtype {
     pub const NAME: &'static str = "no_collection_newtype";
-    pub const CODE: &'static str = "E028";
+    pub const CODE: &'static str = "LELE028";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.",

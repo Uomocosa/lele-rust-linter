@@ -10,7 +10,7 @@ pub struct DelegateMacro;
 
 impl DelegateMacro {
     pub const NAME: &'static str = "delegate_macro";
-    pub const CODE: &'static str = "E032";
+    pub const CODE: &'static str = "LELE032";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type; `new` is never delegated.",

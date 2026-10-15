@@ -1,8 +1,13 @@
 use crate::Checker;
 
 pub fn print_checker_list(checkers: &[Box<dyn Checker>]) {
-    for c in checkers {
-        println!("{:>5}  {}", c.code(), c.name());
+    let width = checkers
+        .iter()
+        .map(|checker| checker.code().len())
+        .max()
+        .unwrap_or_default();
+    for checker in checkers {
+        println!("{:>width$}  {}", checker.code(), checker.name());
     }
 }
 

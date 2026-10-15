@@ -10,7 +10,7 @@ pub struct NoAllowAttributes;
 
 impl NoAllowAttributes {
     pub const NAME: &'static str = "no_allow_attributes";
-    pub const CODE: &'static str = "E023";
+    pub const CODE: &'static str = "LELE023";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Style,
         summary: "No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.",

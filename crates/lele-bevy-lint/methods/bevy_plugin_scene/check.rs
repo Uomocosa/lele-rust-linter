@@ -13,30 +13,50 @@ pub fn check(
     for source in project.sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if !scan::defines_plugin(file) || !scan::dir_spawns_ui(project, source.origin, rel_path) {
+        if !scan::defines_plugin(file) {
+            continue;
+        }
+        let spawns_ui = scan::dir_spawns_ui(project, source.origin, rel_path)
+            || scan::registers_ui(project, &scan::plugin_registrations(project, file));
+        if !spawns_ui {
             continue;
         }
 
-        violations.extend(scan::require_preview(
-            project,
-            source.origin,
-            rel_path,
-            file,
-            scan::PreviewKind::Scene,
-            checkers::bevy_plugin_scene::BevyPluginScene::CODE,
-            || {
-                scan::site_violation(
-                    project,
-                    source.origin,
-                    rel_path,
-                    1,
-                    checkers::bevy_plugin_scene::BevyPluginScene::CODE,
-                    String::from(
-                        "file defines a `Plugin` whose domain spawns UI but has no ignored `*_ui_scene_preview` test routing through `lele_bevy_preview::run`",
-                    ),
-                )
-            },
-        ));
+        let missing = scan::require_preview(file, scan::PreviewKind::Scene, || {
+            scan::site_violation(
+                project,
+                source.origin,
+                rel_path,
+                1,
+                checkers::bevy_plugin_scene::BevyPluginScene::CODE,
+                String::from(
+                    "file defines a `Plugin` whose domain spawns UI but has no `*_ui_scene_preview` test routing through `lele_bevy_preview::run`",
+                ),
+            )
+        });
+        if missing.is_some() {
+            violations.extend(missing);
+            continue;
+        }
+
+        let previews = scan::collect_previews(file);
+        let plugins = scan::plugin_types(file);
+        if let Some(preview) =
+            scan::preview_missing_subject(&previews, scan::PreviewKind::Scene, &plugins)
+        {
+            violations.push(scan::site_violation(
+                project,
+                source.origin,
+                rel_path,
+                preview.line,
+                checkers::bevy_plugin_scene::BevyPluginScene::CODE,
+                format!(
+                    "`fn {}` does not assemble the plugin: its `Scene::build` must `add_plugins({})`",
+                    preview.name,
+                    plugins.join(", ")
+                ),
+            ));
+        }
     }
 
     violations
@@ -66,6 +86,6 @@ mod tests {
         );
         let violations = check(&checkers::bevy_plugin_scene::BevyPluginScene, &project);
         assert_eq!(violations.len(), 1);
-        assert_eq!(violations[0].code, "E038");
+        assert_eq!(violations[0].code, "LELEBEVY038");
     }
 }

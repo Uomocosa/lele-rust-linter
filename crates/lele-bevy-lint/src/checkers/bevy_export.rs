@@ -10,7 +10,7 @@ pub struct BevyExport;
 
 impl BevyExport {
     pub const NAME: &'static str = "bevy_export";
-    pub const CODE: &'static str = "E005";
+    pub const CODE: &'static str = "LELEBEVY005";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.",

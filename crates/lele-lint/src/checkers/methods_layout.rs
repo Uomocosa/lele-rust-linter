@@ -10,7 +10,7 @@ pub struct MethodsLayout;
 
 impl MethodsLayout {
     pub const NAME: &'static str = "methods_layout";
-    pub const CODE: &'static str = "E030";
+    pub const CODE: &'static str = "LELE030";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage`.",

@@ -7,11 +7,12 @@ use crate::scan;
 
 #[must_use]
 pub fn dir_spawns_ui(project: &Project, origin: Origin, rel_path: &Path) -> bool {
+    let extra = scan::require_visuals(project);
     let dir = rel_path.parent();
     project.sources().any(|source| {
         source.origin == origin
             && source.relative_path.parent() == dir
-            && !scan::prod_visuals(source.file).is_empty()
+            && !scan::prod_visuals(source.file, &extra).is_empty()
     })
 }
 

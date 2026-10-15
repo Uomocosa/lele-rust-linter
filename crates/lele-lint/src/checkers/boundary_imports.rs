@@ -10,7 +10,7 @@ pub struct BoundaryImports;
 
 impl BoundaryImports {
     pub const NAME: &'static str = "boundary_imports";
-    pub const CODE: &'static str = "E036";
+    pub const CODE: &'static str = "LELE036";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.",

@@ -10,7 +10,7 @@ pub struct RootReexport;
 
 impl RootReexport {
     pub const NAME: &'static str = "root_reexport";
-    pub const CODE: &'static str = "E024";
+    pub const CODE: &'static str = "LELE024";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.",

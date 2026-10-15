@@ -142,6 +142,11 @@ impl<'ast> Visit<'ast> for CallCollector<'_> {
         if let Some(idents) = scan::system_args(node) {
             self.calls.extend(idents.iter().cloned());
             self.systems.extend(idents);
+            self.visit_expr(&node.receiver);
+        } else if let Some(idents) = scan::observer_args(node) {
+            self.calls.extend(idents.iter().cloned());
+            self.systems.extend(idents);
+            self.visit_expr(&node.receiver);
         } else {
             syn::visit::visit_expr_method_call(self, node);
         }
@@ -164,5 +169,39 @@ mod tests {
         let graph = CallGraph::collect(&project);
         assert!(graph.reaches_production("setup"));
         assert!(!graph.reaches_production("unrelated"));
+    }
+
+    #[test]
+    fn test_usage_chained_registrations_are_all_roots() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("a.rs"),
+            syn::parse_str(
+                "pub fn wire(app: &mut App) {
+                     app.add_systems(Startup, spawn_hud).add_systems(Update, tick_hud);
+                 }
+                 fn spawn_hud() {}
+                 fn tick_hud() {}",
+            )
+            .unwrap(),
+        );
+        let graph = CallGraph::collect(&project);
+        assert!(graph.reaches_production("spawn_hud"));
+        assert!(graph.reaches_production("tick_hud"));
+    }
+
+    #[test]
+    fn test_usage_observer_is_a_root() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("a.rs"),
+            syn::parse_str(
+                "pub fn wire(app: &mut App) { app.add_observer(spawn_on_ready); }
+                 fn spawn_on_ready() {}",
+            )
+            .unwrap(),
+        );
+        let graph = CallGraph::collect(&project);
+        assert!(graph.reaches_production("spawn_on_ready"));
     }
 }

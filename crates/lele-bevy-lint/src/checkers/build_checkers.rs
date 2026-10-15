@@ -7,6 +7,7 @@ pub fn build_checkers() -> Vec<Box<dyn Checker>> {
     checkers::bevy_folder::BevyFolder::register(&mut checkers);
     checkers::bevy_ui::BevyUi::register(&mut checkers);
     checkers::bevy_ui_mp4::BevyUiMp4::register(&mut checkers);
+    checkers::bevy_ui_restyle::BevyUiRestyle::register(&mut checkers);
     checkers::bevy_plugin_scene::BevyPluginScene::register(&mut checkers);
     checkers::preview_routing::PreviewRouting::register(&mut checkers);
     checkers

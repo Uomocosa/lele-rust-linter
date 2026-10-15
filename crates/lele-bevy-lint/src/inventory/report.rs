@@ -39,15 +39,17 @@ struct Row {
 
 // needed helper: one inventory row per file that has UI or previews
 fn rows(project: &Project) -> Vec<Row> {
+    let extra = scan::require_visuals(project);
     let mut rows: Vec<Row> = project
         .sources()
         .filter_map(|source| {
             let rel_path = source.relative_path;
             let file = source.file;
-            let visuals = scan::prod_visuals(file);
+            let visuals = scan::prod_visuals(file, &extra);
             let previews = scan::collect_previews(file);
-            let relevant_plugin =
-                scan::defines_plugin(file) && scan::dir_spawns_ui(project, source.origin, rel_path);
+            let relevant_plugin = scan::defines_plugin(file)
+                && (scan::dir_spawns_ui(project, source.origin, rel_path)
+                    || scan::registers_ui(project, &scan::plugin_registrations(project, file)));
             if visuals.is_empty() && previews.is_empty() && !relevant_plugin {
                 return None;
             }
@@ -55,7 +57,12 @@ fn rows(project: &Project) -> Vec<Row> {
                 file: display_path(source.origin, rel_path),
                 markers: join_unique(scan::declared_components(file)),
                 visual: join_unique(visuals.iter().map(|found| found.visual.clone()).collect()),
-                anim: join_unique(scan::drivers(file)),
+                anim: join_unique(
+                    scan::time_drivers(file)
+                        .into_iter()
+                        .chain(scan::input_drivers(file))
+                        .collect(),
+                ),
                 kinds: previews.iter().map(|p| p.kind).collect(),
             })
         })

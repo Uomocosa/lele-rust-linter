@@ -10,7 +10,7 @@ pub struct SnakeCaseFiles;
 
 impl SnakeCaseFiles {
     pub const NAME: &'static str = "snake_case_files";
-    pub const CODE: &'static str = "E002";
+    pub const CODE: &'static str = "LELE002";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "File and folder names are snake_case.",

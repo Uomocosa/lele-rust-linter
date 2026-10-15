@@ -10,7 +10,7 @@ pub struct NoTrivialAccessors;
 
 impl NoTrivialAccessors {
     pub const NAME: &'static str = "no_trivial_accessors";
-    pub const CODE: &'static str = "E010";
+    pub const CODE: &'static str = "LELE010";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "No getters or setters that only read or write a public field.",

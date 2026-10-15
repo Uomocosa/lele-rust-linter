@@ -10,7 +10,7 @@ pub struct TestUsage;
 
 impl TestUsage {
     pub const NAME: &'static str = "test_usage";
-    pub const CODE: &'static str = "E006";
+    pub const CODE: &'static str = "LELE006";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.",

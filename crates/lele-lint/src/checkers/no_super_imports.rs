@@ -10,7 +10,7 @@ pub struct NoSuperImports;
 
 impl NoSuperImports {
     pub const NAME: &'static str = "no_super_imports";
-    pub const CODE: &'static str = "E033";
+    pub const CODE: &'static str = "LELE033";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "`super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).",

@@ -114,6 +114,7 @@ impl<'ast> Visit<'ast> for RegisteredCollector<'_> {
     fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
         if let Some(idents) = scan::system_args(node) {
             self.extend(idents);
+            self.visit_expr(&node.receiver);
         } else {
             syn::visit::visit_expr_method_call(self, node);
         }
@@ -149,10 +150,13 @@ mod tests {
             "pub fn build(app: &mut App) {
                  app.add_systems(Update, tick);
                  app.add_systems(Startup, (setup, spawn).chain());
+                 app.add_systems(Startup, chained).add_systems(Update, outer);
              }",
         )
         .unwrap();
         let registered = registered_systems(&scheduled);
+        assert!(registered.contains(&"chained".to_string()));
+        assert!(registered.contains(&"outer".to_string()));
         assert!(registered.contains(&"tick".to_string()));
         assert!(registered.contains(&"setup".to_string()));
         assert!(registered.contains(&"spawn".to_string()));

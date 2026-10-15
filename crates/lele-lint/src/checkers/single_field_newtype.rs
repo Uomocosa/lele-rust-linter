@@ -10,7 +10,7 @@ pub struct SingleFieldNewtype;
 
 impl SingleFieldNewtype {
     pub const NAME: &'static str = "single_field_newtype";
-    pub const CODE: &'static str = "E018";
+    pub const CODE: &'static str = "LELE018";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.",

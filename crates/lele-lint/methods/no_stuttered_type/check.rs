@@ -113,7 +113,7 @@ mod tests {
         )]);
         let violations = super::check(&NoStutteredType, &project);
         assert_eq!(violations.len(), 1);
-        assert_eq!(violations[0].code, "E027");
+        assert_eq!(violations[0].code, "LELE027");
         assert!(violations[0].message.contains("`Client`"));
     }
 

@@ -1,5 +1,5 @@
 // Reachable production spawn with a preview that breaks the contract:
-// no ignore, no assert, no PREVIEW_ARTIFACT println, wrong stem literal.
+// no harness call, so nothing is rendered or checked.
 
 pub struct Sprite;
 pub struct Spawner;

@@ -34,27 +34,34 @@ fn compliant_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>>
 fn violation_crate_catches_all_errors() -> Result<(), Box<dyn std::error::Error>> {
     let violations = run_checkers("violation_crate")?;
     let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
+    let code_of = |name: &str| {
+        build_checkers()
+            .iter()
+            .find(|checker| checker.name() == name)
+            .map(|checker| checker.code())
+            .expect("unknown checker")
+    };
 
     let expected = [
-        "E001", // atomic_file (orphan method file has no parent type)
-        "E002", // snake_case_files
-        "E003", // method_visibility
-        "E004", // no_cross_domain_reexport
-        "E006", // test_usage
-        "E007", // test_inline
-        "E009", // no_positional
-        "E010", // no_trivial_accessors
-        "E011", // domain_import
-        "E012", // atomic_delegates
-        "E013", // constructor_no_skip
-        "E016", // single_caller_type
-        "E017", // method_file_co_location (orphan method file)
-        "E018", // single_field_newtype
-        "E019", // mod_rs_purity
-        "E020", // no_crate_paths
-        "E024", // root_reexport
-        "E025", // no_stuttered_path
-        "E027", // no_stuttered_type
+        code_of("atomic_file"),
+        code_of("snake_case_files"),
+        code_of("method_visibility"),
+        code_of("no_cross_domain_reexport"),
+        code_of("test_usage"),
+        code_of("test_inline"),
+        code_of("no_positional"),
+        code_of("no_trivial_accessors"),
+        code_of("domain_import"),
+        code_of("atomic_delegates"),
+        code_of("constructor_no_skip"),
+        code_of("single_caller_type"),
+        code_of("method_file_co_location"),
+        code_of("single_field_newtype"),
+        code_of("mod_rs_purity"),
+        code_of("no_crate_paths"),
+        code_of("root_reexport"),
+        code_of("no_stuttered_path"),
+        code_of("no_stuttered_type"),
     ];
 
     for code in expected {
@@ -78,8 +85,19 @@ fn methods_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>> {
 fn methods_violation_crate_catches_layout_errors() -> Result<(), Box<dyn std::error::Error>> {
     let violations = run_checkers("methods_violation_crate")?;
     let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
+    let code_of = |name: &str| {
+        build_checkers()
+            .iter()
+            .find(|checker| checker.name() == name)
+            .map(|checker| checker.code())
+            .expect("unknown checker")
+    };
 
-    for code in ["E030", "E031", "E032"] {
+    for code in [
+        code_of("methods_layout"),
+        code_of("no_comments"),
+        code_of("delegate_macro"),
+    ] {
         if !codes.contains(&code) {
             return Err(format!(
                 "expected {code} in methods violation crate, got codes: {codes:?}"

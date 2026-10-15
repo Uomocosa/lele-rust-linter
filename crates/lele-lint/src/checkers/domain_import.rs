@@ -10,7 +10,7 @@ pub struct DomainImport;
 
 impl DomainImport {
     pub const NAME: &'static str = "domain_import";
-    pub const CODE: &'static str = "E011";
+    pub const CODE: &'static str = "LELE011";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Imports,
         summary: "Import the domain, not the item: `use crate::stock;` then `stock::Item`.",

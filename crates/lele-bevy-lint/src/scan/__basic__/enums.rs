@@ -4,3 +4,10 @@ pub enum PreviewKind {
     Mp4,
     Scene,
 }
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum HarnessCall {
+    Missing,
+    Unchecked,
+    Checked,
+}

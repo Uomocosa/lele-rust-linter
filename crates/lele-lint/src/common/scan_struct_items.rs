@@ -46,7 +46,7 @@ mod tests {
         let found = scan_struct_items(&file.items, Path::new("x.rs"), |_, _| {
             vec![RuleViolation::file(
                 std::path::PathBuf::from("x.rs"),
-                "E018",
+                "LELE018",
                 String::new(),
             )]
         });

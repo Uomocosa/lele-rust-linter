@@ -10,7 +10,7 @@ pub struct AtomicFile;
 
 impl AtomicFile {
     pub const NAME: &'static str = "atomic_file";
-    pub const CODE: &'static str = "E001";
+    pub const CODE: &'static str = "LELE001";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "One public item per file, and the file is named after it (`greet.rs` holds `pub fn greet`).",

@@ -10,7 +10,7 @@ pub struct PreviewRouting;
 
 impl PreviewRouting {
     pub const NAME: &'static str = "preview_routing";
-    pub const CODE: &'static str = "LELEBEVY039";
+    pub const CODE: &'static str = "LELEBEVY007";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.",

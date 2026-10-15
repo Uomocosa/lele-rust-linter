@@ -14,11 +14,11 @@ every **Good** example reports nothing at all.
 
 - [LELE001 `atomic_file`](#lele001-atomic_file): One public item per file, and the file is named after it (`greet.rs` holds `pub fn greet`).
 - [LELE002 `snake_case_files`](#lele002-snake_case_files): File and folder names are snake_case.
-- [LELE015 `helper_count`](#lele015-helper_count): A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.
-- [LELE017 `method_file_co_location`](#lele017-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
-- [LELE019 `mod_rs_purity`](#lele019-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
-- [LELE026 `constants_placement`](#lele026-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
-- [LELE040 `container_placement`](#lele040-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
+- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
+- [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
+- [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
+- [LELE021 `helper_count`](#lele021-helper_count): A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.
+- [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 
 ### LELE001 `atomic_file`
 
@@ -155,100 +155,13 @@ mod tests {
 }
 ```
 
-### LELE015 `helper_count`
-
-A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.
-
-**Why:** Helpers pile up silently; the marker forces a reason for every extra function, and unexplained ones get their own file.
-
-**Bad** (reports LELE015):
-
-`src/lib.rs`
-
-```rust
-mod score;
-pub use score::score;
-```
-
-`src/score.rs`
-
-```rust
-pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
-}
-
-fn base(hits: u32) -> u32 {
-    hits.saturating_mul(10)
-}
-
-fn bonus(hits: u32) -> u32 {
-    if hits > 10 { 50 } else { 0 }
-}
-
-fn penalty(misses: u32) -> u32 {
-    misses.saturating_mul(5)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::score;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(score(1, 0), 10);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-mod score;
-pub use score::score;
-```
-
-`src/score.rs`
-
-```rust
-pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
-}
-
-// needed helper: points per hit
-fn base(hits: u32) -> u32 {
-    hits.saturating_mul(10)
-}
-
-// needed helper: streak bonus above 10 hits
-fn bonus(hits: u32) -> u32 {
-    if hits > 10 { 50 } else { 0 }
-}
-
-// needed helper: points lost per miss
-fn penalty(misses: u32) -> u32 {
-    misses.saturating_mul(5)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::score;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(score(1, 0), 10);
-    }
-}
-```
-
-### LELE017 `method_file_co_location`
+### LELE003 `method_file_co_location`
 
 A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
 
 **Why:** A method file that drifts away from its type is impossible to find from the type.
 
-**Bad** (reports LELE017):
+**Bad** (reports LELE003):
 
 `src/lib.rs`
 
@@ -397,69 +310,13 @@ mod tests {
 }
 ```
 
-### LELE019 `mod_rs_purity`
-
-`mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
-
-**Why:** `mod.rs` is the folder's table of contents; logic hidden there is logic nobody looks for.
-
-**Bad** (reports LELE019):
-
-`src/lib.rs`
-
-```rust
-pub mod greeting;
-```
-
-`src/greeting/mod.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod greeting;
-```
-
-`src/greeting/mod.rs`
-
-```rust
-mod greet;
-
-pub use greet::greet;
-```
-
-`src/greeting/greet.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::greet;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
-    }
-}
-```
-
-### LELE026 `constants_placement`
+### LELE019 `constants_placement`
 
 A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 
 **Why:** Constants placed too high leak across domains; placed too low they get duplicated.
 
-**Bad** (reports LELE026):
+**Bad** (reports LELE019):
 
 `src/lib.rs`
 
@@ -553,13 +410,13 @@ mod tests {
 }
 ```
 
-### LELE040 `container_placement`
+### LELE020 `container_placement`
 
 Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 
 **Why:** Small data types don't need a file and a test each; grouping them keeps atomic files for code that does something.
 
-**Bad** (reports LELE040):
+**Bad** (reports LELE020):
 
 `src/lib.rs`
 
@@ -616,21 +473,164 @@ pub struct Item {
 }
 ```
 
+### LELE021 `helper_count`
+
+A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.
+
+**Why:** Helpers pile up silently; the marker forces a reason for every extra function, and unexplained ones get their own file.
+
+**Bad** (reports LELE021):
+
+`src/lib.rs`
+
+```rust
+mod score;
+pub use score::score;
+```
+
+`src/score.rs`
+
+```rust
+pub fn score(hits: u32, misses: u32) -> u32 {
+    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+}
+
+fn base(hits: u32) -> u32 {
+    hits.saturating_mul(10)
+}
+
+fn bonus(hits: u32) -> u32 {
+    if hits > 10 { 50 } else { 0 }
+}
+
+fn penalty(misses: u32) -> u32 {
+    misses.saturating_mul(5)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::score;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(score(1, 0), 10);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod score;
+pub use score::score;
+```
+
+`src/score.rs`
+
+```rust
+pub fn score(hits: u32, misses: u32) -> u32 {
+    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+}
+
+// needed helper: points per hit
+fn base(hits: u32) -> u32 {
+    hits.saturating_mul(10)
+}
+
+// needed helper: streak bonus above 10 hits
+fn bonus(hits: u32) -> u32 {
+    if hits > 10 { 50 } else { 0 }
+}
+
+// needed helper: points lost per miss
+fn penalty(misses: u32) -> u32 {
+    misses.saturating_mul(5)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::score;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(score(1, 0), 10);
+    }
+}
+```
+
+### LELE023 `mod_rs_purity`
+
+`mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
+
+**Why:** `mod.rs` is the folder's table of contents; logic hidden there is logic nobody looks for.
+
+**Bad** (reports LELE023):
+
+`src/lib.rs`
+
+```rust
+pub mod greeting;
+```
+
+`src/greeting/mod.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod greeting;
+```
+
+`src/greeting/mod.rs`
+
+```rust
+mod greet;
+
+pub use greet::greet;
+```
+
+`src/greeting/greet.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::greet;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(greet("Ada"), "Hello, Ada!");
+    }
+}
+```
+
 ## Delegates: methods and `methods/`
 
-- [LELE003 `method_visibility`](#lele003-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
-- [LELE012 `atomic_delegates`](#lele012-atomic_delegates): Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
-- [LELE013 `constructor_no_skip`](#lele013-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
+- [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
+- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
+- [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage`.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type; `new` is never delegated.
 
-### LELE003 `method_visibility`
+### LELE004 `method_visibility`
 
 A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
 
 **Why:** Method bodies are reached only through the type's methods, so callers can't depend on the file layout.
 
-**Bad** (reports LELE003):
+**Bad** (reports LELE004):
 
 `src/lib.rs`
 
@@ -771,13 +771,13 @@ mod tests {
 }
 ```
 
-### LELE012 `atomic_delegates`
+### LELE017 `atomic_delegates`
 
 Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
 
 **Why:** Longer methods belong in `methods/<type>/<method>.rs`; short ones stay readable as one line each.
 
-**Bad** (reports LELE012):
+**Bad** (reports LELE017):
 
 `src/lib.rs`
 
@@ -866,13 +866,13 @@ mod tests {
 }
 ```
 
-### LELE013 `constructor_no_skip`
+### LELE018 `constructor_no_skip`
 
 `impl Default` and real constructors are never `#[rustfmt::skip]`.
 
 **Why:** Constructors list every field; rustfmt keeps them one field per line so diffs stay readable.
 
-**Bad** (reports LELE013):
+**Bad** (reports LELE018):
 
 `src/lib.rs`
 
@@ -1311,21 +1311,21 @@ mod tests {
 
 ## Imports and re-exports
 
-- [LELE004 `no_cross_domain_reexport`](#lele004-no_cross_domain_reexport): A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.
-- [LELE011 `domain_import`](#lele011-domain_import): Import the domain, not the item: `use crate::stock;` then `stock::Item`.
-- [LELE020 `no_crate_paths`](#lele020-no_crate_paths): `crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).
-- [LELE024 `root_reexport`](#lele024-root_reexport): A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.
-- [LELE025 `no_stuttered_path`](#lele025-no_stuttered_path): No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.
-- [LELE033 `no_super_imports`](#lele033-no_super_imports): `super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).
-- [LELE036 `boundary_imports`](#lele036-boundary_imports): A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
+- [LELE005 `no_cross_domain_reexport`](#lele005-no_cross_domain_reexport): A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.
+- [LELE011 `no_stuttered_path`](#lele011-no_stuttered_path): No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.
+- [LELE013 `no_super_imports`](#lele013-no_super_imports): `super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).
+- [LELE015 `root_reexport`](#lele015-root_reexport): A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.
+- [LELE016 `domain_import`](#lele016-domain_import): Import the domain, not the item: `use crate::stock;` then `stock::Item`.
+- [LELE025 `no_crate_paths`](#lele025-no_crate_paths): `crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).
+- [LELE033 `boundary_imports`](#lele033-boundary_imports): A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
 
-### LELE004 `no_cross_domain_reexport`
+### LELE005 `no_cross_domain_reexport`
 
 A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.
 
 **Why:** Each domain's `mod.rs` then describes only that domain, and the crate's public surface is in one file.
 
-**Bad** (reports LELE004):
+**Bad** (reports LELE005):
 
 `src/lib.rs`
 
@@ -1405,13 +1405,309 @@ pub struct Item {
 }
 ```
 
-### LELE011 `domain_import`
+### LELE011 `no_stuttered_path`
+
+No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.
+
+**Why:** The module and type say the same word twice; the type name alone is already unambiguous.
+
+**Bad** (reports LELE011):
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+pub use meters::Meters;
+mod race_length;
+pub use race_length::race_length;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+`src/race_length.rs`
+
+```rust
+use crate::meters;
+
+pub fn race_length() -> meters::Meters {
+    meters::Meters(400)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::race_length;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(*race_length(), 400);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+pub use meters::Meters;
+mod race_length;
+pub use race_length::race_length;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+`src/race_length.rs`
+
+```rust
+use crate::Meters;
+
+pub fn race_length() -> Meters {
+    Meters(400)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::race_length;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(*race_length(), 400);
+    }
+}
+```
+
+### LELE013 `no_super_imports`
+
+`super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).
+
+**Why:** `super::` paths break when files move; domain paths read the same from every file.
+
+**Bad** (reports LELE013):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::structs::Item;
+mod price_of;
+pub use price_of::price_of;
+```
+
+`src/stock/price_of.rs`
+
+```rust
+use super::Item;
+
+pub fn price_of(item: &Item) -> u32 {
+    item.price
+}
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::structs::Item;
+mod price_of;
+pub use price_of::price_of;
+```
+
+`src/stock/price_of.rs`
+
+```rust
+use crate::stock;
+
+pub fn price_of(item: &stock::Item) -> u32 {
+    item.price
+}
+
+#[cfg(test)]
+mod tests {
+    use super::price_of;
+    use crate::stock::Item;
+
+    #[test]
+    fn test_usage() {
+        let item = Item {
+            name: "apple".to_string(),
+            price: 3,
+        };
+        assert_eq!(price_of(&item), 3);
+    }
+}
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+```
+
+### LELE015 `root_reexport`
+
+A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.
+
+**Why:** Root items are used as `crate::Meters`, never `crate::meters::Meters`.
+
+**Bad** (reports LELE015):
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::meters::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+pub use meters::Meters;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+### LELE016 `domain_import`
 
 Import the domain, not the item: `use crate::stock;` then `stock::Item`.
 
 **Why:** The domain prefix at every use site says where a name comes from, so names never need to be unique crate-wide.
 
-**Bad** (reports LELE011):
+**Bad** (reports LELE016):
 
 `src/lib.rs`
 
@@ -1543,13 +1839,13 @@ pub struct Item {
 }
 ```
 
-### LELE020 `no_crate_paths`
+### LELE025 `no_crate_paths`
 
 `crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).
 
 **Why:** All cross-domain dependencies of a file are then visible in its `use` lines at the top.
 
-**Bad** (reports LELE020):
+**Bad** (reports LELE025):
 
 `src/lib.rs`
 
@@ -1679,309 +1975,13 @@ pub struct Item {
 }
 ```
 
-### LELE024 `root_reexport`
-
-A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.
-
-**Why:** Root items are used as `crate::Meters`, never `crate::meters::Meters`.
-
-**Bad** (reports LELE024):
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::meters::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-pub use meters::Meters;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
-
-### LELE025 `no_stuttered_path`
-
-No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.
-
-**Why:** The module and type say the same word twice; the type name alone is already unambiguous.
-
-**Bad** (reports LELE025):
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
-
-`src/race_length.rs`
-
-```rust
-use crate::meters;
-
-pub fn race_length() -> meters::Meters {
-    meters::Meters(400)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::race_length;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(*race_length(), 400);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
-
-`src/race_length.rs`
-
-```rust
-use crate::Meters;
-
-pub fn race_length() -> Meters {
-    Meters(400)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::race_length;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(*race_length(), 400);
-    }
-}
-```
-
-### LELE033 `no_super_imports`
-
-`super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).
-
-**Why:** `super::` paths break when files move; domain paths read the same from every file.
-
-**Bad** (reports LELE033):
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
-```
-
-`src/stock/price_of.rs`
-
-```rust
-use super::Item;
-
-pub fn price_of(item: &Item) -> u32 {
-    item.price
-}
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
-```
-
-`src/stock/price_of.rs`
-
-```rust
-use crate::stock;
-
-pub fn price_of(item: &stock::Item) -> u32 {
-    item.price
-}
-
-#[cfg(test)]
-mod tests {
-    use super::price_of;
-    use crate::stock::Item;
-
-    #[test]
-    fn test_usage() {
-        let item = Item {
-            name: "apple".to_string(),
-            price: 3,
-        };
-        assert_eq!(price_of(&item), 3);
-    }
-}
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-```
-
-### LELE036 `boundary_imports`
+### LELE033 `boundary_imports`
 
 A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
 
 **Why:** A boundary marks a pure core; forbidden imports are how I/O and frameworks leak in.
 
-**Bad** (reports LELE036):
+**Bad** (reports LELE033):
 
 `lele.toml`
 
@@ -2063,20 +2063,20 @@ mod tests {
 
 ## Types
 
-- [LELE009 `no_positional`](#lele009-no_positional): No positional field access (`.0`, `.1`).
-- [LELE010 `no_trivial_accessors`](#lele010-no_trivial_accessors): No getters or setters that only read or write a public field.
-- [LELE016 `single_caller_type`](#lele016-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
-- [LELE018 `single_field_newtype`](#lele018-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
-- [LELE027 `no_stuttered_type`](#lele027-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
-- [LELE028 `no_collection_newtype`](#lele028-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
+- [LELE010 `no_positional`](#lele010-no_positional): No positional field access (`.0`, `.1`).
+- [LELE012 `no_stuttered_type`](#lele012-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
+- [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field.
+- [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
+- [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
+- [LELE027 `single_caller_type`](#lele027-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
 
-### LELE009 `no_positional`
+### LELE010 `no_positional`
 
 No positional field access (`.0`, `.1`).
 
 **Why:** A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.
 
-**Bad** (reports LELE009):
+**Bad** (reports LELE010):
 
 `src/lib.rs`
 
@@ -2142,265 +2142,13 @@ mod tests {
 }
 ```
 
-### LELE010 `no_trivial_accessors`
-
-No getters or setters that only read or write a public field.
-
-**Why:** The field is already public; an accessor adds a second name for the same thing.
-
-**Bad** (reports LELE010):
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn health(&self) -> u32 { self.health }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn is_alive(&self) -> bool { self.health > 0 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        assert!(player::Player::default().is_alive());
-    }
-}
-```
-
-### LELE016 `single_caller_type`
-
-A type with no methods that is used from exactly one file is defined privately in that file.
-
-**Why:** A separate file for a type only one function uses spreads one idea over two places.
-
-**Bad** (reports LELE016):
-
-`src/lib.rs`
-
-```rust
-pub mod card;
-```
-
-`src/card/mod.rs`
-
-```rust
-mod card_lines;
-mod render;
-
-pub use render::render;
-```
-
-`src/card/card_lines.rs`
-
-```rust
-#[derive(thiserror::Error, Debug)]
-pub enum CardLines {
-    #[error("empty card")]
-    Empty,
-}
-```
-
-`src/card/render.rs`
-
-```rust
-use crate::card;
-
-pub fn render(title: &str) -> Result<String, card::card_lines::CardLines> {
-    if title.is_empty() {
-        return Err(card::card_lines::CardLines::Empty);
-    }
-    Ok(format!("# {title}"))
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod card;
-```
-
-`src/card/mod.rs`
-
-```rust
-mod render;
-
-pub use render::render;
-```
-
-`src/card/render.rs`
-
-```rust
-struct Lines {
-    title: String,
-    body: String,
-}
-
-pub fn render(title: &str, body: &str) -> String {
-    let lines = Lines {
-        title: title.to_string(),
-        body: body.to_string(),
-    };
-    format!("# {}\n{}", lines.title, lines.body)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::render;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(render("A", "b"), "# A\nb");
-    }
-}
-```
-
-### LELE018 `single_field_newtype`
-
-A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
-
-**Why:** Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.
-
-**Bad** (reports LELE018):
-
-`src/lib.rs`
-
-```rust
-pub mod track;
-```
-
-`src/track/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::structs::Meters;
-```
-
-`src/track/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/track/__basic__/structs.rs`
-
-```rust
-pub struct Meters {
-    pub value: u32,
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod track;
-```
-
-`src/track/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::newtypes::Meters;
-```
-
-`src/track/__basic__/mod.rs`
-
-```rust
-pub mod newtypes;
-```
-
-`src/track/__basic__/newtypes.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Meters(pub u32);
-```
-
-### LELE027 `no_stuttered_type`
+### LELE012 `no_stuttered_type`
 
 A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
 
 **Why:** Code always says `freenet::Client` through the domain prefix, so the prefix in the type name is said twice.
 
-**Bad** (reports LELE027):
+**Bad** (reports LELE012):
 
 `src/lib.rs`
 
@@ -2488,13 +2236,176 @@ mod tests {
 }
 ```
 
-### LELE028 `no_collection_newtype`
+### LELE014 `no_trivial_accessors`
+
+No getters or setters that only read or write a public field.
+
+**Why:** The field is already public; an accessor adds a second name for the same thing.
+
+**Bad** (reports LELE014):
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[rustfmt::skip]
+impl Player {
+    pub fn health(&self) -> u32 { self.health }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[rustfmt::skip]
+impl Player {
+    pub fn is_alive(&self) -> bool { self.health > 0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        assert!(player::Player::default().is_alive());
+    }
+}
+```
+
+### LELE022 `single_field_newtype`
+
+A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
+
+**Why:** Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.
+
+**Bad** (reports LELE022):
+
+`src/lib.rs`
+
+```rust
+pub mod track;
+```
+
+`src/track/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::structs::Meters;
+```
+
+`src/track/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/track/__basic__/structs.rs`
+
+```rust
+pub struct Meters {
+    pub value: u32,
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod track;
+```
+
+`src/track/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::newtypes::Meters;
+```
+
+`src/track/__basic__/mod.rs`
+
+```rust
+pub mod newtypes;
+```
+
+`src/track/__basic__/newtypes.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Meters(pub u32);
+```
+
+### LELE026 `no_collection_newtype`
 
 No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
 
-**Bad** (reports LELE028):
+**Bad** (reports LELE026):
 
 `src/lib.rs`
 
@@ -2558,139 +2469,109 @@ use derive_more::Deref;
 pub struct Room(pub String);
 ```
 
+### LELE027 `single_caller_type`
+
+A type with no methods that is used from exactly one file is defined privately in that file.
+
+**Why:** A separate file for a type only one function uses spreads one idea over two places.
+
+**Bad** (reports LELE027):
+
+`src/lib.rs`
+
+```rust
+pub mod card;
+```
+
+`src/card/mod.rs`
+
+```rust
+mod card_lines;
+mod render;
+
+pub use render::render;
+```
+
+`src/card/card_lines.rs`
+
+```rust
+#[derive(thiserror::Error, Debug)]
+pub enum CardLines {
+    #[error("empty card")]
+    Empty,
+}
+```
+
+`src/card/render.rs`
+
+```rust
+use crate::card;
+
+pub fn render(title: &str) -> Result<String, card::card_lines::CardLines> {
+    if title.is_empty() {
+        return Err(card::card_lines::CardLines::Empty);
+    }
+    Ok(format!("# {title}"))
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod card;
+```
+
+`src/card/mod.rs`
+
+```rust
+mod render;
+
+pub use render::render;
+```
+
+`src/card/render.rs`
+
+```rust
+struct Lines {
+    title: String,
+    body: String,
+}
+
+pub fn render(title: &str, body: &str) -> String {
+    let lines = Lines {
+        title: title.to_string(),
+        body: body.to_string(),
+    };
+    format!("# {}\n{}", lines.title, lines.body)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(render("A", "b"), "# A\nb");
+    }
+}
+```
+
 ## Tests
 
-- [LELE006 `test_usage`](#lele006-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+- [LELE006 `no_dunder_tests`](#lele006-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
 - [LELE007 `test_inline`](#lele007-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
-- [LELE034 `no_dunder_tests`](#lele034-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
-- [LELE041 `test_is_not_helper`](#lele041-test_is_not_helper): A `#[test]` fn is not a helper — it carries no `// needed helper:` line.
+- [LELE008 `test_is_not_helper`](#lele008-test_is_not_helper): A `#[test]` fn is not a helper — it carries no `// needed helper:` line.
+- [LELE009 `test_usage`](#lele009-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
 
-### LELE006 `test_usage`
-
-Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
-
-**Why:** The usage test is the function's documentation: it shows how to call it and proves it works.
-
-**Bad** (reports LELE006):
-
-`src/lib.rs`
-
-```rust
-mod greet;
-pub use greet::greet;
-```
-
-`src/greet.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-mod greet;
-pub use greet::greet;
-```
-
-`src/greet.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::greet;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
-    }
-}
-```
-
-### LELE007 `test_inline`
-
-Unit tests live in the same file as the code (no `tests/` folders under `src/`).
-
-**Why:** The test sits next to what it tests, so reading one means reading the other.
-
-**Bad** (reports LELE007):
-
-`src/lib.rs`
-
-```rust
-mod greet;
-pub use greet::greet;
-```
-
-`src/greet.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::greet;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
-    }
-}
-```
-
-`src/tests/greet_more.rs`
-
-```rust
-#[test]
-fn greets_empty_name() {
-    assert_eq!(crate::greet(""), "Hello, !");
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-mod greet;
-pub use greet::greet;
-```
-
-`src/greet.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::greet;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
-    }
-}
-```
-
-### LELE034 `no_dunder_tests`
+### LELE006 `no_dunder_tests`
 
 No `#[cfg(test)]` inside `__basic__/` containers.
 
 **Why:** Containers hold declarations only; test the function or method that uses the types instead.
 
-**Bad** (reports LELE034):
+**Bad** (reports LELE006):
 
 `src/lib.rs`
 
@@ -2768,13 +2649,82 @@ pub struct Item {
 }
 ```
 
-### LELE041 `test_is_not_helper`
+### LELE007 `test_inline`
+
+Unit tests live in the same file as the code (no `tests/` folders under `src/`).
+
+**Why:** The test sits next to what it tests, so reading one means reading the other.
+
+**Bad** (reports LELE007):
+
+`src/lib.rs`
+
+```rust
+mod greet;
+pub use greet::greet;
+```
+
+`src/greet.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::greet;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(greet("Ada"), "Hello, Ada!");
+    }
+}
+```
+
+`src/tests/greet_more.rs`
+
+```rust
+#[test]
+fn greets_empty_name() {
+    assert_eq!(crate::greet(""), "Hello, !");
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod greet;
+pub use greet::greet;
+```
+
+`src/greet.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::greet;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(greet("Ada"), "Hello, Ada!");
+    }
+}
+```
+
+### LELE008 `test_is_not_helper`
 
 A `#[test]` fn is not a helper — it carries no `// needed helper:` line.
 
 **Why:** Tests are entry points, not shared fixtures; annotating them hides the real helpers.
 
-**Bad** (reports LELE041):
+**Bad** (reports LELE008):
 
 `src/timeline/tests.rs`
 
@@ -2797,18 +2747,68 @@ fn test_usage() {}
 // no test_usage necessary
 ```
 
+### LELE009 `test_usage`
+
+Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+
+**Why:** The usage test is the function's documentation: it shows how to call it and proves it works.
+
+**Bad** (reports LELE009):
+
+`src/lib.rs`
+
+```rust
+mod greet;
+pub use greet::greet;
+```
+
+`src/greet.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod greet;
+pub use greet::greet;
+```
+
+`src/greet.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::greet;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(greet("Ada"), "Hello, Ada!");
+    }
+}
+```
+
 ## Style
 
-- [LELE023 `no_allow_attributes`](#lele023-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
+- [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
 - [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `methods/`, except `// needed helper: <why>` and a final `// no test_usage necessary`.
 
-### LELE023 `no_allow_attributes`
+### LELE024 `no_allow_attributes`
 
 No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
 
 **Why:** Every silenced lint is a decision the user made on purpose, recorded with its reason.
 
-**Bad** (reports LELE023):
+**Bad** (reports LELE024):
 
 `src/lib.rs`
 
@@ -2938,16 +2938,16 @@ mod tests {
 
 ## Crate config
 
-- [LELE021 `clippy_config_cargo`](#lele021-clippy_config_cargo): `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
-- [LELE022 `clippy_config_clippy`](#lele022-clippy_config_clippy): `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
+- [LELE028 `clippy_config_cargo`](#lele028-clippy_config_cargo): `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
+- [LELE029 `clippy_config_clippy`](#lele029-clippy_config_clippy): `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
-### LELE021 `clippy_config_cargo`
+### LELE028 `clippy_config_cargo`
 
 `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
 
 **Why:** Every crate gets the same strict baseline, so no crate silently allows unwraps, panics or lossy casts.
 
-**Bad** (reports LELE021):
+**Bad** (reports LELE028):
 
 `Cargo.toml`
 
@@ -2986,13 +2986,13 @@ exit = "deny"
 as_conversions = "deny"
 ```
 
-### LELE022 `clippy_config_clippy`
+### LELE029 `clippy_config_clippy`
 
 `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
 **Why:** Tests may unwrap and index freely; production code may not.
 
-**Bad** (reports LELE022):
+**Bad** (reports LELE029):
 
 `clippy.toml`
 

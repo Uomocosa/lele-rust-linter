@@ -10,7 +10,7 @@ pub struct BevyUiRestyle;
 
 impl BevyUiRestyle {
     pub const NAME: &'static str = "bevy_ui_restyle";
-    pub const CODE: &'static str = "LELEBEVY042";
+    pub const CODE: &'static str = "LELEBEVY005";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A file with a system that restyles UI (`&mut` on a styling component) must ship a preview that renders that system: a `*_ui_png_preview` with at least two `State`s when it is driven by input or state, or a `*_ui_mp4_preview` when it is driven by time.",

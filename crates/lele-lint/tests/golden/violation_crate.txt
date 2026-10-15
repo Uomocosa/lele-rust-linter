@@ -1,94 +1,94 @@
-Cargo.toml:1:0 LELE021 missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)
-bad_method_vis/mod.rs:1:0 LELE003 method file `player_new.rs` of struct `player` must be declared with `mod` (private), not `pub mod`
-clippy.toml:1:0 LELE022 clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true
+Cargo.toml:1:0 LELE028 missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)
+bad_method_vis/mod.rs:1:0 LELE004 method file `player_new.rs` of struct `player` must be declared with `mod` (private), not `pub mod`
+clippy.toml:1:0 LELE029 clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true
 src/bad_atomic/multiple_items.rs:1:0 LELE001 SHAPE-F fn-file `multiple_items.rs` must hold only the fn — move exposed `struct Config` to `config.rs` (O2-extraction)
 src/bad_atomic/multiple_items.rs:1:0 LELE001 filename mismatch — `multiple_items.rs` should be `config.rs`
 src/bad_atomic/multiple_items.rs:1:0 LELE001 only one public item per file — move `pub fn spawn` to `multiple_items_spawn.rs`
-src/bad_atomic/multiple_items.rs:1:0 LELE018 Config has a single named field without Deref and must be a tuple newtype like `pub struct Config(pub T)`; named single-field structs must derive Deref
-src/bad_atomic/multiple_items.rs:1:0 LELE040 `Config` is a behavior-free structs.rs; move it to `bad_atomic/__basic__/structs.rs`
+src/bad_atomic/multiple_items.rs:1:0 LELE020 `Config` is a behavior-free structs.rs; move it to `bad_atomic/__basic__/structs.rs`
+src/bad_atomic/multiple_items.rs:1:0 LELE022 Config has a single named field without Deref and must be a tuple newtype like `pub struct Config(pub T)`; named single-field structs must derive Deref
 src/bad_atomic_delegate/counter.rs:11:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_atomic_delegate/counter.rs:1:0 LELE012 method(s) `double` have >3 statements — extract each into `<type>_<method>.rs`
-src/bad_atomic_delegate/counter.rs:1:0 LELE018 Counter has a single named field without Deref and must be a tuple newtype like `pub struct Counter(pub T)`; named single-field structs must derive Deref
+src/bad_atomic_delegate/counter.rs:1:0 LELE017 method(s) `double` have >3 statements — extract each into `<type>_<method>.rs`
+src/bad_atomic_delegate/counter.rs:1:0 LELE022 Counter has a single named field without Deref and must be a tuple newtype like `pub struct Counter(pub T)`; named single-field structs must derive Deref
 src/bad_atomic_delegate/counter.rs:1:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_atomic_delegate/counter.rs:1:0 LELE032 inherent impl for `Counter` mixes shells with hand-written methods; split it into a plain block keeping double and an `#[atomic_delegates]` block with empty bodies moved to methods/counter/increment.rs (one `pub fn` + `test_usage` per file)
 src/bad_atomic_delegate/counter.rs:20:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_atomic_delegate/counter.rs:2:0 LELE033 `super::counter_increment` used outside `#[cfg(test)]` — write `bad_atomic_delegate::counter_increment` instead and add `use crate::bad_atomic_delegate;` at the top of the file
+src/bad_atomic_delegate/counter.rs:2:0 LELE013 `super::counter_increment` used outside `#[cfg(test)]` — write `bad_atomic_delegate::counter_increment` instead and add `use crate::bad_atomic_delegate;` at the top of the file
 src/bad_atomic_delegate/counter_increment.rs:1:0 LELE001 filename mismatch — `counter_increment.rs` looks like a method file for `Counter` but `increment` is not an atomic delegate; rename to `increment.rs`
-src/bad_atomic_delegate/counter_increment.rs:1:0 LELE033 `super::counter::Counter` used outside `#[cfg(test)]` — write `bad_atomic_delegate::counter::Counter` instead and add `use crate::bad_atomic_delegate;` at the top of the file
+src/bad_atomic_delegate/counter_increment.rs:1:0 LELE013 `super::counter::Counter` used outside `#[cfg(test)]` — write `bad_atomic_delegate::counter::Counter` instead and add `use crate::bad_atomic_delegate;` at the top of the file
 src/bad_atomic_delegate/counter_increment.rs:9:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_constructor_skip/defaults.rs:16:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_constructor_skip/defaults.rs:1:0 LELE006 file `bad_constructor_skip/defaults.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
-src/bad_constructor_skip/defaults.rs:1:0 LELE012 method(s) `production` have >3 statements — extract each into `<type>_<method>.rs`
-src/bad_constructor_skip/defaults.rs:1:0 LELE013 constructor impl for Defaults must not have #[rustfmt::skip]
-src/bad_constructor_skip/defaults.rs:1:0 LELE013 impl Default for Defaults must not have #[rustfmt::skip]
+src/bad_constructor_skip/defaults.rs:1:0 LELE009 file `bad_constructor_skip/defaults.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
+src/bad_constructor_skip/defaults.rs:1:0 LELE017 method(s) `production` have >3 statements — extract each into `<type>_<method>.rs`
+src/bad_constructor_skip/defaults.rs:1:0 LELE018 constructor impl for Defaults must not have #[rustfmt::skip]
+src/bad_constructor_skip/defaults.rs:1:0 LELE018 impl Default for Defaults must not have #[rustfmt::skip]
 src/bad_constructor_skip/defaults.rs:6:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_crate_path/connect.rs:1:0 LELE006 file `bad_crate_path/connect.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
-src/bad_crate_path/connect.rs:1:0 LELE020 `crate::bad_positional::Positional` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead
-src/bad_cross_domain/mod.rs:1:0 LELE004 cross-domain re-export `pub use crate::bad_positional::Positional` in mod.rs, move to lib.rs
+src/bad_crate_path/connect.rs:1:0 LELE009 file `bad_crate_path/connect.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
+src/bad_crate_path/connect.rs:1:0 LELE025 `crate::bad_positional::Positional` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead
+src/bad_cross_domain/mod.rs:1:0 LELE005 cross-domain re-export `pub use crate::bad_positional::Positional` in mod.rs, move to lib.rs
 src/bad_cross_domain/mod.rs:1:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_getter/score.rs:1:0 LELE010 trivial accessor `value` reads pub field `value`, make field public/pub(crate) and access directly
-src/bad_getter/score.rs:1:0 LELE012 one-liner method(s) `value` require `#[rustfmt::skip]` on the impl block
-src/bad_getter/score.rs:1:0 LELE018 Score has a single named field without Deref and must be a tuple newtype like `pub struct Score(pub T)`; named single-field structs must derive Deref
+src/bad_getter/score.rs:1:0 LELE014 trivial accessor `value` reads pub field `value`, make field public/pub(crate) and access directly
+src/bad_getter/score.rs:1:0 LELE017 one-liner method(s) `value` require `#[rustfmt::skip]` on the impl block
+src/bad_getter/score.rs:1:0 LELE022 Score has a single named field without Deref and must be a tuple newtype like `pub struct Score(pub T)`; named single-field structs must derive Deref
 src/bad_getter/score.rs:6:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_import/settings.rs:1:0 LELE011 use `use crate::bad_getter;` instead of `use crate::bad_getter::Score;`
-src/bad_import/settings.rs:1:0 LELE016 type `Settings` has exactly one caller in `bad_import/settings_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
-src/bad_import/settings.rs:1:0 LELE018 Settings has a single named field without Deref and must be a tuple newtype like `pub struct Settings(pub T)`; named single-field structs must derive Deref
+src/bad_import/settings.rs:1:0 LELE016 use `use crate::bad_getter;` instead of `use crate::bad_getter::Score;`
+src/bad_import/settings.rs:1:0 LELE020 `Settings` is a behavior-free structs.rs; move it to `bad_import/__basic__/structs.rs`
+src/bad_import/settings.rs:1:0 LELE022 Settings has a single named field without Deref and must be a tuple newtype like `pub struct Settings(pub T)`; named single-field structs must derive Deref
+src/bad_import/settings.rs:1:0 LELE027 type `Settings` has exactly one caller in `bad_import/settings_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
 src/bad_import/settings.rs:1:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_import/settings.rs:1:0 LELE040 `Settings` is a behavior-free structs.rs; move it to `bad_import/__basic__/structs.rs`
 src/bad_import/settings_new.rs:1:0 LELE001 filename mismatch — `settings_new.rs` looks like a method file for `Settings` but `new` is not an atomic delegate; rename to `new.rs`
-src/bad_import/settings_new.rs:1:0 LELE006 file `bad_import/settings_new.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
-src/bad_import/settings_new.rs:1:0 LELE033 `super::settings::Settings` used outside `#[cfg(test)]` — write `bad_import::settings::Settings` instead and add `use crate::bad_import;` at the top of the file
-src/bad_import/settings_new.rs:4:0 LELE020 `crate::bad_getter::Score` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead
+src/bad_import/settings_new.rs:1:0 LELE009 file `bad_import/settings_new.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
+src/bad_import/settings_new.rs:1:0 LELE013 `super::settings::Settings` used outside `#[cfg(test)]` — write `bad_import::settings::Settings` instead and add `use crate::bad_import;` at the top of the file
+src/bad_import/settings_new.rs:4:0 LELE025 `crate::bad_getter::Score` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead
 src/bad_logging/reporter.rs:1:0 LELE001 filename mismatch — `reporter.rs` should be `report.rs`
 src/bad_logging/reporter.rs:2:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_logging/reporter.rs:3:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_logging/reporter.rs:4:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_method_vis/mod.rs:2:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/bad_method_vis/player.rs:1:0 LELE016 type `Player` has exactly one caller in `bad_method_vis/player_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
-src/bad_method_vis/player.rs:1:0 LELE018 Player has a single named field without Deref and must be a tuple newtype like `pub struct Player(pub T)`; named single-field structs must derive Deref
-src/bad_method_vis/player.rs:1:0 LELE040 `Player` is a behavior-free structs.rs; move it to `bad_method_vis/__basic__/structs.rs`
+src/bad_method_vis/player.rs:1:0 LELE020 `Player` is a behavior-free structs.rs; move it to `bad_method_vis/__basic__/structs.rs`
+src/bad_method_vis/player.rs:1:0 LELE022 Player has a single named field without Deref and must be a tuple newtype like `pub struct Player(pub T)`; named single-field structs must derive Deref
+src/bad_method_vis/player.rs:1:0 LELE027 type `Player` has exactly one caller in `bad_method_vis/player_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
 src/bad_method_vis/player_new.rs:1:0 LELE001 filename mismatch — `player_new.rs` looks like a method file for `Player` but `new` is not an atomic delegate; rename to `new.rs`
-src/bad_method_vis/player_new.rs:1:0 LELE006 file `bad_method_vis/player_new.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
-src/bad_method_vis/player_new.rs:1:0 LELE033 `super::player::Player` used outside `#[cfg(test)]` — write `bad_method_vis::player::Player` instead and add `use crate::bad_method_vis;` at the top of the file
-src/bad_modrs_purity/mod.rs:1:0 LELE018 Score has a single named field without Deref and must be a tuple newtype like `pub struct Score(pub T)`; named single-field structs must derive Deref
-src/bad_modrs_purity/mod.rs:1:0 LELE019 mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — found `pub struct Score`; move it to its own file
-src/bad_modrs_purity/mod.rs:1:0 LELE040 `Score` is a behavior-free structs.rs; move it to `bad_modrs_purity/__basic__/structs.rs`
-src/bad_modrs_purity/mod.rs:5:0 LELE019 mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — found `pub fn tick`; move it to its own file
-src/bad_modrs_purity/mod.rs:7:0 LELE019 mod.rs may contain only `pub use` re-exports — private `use` imports are not allowed; re-export with `pub use` or move the import into a function file
-src/bad_modrs_purity/mod.rs:7:0 LELE033 `super::config_new` used outside `#[cfg(test)]` — write `bad_modrs_purity::config_new` instead and add `use crate::bad_modrs_purity;` at the top of the file
+src/bad_method_vis/player_new.rs:1:0 LELE009 file `bad_method_vis/player_new.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
+src/bad_method_vis/player_new.rs:1:0 LELE013 `super::player::Player` used outside `#[cfg(test)]` — write `bad_method_vis::player::Player` instead and add `use crate::bad_method_vis;` at the top of the file
+src/bad_modrs_purity/mod.rs:1:0 LELE020 `Score` is a behavior-free structs.rs; move it to `bad_modrs_purity/__basic__/structs.rs`
+src/bad_modrs_purity/mod.rs:1:0 LELE022 Score has a single named field without Deref and must be a tuple newtype like `pub struct Score(pub T)`; named single-field structs must derive Deref
+src/bad_modrs_purity/mod.rs:1:0 LELE023 mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — found `pub struct Score`; move it to its own file
+src/bad_modrs_purity/mod.rs:5:0 LELE023 mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — found `pub fn tick`; move it to its own file
+src/bad_modrs_purity/mod.rs:7:0 LELE013 `super::config_new` used outside `#[cfg(test)]` — write `bad_modrs_purity::config_new` instead and add `use crate::bad_modrs_purity;` at the top of the file
+src/bad_modrs_purity/mod.rs:7:0 LELE023 mod.rs may contain only `pub use` re-exports — private `use` imports are not allowed; re-export with `pub use` or move the import into a function file
 src/bad_orphan_method/orphan_load.rs:1:0 LELE001 filename mismatch — `orphan_load.rs` should be `load.rs`
-src/bad_orphan_method/orphan_load.rs:1:0 LELE017 orphan method file `orphan_load.rs` — no parent type found; rename to `load.rs` or `<type>_load.rs` with a `<type>.rs` defining the type
-src/bad_positional/positional.rs:1:0 LELE009 positional field access is not allowed, use named fields
-src/bad_positional/positional.rs:1:0 LELE009 positional field access is not allowed, use named fields
-src/bad_positional/positional.rs:1:0 LELE018 Positional has multiple fields and must use named fields like `{ a: A, b: B }`
+src/bad_orphan_method/orphan_load.rs:1:0 LELE003 orphan method file `orphan_load.rs` — no parent type found; rename to `load.rs` or `<type>_load.rs` with a `<type>.rs` defining the type
+src/bad_positional/positional.rs:1:0 LELE010 positional field access is not allowed, use named fields
+src/bad_positional/positional.rs:1:0 LELE010 positional field access is not allowed, use named fields
+src/bad_positional/positional.rs:1:0 LELE013 `super::positional_new` used outside `#[cfg(test)]` — write `bad_positional::positional_new` instead and add `use crate::bad_positional;` at the top of the file
+src/bad_positional/positional.rs:1:0 LELE022 Positional has multiple fields and must use named fields like `{ a: A, b: B }`
 src/bad_positional/positional.rs:1:0 LELE032 inherent impl for `Positional` must be annotated with `#[atomic_delegates]`; empty each body and move it to methods/positional/new.rs (one `pub fn` + `test_usage` per file)
-src/bad_positional/positional.rs:1:0 LELE033 `super::positional_new` used outside `#[cfg(test)]` — write `bad_positional::positional_new` instead and add `use crate::bad_positional;` at the top of the file
 src/bad_positional/positional.rs:23:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_positional/positional.rs:24:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
 src/bad_positional/positional_new.rs:1:0 LELE001 filename mismatch — `positional_new.rs` looks like a method file for `Positional` but `new` is not an atomic delegate; rename to `new.rs`
-src/bad_positional/positional_new.rs:1:0 LELE033 `super::positional::Positional` used outside `#[cfg(test)]` — write `bad_positional::positional::Positional` instead and add `use crate::bad_positional;` at the top of the file
+src/bad_positional/positional_new.rs:1:0 LELE013 `super::positional::Positional` used outside `#[cfg(test)]` — write `bad_positional::positional::Positional` instead and add `use crate::bad_positional;` at the top of the file
 src/bad_single_caller/consumer.rs:1:0 LELE001 filename mismatch — `consumer.rs` should be `handle.rs`
-src/bad_single_caller/consumer.rs:1:0 LELE033 `super::msg::Msg` used outside `#[cfg(test)]` — write `bad_single_caller::msg::Msg` instead and add `use crate::bad_single_caller;` at the top of the file
-src/bad_single_caller/msg.rs:1:0 LELE016 type `Msg` has exactly one caller in `bad_single_caller/consumer.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
-src/bad_single_caller/msg.rs:1:0 LELE040 `Msg` is a behavior-free enums.rs; move it to `bad_single_caller/__basic__/enums.rs`
-src/bad_single_field/config.rs:1:0 LELE018 Config is a single-field tuple newtype and must derive Deref
-src/bad_single_field/config.rs:1:0 LELE040 `Config` is a behavior-free newtypes.rs; move it to `bad_single_field/__basic__/newtypes.rs`
-src/bad_single_field/player.rs:1:0 LELE016 type `Player` has exactly one caller in `bad_method_vis/player_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
-src/bad_single_field/player.rs:1:0 LELE018 Player has a single named field without Deref and must be a tuple newtype like `pub struct Player(pub T)`; named single-field structs must derive Deref
-src/bad_single_field/player.rs:1:0 LELE040 `Player` is a behavior-free structs.rs; move it to `bad_single_field/__basic__/structs.rs`
+src/bad_single_caller/consumer.rs:1:0 LELE013 `super::msg::Msg` used outside `#[cfg(test)]` — write `bad_single_caller::msg::Msg` instead and add `use crate::bad_single_caller;` at the top of the file
+src/bad_single_caller/msg.rs:1:0 LELE020 `Msg` is a behavior-free enums.rs; move it to `bad_single_caller/__basic__/enums.rs`
+src/bad_single_caller/msg.rs:1:0 LELE027 type `Msg` has exactly one caller in `bad_single_caller/consumer.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
+src/bad_single_field/config.rs:1:0 LELE020 `Config` is a behavior-free newtypes.rs; move it to `bad_single_field/__basic__/newtypes.rs`
+src/bad_single_field/config.rs:1:0 LELE022 Config is a single-field tuple newtype and must derive Deref
+src/bad_single_field/player.rs:1:0 LELE020 `Player` is a behavior-free structs.rs; move it to `bad_single_field/__basic__/structs.rs`
+src/bad_single_field/player.rs:1:0 LELE022 Player has a single named field without Deref and must be a tuple newtype like `pub struct Player(pub T)`; named single-field structs must derive Deref
+src/bad_single_field/player.rs:1:0 LELE027 type `Player` has exactly one caller in `bad_method_vis/player_new.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
 src/bad_snake_case/PascalName.rs:1:0 LELE001 filename mismatch — `PascalName.rs` should be `pascal_item.rs`
 src/bad_snake_case/PascalName.rs:1:0 LELE002 filename `PascalName` is not snake_case — rename it to use lowercase letters, digits, and underscores
-src/bad_snake_case/PascalName.rs:1:0 LELE018 PascalItem has a single named field without Deref and must be a tuple newtype like `pub struct PascalItem(pub T)`; named single-field structs must derive Deref
-src/bad_snake_case/PascalName.rs:1:0 LELE040 `PascalItem` is a behavior-free structs.rs; move it to `bad_snake_case/__basic__/structs.rs`
-src/bad_stutter/consume.rs:3:0 LELE025 stuttered path `report::Report` adds no information — import `Report` once and use `Report` directly
+src/bad_snake_case/PascalName.rs:1:0 LELE020 `PascalItem` is a behavior-free structs.rs; move it to `bad_snake_case/__basic__/structs.rs`
+src/bad_snake_case/PascalName.rs:1:0 LELE022 PascalItem has a single named field without Deref and must be a tuple newtype like `pub struct PascalItem(pub T)`; named single-field structs must derive Deref
+src/bad_stutter/consume.rs:3:0 LELE011 stuttered path `report::Report` adds no information — import `Report` once and use `Report` directly
 src/bad_test_inline/data.rs:1:0 LELE001 filename mismatch — `data.rs` should be `load_data.rs`
 src/bad_test_inline/tests:1:0 LELE007 unit tests must be in the same file as the primary item — delete `bad_test_inline/tests` and move the tests inline
 src/bad_test_missing/compute.rs:1:0 LELE001 filename mismatch — `compute.rs` should be `compute_score.rs`
-src/bad_test_missing/compute.rs:1:0 LELE006 file `bad_test_missing/compute.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
+src/bad_test_missing/compute.rs:1:0 LELE009 file `bad_test_missing/compute.rs` must contain a `#[cfg(test)] mod tests { fn test_usage() { ... } }` block, or add `// no test_usage necessary` as its last line to opt out
 src/bad_test_missing/compute.rs:5:0 LELE031 comments are not allowed in the methods layout (code, tests and logs only)
-src/freenet/freenet_client.rs:1:0 LELE027 type `FreenetClient` repeats parent module `freenet` — rename to `Client` (`freenet::Client`)
-src/freenet/freenet_client.rs:1:0 LELE040 `FreenetClient` is a behavior-free structs.rs; move it to `freenet/__basic__/structs.rs`
-src/report.rs:1:0 LELE016 type `Report` has exactly one caller in `bad_stutter/consume.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file
-src/report.rs:1:0 LELE018 Report has a single named field without Deref and must be a tuple newtype like `pub struct Report(pub T)`; named single-field structs must derive Deref
-src/report.rs:1:0 LELE024 public type `Report` in root module `report` is not re-exported at the crate root — add `pub use report::Report;` to lib.rs
-src/report.rs:1:0 LELE040 `Report` is a behavior-free structs.rs; move it to `__basic__/structs.rs`
+src/freenet/freenet_client.rs:1:0 LELE012 type `FreenetClient` repeats parent module `freenet` — rename to `Client` (`freenet::Client`)
+src/freenet/freenet_client.rs:1:0 LELE020 `FreenetClient` is a behavior-free structs.rs; move it to `freenet/__basic__/structs.rs`
+src/report.rs:1:0 LELE015 public type `Report` in root module `report` is not re-exported at the crate root — add `pub use report::Report;` to lib.rs
+src/report.rs:1:0 LELE020 `Report` is a behavior-free structs.rs; move it to `__basic__/structs.rs`
+src/report.rs:1:0 LELE022 Report has a single named field without Deref and must be a tuple newtype like `pub struct Report(pub T)`; named single-field structs must derive Deref
+src/report.rs:1:0 LELE027 type `Report` has exactly one caller in `bad_stutter/consume.rs` and no atomic-delegate methods — define it in the caller's file instead of its own file

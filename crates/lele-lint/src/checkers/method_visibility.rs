@@ -10,7 +10,7 @@ pub struct MethodVisibility;
 
 impl MethodVisibility {
     pub const NAME: &'static str = "method_visibility";
-    pub const CODE: &'static str = "LELE003";
+    pub const CODE: &'static str = "LELE004";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.",

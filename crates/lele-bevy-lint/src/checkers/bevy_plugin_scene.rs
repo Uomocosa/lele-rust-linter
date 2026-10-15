@@ -10,7 +10,7 @@ pub struct BevyPluginScene;
 
 impl BevyPluginScene {
     pub const NAME: &'static str = "bevy_plugin_scene";
-    pub const CODE: &'static str = "LELEBEVY038";
+    pub const CODE: &'static str = "LELEBEVY006";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.",

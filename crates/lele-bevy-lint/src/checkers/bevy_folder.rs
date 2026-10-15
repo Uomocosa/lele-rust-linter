@@ -10,7 +10,7 @@ pub struct BevyFolder;
 
 impl BevyFolder {
     pub const NAME: &'static str = "bevy_folder";
-    pub const CODE: &'static str = "LELEBEVY008";
+    pub const CODE: &'static str = "LELEBEVY002";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.",

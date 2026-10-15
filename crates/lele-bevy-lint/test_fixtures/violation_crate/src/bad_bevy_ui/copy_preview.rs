@@ -1,5 +1,5 @@
 // The preview renders a hand-copied twin of the production spawner, so edits
-// to `spawn_status` never change the artifact (LELEBEVY029).
+// to `spawn_status` never change the artifact (LELEBEVY003).
 
 pub struct Spawner;
 

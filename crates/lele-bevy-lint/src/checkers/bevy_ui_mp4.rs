@@ -10,7 +10,7 @@ pub struct BevyUiMp4;
 
 impl BevyUiMp4 {
     pub const NAME: &'static str = "bevy_ui_mp4";
-    pub const CODE: &'static str = "LELEBEVY037";
+    pub const CODE: &'static str = "LELEBEVY004";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A file that spawns UI reachable from production and drives it over time (`Time`, `Timer`, animation) must ship a `*_ui_mp4_preview` test whose `Scene` has a `Timeline`.",

@@ -1,5 +1,5 @@
 // Registers its spawner through a chained `add_systems` call: the inner call's
-// systems are production roots too, so the spawn needs a png preview (LELEBEVY029).
+// systems are production roots too, so the spawn needs a png preview (LELEBEVY003).
 
 pub struct Spawner;
 pub struct App;

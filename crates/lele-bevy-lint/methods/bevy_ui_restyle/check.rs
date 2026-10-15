@@ -110,7 +110,10 @@ mod tests {
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }",
         );
         assert_eq!(found.len(), 1);
-        assert_eq!(found[0].code, "LELEBEVY042");
+        assert_eq!(
+            found[0].code,
+            checkers::bevy_ui_restyle::BevyUiRestyle::CODE
+        );
     }
 
     #[test]

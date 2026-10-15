@@ -10,7 +10,7 @@ pub struct BevyUi;
 
 impl BevyUi {
     pub const NAME: &'static str = "bevy_ui";
-    pub const CODE: &'static str = "LELEBEVY029";
+    pub const CODE: &'static str = "LELEBEVY003";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A file whose visual spawn is reachable from production must ship a `*_ui_png_preview` test whose `Scene::build` renders that spawn (or the file's `Plugin`) through `lele_bevy_preview::run(...)`.",

@@ -82,6 +82,6 @@ mod tests {
         );
         let violations = check(&checkers::bevy_ui_mp4::BevyUiMp4, &project);
         assert_eq!(violations.len(), 1);
-        assert_eq!(violations[0].code, "LELEBEVY037");
+        assert_eq!(violations[0].code, checkers::bevy_ui_mp4::BevyUiMp4::CODE);
     }
 }

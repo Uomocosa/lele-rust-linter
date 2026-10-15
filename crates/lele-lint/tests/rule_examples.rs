@@ -155,3 +155,16 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
     }
     Ok(())
 }
+
+/// Codes are exactly `LELE001..LELE<count>`, in registration order.
+#[test]
+fn codes_are_contiguous_in_registration_order() {
+    for (index, checker) in build_checkers().iter().enumerate() {
+        assert_eq!(
+            checker.code(),
+            format!("LELE{:03}", index + 1),
+            "{}",
+            checker.name()
+        );
+    }
+}

@@ -10,7 +10,7 @@ pub struct TestIsNotHelper;
 
 impl TestIsNotHelper {
     pub const NAME: &'static str = "test_is_not_helper";
-    pub const CODE: &'static str = "LELE041";
+    pub const CODE: &'static str = "LELE008";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A `#[test]` fn is not a helper — it carries no `// needed helper:` line.",

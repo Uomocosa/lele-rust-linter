@@ -37,10 +37,10 @@ mod tests {
             Origin::Src,
             Path::new("a.rs"),
             7,
-            "LELEBEVY029",
+            "X",
             String::from("m"),
         );
-        assert_eq!(violation.code, "LELEBEVY029");
+        assert_eq!(violation.code, "X");
         assert_eq!(violation.location, Location::Site { line: 7, col: 0 });
     }
 }

@@ -1,6 +1,6 @@
 // A Plugin whose build spawns UI lives one level below it (in `bevy_systems/`),
 // so `dir_spawns_ui` is false; the system it registers still needs a scene
-// preview (LELEBEVY038).
+// preview (LELEBEVY006).
 
 pub struct SpreadPlugin;
 

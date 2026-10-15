@@ -10,7 +10,7 @@ pub struct SingleCallerType;
 
 impl SingleCallerType {
     pub const NAME: &'static str = "single_caller_type";
-    pub const CODE: &'static str = "LELE016";
+    pub const CODE: &'static str = "LELE027";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "A type with no methods that is used from exactly one file is defined privately in that file.",

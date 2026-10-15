@@ -10,7 +10,7 @@ pub struct ClippyConfigCargo;
 
 impl ClippyConfigCargo {
     pub const NAME: &'static str = "clippy_config_cargo";
-    pub const CODE: &'static str = "LELE021";
+    pub const CODE: &'static str = "LELE028";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Config,
         summary: "`Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).",

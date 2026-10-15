@@ -10,7 +10,7 @@ pub struct MethodFileCoLocation;
 
 impl MethodFileCoLocation {
     pub const NAME: &'static str = "method_file_co_location";
-    pub const CODE: &'static str = "LELE017";
+    pub const CODE: &'static str = "LELE003";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.",

@@ -1,6 +1,6 @@
 ---
 name: bevy-ui-preview
-description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY005/LELEBEVY008/LELEBEVY029/LELEBEVY037/LELEBEVY042/LELEBEVY038/LELEBEVY039), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
+description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY001/LELEBEVY002/LELEBEVY003/LELEBEVY004/LELEBEVY005/LELEBEVY006/LELEBEVY007), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
 ---
 
 # Bevy UI previews
@@ -124,13 +124,13 @@ cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview -- --nocapture
 
 ## Rules
 
-### LELEBEVY005 `bevy_export`
+### LELEBEVY001 `bevy_export`
 
 A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.
 
 **Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
 
-**Bad** (reports LELEBEVY005):
+**Bad** (reports LELEBEVY001):
 
 `src/inventory/mod.rs`
 
@@ -163,13 +163,13 @@ pub use poll_inv::poll_inv;
 ```
 
 
-### LELEBEVY008 `bevy_folder`
+### LELEBEVY002 `bevy_folder`
 
 A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.
 
 **Why:** Systems are the domain's Bevy edge; keeping them in one folder makes the plugin surface readable.
 
-**Bad** (reports LELEBEVY008):
+**Bad** (reports LELEBEVY002):
 
 `src/enemy/tick_enemies.rs`
 
@@ -208,13 +208,13 @@ pub fn tick_enemies(_q: Query) {}
 ```
 
 
-### LELEBEVY029 `bevy_ui`
+### LELEBEVY003 `bevy_ui`
 
 A file whose visual spawn is reachable from production must ship a `*_ui_png_preview` test whose `Scene::build` renders that spawn (or the file's `Plugin`) through `lele_bevy_preview::run(...)`.
 
 **Why:** UI that is never rendered cannot be reviewed; the named preview test is the contract that forces an artifact for every production visual, and naming the real spawner keeps it from rendering a copy.
 
-**Bad** (reports LELEBEVY029):
+**Bad** (reports LELEBEVY003):
 
 `src/discovery/ui/spawn_root.rs`
 
@@ -265,13 +265,13 @@ mod tests {
 ```
 
 
-### LELEBEVY037 `bevy_ui_mp4`
+### LELEBEVY004 `bevy_ui_mp4`
 
 A file that spawns UI reachable from production and drives it over time (`Time`, `Timer`, animation) must ship a `*_ui_mp4_preview` test whose `Scene` has a `Timeline`.
 
 **Why:** Static frames cannot show motion; a time-driven UI needs a recorded clip to be reviewable. One-tick input changes are covered by `bevy_ui_restyle`'s before/after states instead.
 
-**Bad** (reports LELEBEVY037):
+**Bad** (reports LELEBEVY004):
 
 `src/discovery/ui/sync_room_list.rs`
 
@@ -327,13 +327,13 @@ mod tests {
 ```
 
 
-### LELEBEVY042 `bevy_ui_restyle`
+### LELEBEVY005 `bevy_ui_restyle`
 
 A file with a system that restyles UI (`&mut` on a styling component) must ship a preview that renders that system: a `*_ui_png_preview` with at least two `State`s when it is driven by input or state, or a `*_ui_mp4_preview` when it is driven by time.
 
 **Why:** A restyle never changes the set of entities, so a spawn-only preview cannot see it; only a rendering that names the restyle system (with a before/after pair, or a clip for motion) proves the change lands.
 
-**Bad** (reports LELEBEVY042):
+**Bad** (reports LELEBEVY005):
 
 `src/discovery/ui/bevy_systems/gate_create.rs`
 
@@ -391,13 +391,13 @@ mod tests {
 ```
 
 
-### LELEBEVY038 `bevy_plugin_scene`
+### LELEBEVY006 `bevy_plugin_scene`
 
 A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 
 **Why:** A plugin is the assembly point for a whole screen; its scene preview proves the assembled screen renders.
 
-**Bad** (reports LELEBEVY038):
+**Bad** (reports LELEBEVY006):
 
 `src/discovery/ui/default_ui_plugin.rs`
 
@@ -458,13 +458,13 @@ mod tests {
 ```
 
 
-### LELEBEVY039 `preview_routing`
+### LELEBEVY007 `preview_routing`
 
 Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.
 
 **Why:** A preview test that renders and asserts nothing can pass while producing a blank frame; routing through the harness and checking its `Result` makes `NoVisual`/`StaticClip` fail the test.
 
-**Bad** (reports LELEBEVY039):
+**Bad** (reports LELEBEVY007):
 
 `src/discovery/ui/spawn_root.rs`
 

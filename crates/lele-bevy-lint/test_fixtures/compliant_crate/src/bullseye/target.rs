@@ -1,6 +1,6 @@
 // Spawns a UI visual and ships the required ui_png preview: a `#[test]` whose
 // `Scene::build` registers the real spawner and whose `run` result is checked
-// (LELEBEVY029 + LELEBEVY039 compliant).
+// (LELEBEVY003 + LELEBEVY007 compliant).
 
 #[derive(Component)]
 pub struct Target;

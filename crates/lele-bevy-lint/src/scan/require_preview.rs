@@ -30,7 +30,7 @@ mod tests {
             Origin::Src,
             Path::new("a.rs"),
             1,
-            "LELEBEVY029",
+            "X",
             String::from("no preview"),
         )
     }
@@ -39,7 +39,7 @@ mod tests {
     fn test_usage() {
         let file = syn::parse_str("pub fn setup() {}").unwrap();
         let found = require_preview(&file, scan::PreviewKind::Png, missing);
-        assert_eq!(found.map(|violation| violation.code), Some("LELEBEVY029"));
+        assert_eq!(found.map(|violation| violation.code), Some("X"));
     }
 
     #[test]

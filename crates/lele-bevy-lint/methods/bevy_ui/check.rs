@@ -73,7 +73,7 @@ mod tests {
     fn test_usage() {
         let found = violations("pub fn setup(s: &mut S) { s.spawn((Node,)); }");
         assert_eq!(found.len(), 1);
-        assert_eq!(found[0].code, "LELEBEVY029");
+        assert_eq!(found[0].code, checkers::bevy_ui::BevyUi::CODE);
     }
 
     #[test]

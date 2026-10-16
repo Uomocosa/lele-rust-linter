@@ -19,14 +19,7 @@ impl CallGraph {
             callees: HashMap::new(),
             systems: HashSet::new(),
         };
-        for source in project.sources() {
-            for item in &source.file.items {
-                if scan::is_test_module(item) {
-                    continue;
-                }
-                visit_item(&mut graph, item);
-            }
-        }
+        visit_production(&mut graph, project);
         graph
     }
 
@@ -44,6 +37,21 @@ impl CallGraph {
         let mut roots = vec!["main".to_string(), "build".to_string(), "setup".to_string()];
         roots.extend(self.systems.iter().cloned());
         roots
+    }
+}
+
+// needed helper: walks every production item, skipping test modules and test-only files
+fn visit_production(graph: &mut CallGraph, project: &Project) {
+    let test_only = scan::test_only_files(project);
+    for source in project.sources() {
+        if test_only.contains(source.relative_path) {
+            continue;
+        }
+        for item in &source.file.items {
+            if !scan::is_test_module(item) {
+                visit_item(graph, item);
+            }
+        }
     }
 }
 

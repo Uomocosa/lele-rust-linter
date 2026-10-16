@@ -246,7 +246,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -300,7 +300,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup).add_systems(Update, super::tick);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -371,7 +371,7 @@ mod tests {
 
     fn preview_build(app: &mut App) {
         app.add_systems(Update, gate_create);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -514,7 +514,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -536,7 +536,7 @@ mod tests {
 
 ### LELEBEVY008 `preview_centered`
 
-A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::center_roots`.
+A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.
 
 **Why:** Parentless UI nodes lay out at the window's (0,0), so isolated system/component previews pile into the top-left corner, overlap each other and hide state changes; `Plugin`/`App` previews keep their real layout and are exempt.
 

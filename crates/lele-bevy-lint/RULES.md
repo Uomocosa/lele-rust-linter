@@ -104,7 +104,7 @@ pub fn tick_enemies(_q: Query) {}
 - [LELEBEVY005 `bevy_ui_restyle`](#lelebevy005-bevy_ui_restyle): A file with a system that restyles UI (`&mut` on a styling component) must ship a preview that renders that system: a `*_ui_png_preview` with at least two `State`s when it is driven by input or state, or a `*_ui_mp4_preview` when it is driven by time.
 - [LELEBEVY006 `bevy_plugin_scene`](#lelebevy006-bevy_plugin_scene): A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 - [LELEBEVY007 `preview_routing`](#lelebevy007-preview_routing): Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.
-- [LELEBEVY008 `preview_centered`](#lelebevy008-preview_centered): A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::center_roots`.
+- [LELEBEVY008 `preview_centered`](#lelebevy008-preview_centered): A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.
 
 ### LELEBEVY003 `bevy_ui`
 
@@ -144,7 +144,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -197,7 +197,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup).add_systems(Update, super::tick);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -267,7 +267,7 @@ mod tests {
 
     fn preview_build(app: &mut App) {
         app.add_systems(Update, gate_create);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -408,7 +408,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -429,7 +429,7 @@ mod tests {
 
 ### LELEBEVY008 `preview_centered`
 
-A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::center_roots`.
+A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.
 
 **Why:** Parentless UI nodes lay out at the window's (0,0), so isolated system/component previews pile into the top-left corner, overlap each other and hide state changes; `Plugin`/`App` previews keep their real layout and are exempt.
 

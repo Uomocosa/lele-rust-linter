@@ -14,7 +14,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
     }
 
     fn rest(_world: &mut World) {}

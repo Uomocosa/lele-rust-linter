@@ -7,9 +7,13 @@ use crate::scan;
 pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::collect(project);
     let extra = scan::require_visuals(project);
+    let test_only = scan::test_only_files(project);
     let mut violations = Vec::new();
 
     for source in project.sources() {
+        if test_only.contains(source.relative_path) {
+            continue;
+        }
         let rel_path = source.relative_path;
         let file = source.file;
         let Some(visual) = scan::reachable_visual(file, &graph, &extra) else {

@@ -24,7 +24,7 @@ pub fn check(
                     preview.line,
                     checkers::preview_centered::PreviewCentered::CODE,
                     format!(
-                        "`fn {}` previews a `Kind::{kind}` scene without centring it; parent its nodes under `lele_bevy_preview::scene::centered_root()` or chain `lele_bevy_preview::scene::center_roots` after the spawning system",
+                        "`fn {}` previews a `Kind::{kind}` scene without centring it; parent its nodes under `lele_bevy_preview::scene::centered_root()` or chain `lele_bevy_preview::scene::bevy_systems::center_roots` after the spawning system",
                         preview.name
                     ),
                 ));
@@ -98,7 +98,7 @@ mod tests {
     fn test_usage_center_roots_in_build_is_clean() {
         let found = messages(&preview(
             "System",
-            "app.add_systems(Startup, (spawn_rows, lele_bevy_preview::scene::center_roots).chain());",
+            "app.add_systems(Startup, (spawn_rows, lele_bevy_preview::scene::bevy_systems::center_roots).chain());",
         ));
         assert_eq!(found, Vec::<String>::new());
     }

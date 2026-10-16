@@ -38,6 +38,7 @@ pub mod scene_literals;
 pub mod scene_usage;
 pub mod site_violation;
 pub mod system_args;
+pub mod test_only_files;
 pub mod time_drivers;
 
 pub use build_uses::build_uses;
@@ -74,4 +75,5 @@ pub use scene_literals::scene_literals;
 pub use scene_usage::scene_usage;
 pub use site_violation::site_violation;
 pub use system_args::system_args;
+pub use test_only_files::test_only_files;
 pub use time_drivers::time_drivers;

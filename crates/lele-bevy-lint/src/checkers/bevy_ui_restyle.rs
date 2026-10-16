@@ -45,6 +45,7 @@ mod tests {
 
     fn preview_build(app: &mut App) {
         app.add_systems(Update, gate_create);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
     }
 
     fn rest(_world: &mut World) {}

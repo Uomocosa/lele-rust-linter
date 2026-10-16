@@ -5,5 +5,6 @@ mod discarded;
 mod missing_mp4;
 mod no_contract;
 mod restyle;
+mod uncentered;
 
 pub use cursor::spawn_cursor;

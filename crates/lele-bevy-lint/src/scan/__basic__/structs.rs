@@ -10,6 +10,7 @@ pub struct FoundVisual {
 pub struct SceneUsage {
     pub build_uses: Vec<String>,
     pub state_count: usize,
+    pub uncentered_kinds: Vec<String>,
 }
 
 pub struct Restyle {

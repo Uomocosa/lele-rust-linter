@@ -33,6 +33,7 @@ mod tests {
             scene: scan::SceneUsage {
                 build_uses: uses.iter().map(|used| (*used).to_string()).collect(),
                 state_count: 1,
+                uncentered_kinds: Vec::new(),
             },
         }
     }

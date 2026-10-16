@@ -6,6 +6,7 @@ pub use basic::type_aliases::ModuleFns;
 
 pub mod build_uses;
 pub mod call_graph;
+pub mod centers_preview;
 pub mod closure_over;
 pub mod collect_previews;
 pub mod count_states;
@@ -41,6 +42,7 @@ pub mod time_drivers;
 
 pub use build_uses::build_uses;
 pub use call_graph::CallGraph;
+pub use centers_preview::centers_preview;
 pub use closure_over::closure_over;
 pub use collect_previews::collect_previews;
 pub use count_states::count_states;

@@ -85,6 +85,7 @@ fn violation_crate_reports_exactly_the_expected_findings() {
         ("src/bad_bevy_ui/no_contract.rs", code_of("bevy_ui")),
         ("src/bad_bevy_ui/no_contract.rs", code_of("preview_routing")),
         ("src/bad_bevy_ui/restyle.rs", code_of("bevy_ui_restyle")),
+        ("src/bad_bevy_ui/uncentered.rs", code_of("preview_centered")),
     ]);
     let missing: Vec<_> = wanted.difference(&found).collect();
     let unexpected: Vec<_> = found.difference(&wanted).collect();

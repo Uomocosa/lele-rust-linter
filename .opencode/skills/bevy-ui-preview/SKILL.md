@@ -1,6 +1,6 @@
 ---
 name: bevy-ui-preview
-description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY001/LELEBEVY002/LELEBEVY003/LELEBEVY004/LELEBEVY005/LELEBEVY006/LELEBEVY007), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
+description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY001/LELEBEVY002/LELEBEVY003/LELEBEVY004/LELEBEVY005/LELEBEVY006/LELEBEVY007/LELEBEVY008), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
 ---
 
 # Bevy UI previews
@@ -246,6 +246,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -299,6 +300,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup).add_systems(Update, super::tick);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -369,6 +371,7 @@ mod tests {
 
     fn preview_build(app: &mut App) {
         app.add_systems(Update, gate_create);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -511,6 +514,7 @@ mod tests {
 
     fn build(app: &mut App) {
         app.add_systems(Startup, super::setup);
+        app.add_systems(PostStartup, lele_bevy_preview::scene::center_roots);
     }
 
     fn rest(_world: &mut World) {}
@@ -519,6 +523,88 @@ mod tests {
     fn spawn_root_ui_png_preview() {
         let scene = Scene {
             name: String::from("spawn_root"),
+            kind: Kind::System,
+            build,
+            states: vec![State { label: String::from("rest"), apply: rest }],
+            timeline: None,
+        };
+        run(&scene, &Config::default(), "x").expect("preview");
+    }
+}
+```
+
+
+### LELEBEVY008 `preview_centered`
+
+A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::center_roots`.
+
+**Why:** Parentless UI nodes lay out at the window's (0,0), so isolated system/component previews pile into the top-left corner, overlap each other and hide state changes; `Plugin`/`App` previews keep their real layout and are exempt.
+
+**Bad** (reports LELEBEVY008):
+
+`src/discovery/ui/room_row.rs`
+
+```rust
+pub fn highlight(s: &mut S) {}
+
+#[cfg(test)]
+mod tests {
+    use lele_bevy_preview::run;
+    use lele_bevy_preview::scene::{Kind, Scene, State};
+
+    fn spawn_rows(mut commands: Commands) {
+        commands.spawn((Node::default(),));
+    }
+
+    fn build(app: &mut App) {
+        app.add_systems(Startup, spawn_rows);
+        app.add_systems(Update, super::highlight);
+    }
+
+    fn rest(_world: &mut World) {}
+
+    #[test]
+    fn room_row_ui_png_preview() {
+        let scene = Scene {
+            name: String::from("room_row"),
+            kind: Kind::System,
+            build,
+            states: vec![State { label: String::from("rest"), apply: rest }],
+            timeline: None,
+        };
+        run(&scene, &Config::default(), "x").expect("preview");
+    }
+}
+```
+
+**Good:**
+
+`src/discovery/ui/room_row.rs`
+
+```rust
+pub fn highlight(s: &mut S) {}
+
+#[cfg(test)]
+mod tests {
+    use lele_bevy_preview::run;
+    use lele_bevy_preview::scene::{Kind, Scene, State};
+
+    fn spawn_rows(mut commands: Commands) {
+        let root = commands.spawn(lele_bevy_preview::scene::centered_root()).id();
+        commands.spawn((ChildOf(root), Node::default()));
+    }
+
+    fn build(app: &mut App) {
+        app.add_systems(Startup, spawn_rows);
+        app.add_systems(Update, super::highlight);
+    }
+
+    fn rest(_world: &mut World) {}
+
+    #[test]
+    fn room_row_ui_png_preview() {
+        let scene = Scene {
+            name: String::from("room_row"),
             kind: Kind::System,
             build,
             states: vec![State { label: String::from("rest"), apply: rest }],

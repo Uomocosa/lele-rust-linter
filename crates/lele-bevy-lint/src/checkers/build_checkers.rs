@@ -10,6 +10,7 @@ pub fn build_checkers() -> Vec<Box<dyn Checker>> {
     checkers::bevy_ui_restyle::BevyUiRestyle::register(&mut checkers);
     checkers::bevy_plugin_scene::BevyPluginScene::register(&mut checkers);
     checkers::preview_routing::PreviewRouting::register(&mut checkers);
+    checkers::preview_centered::PreviewCentered::register(&mut checkers);
     checkers
 }
 

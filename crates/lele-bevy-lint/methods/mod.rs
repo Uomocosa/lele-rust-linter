@@ -4,4 +4,5 @@ pub mod bevy_plugin_scene;
 pub mod bevy_ui;
 pub mod bevy_ui_mp4;
 pub mod bevy_ui_restyle;
+pub mod preview_centered;
 pub mod preview_routing;

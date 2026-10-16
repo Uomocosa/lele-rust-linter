@@ -130,7 +130,7 @@ pub fn check(
     violations
 }
 
-// needed helper: build an E032 violation anchored to a src file
+// needed helper: build an LELE032 violation anchored to a src file
 fn file_violation(project: &Project, rel_path: &Path, message: String) -> RuleViolation {
     RuleViolation::file(
         project.src_dir.join(rel_path),

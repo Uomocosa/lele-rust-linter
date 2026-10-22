@@ -67,7 +67,7 @@ pub fn check(
 
             if !methods_over_three.is_empty() && !is_trait_impl {
                 let names = names_str(&methods_over_three);
-                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
                         "method(s) `{names}` have >3 statements — extract each into `<type>_<method>.rs`"
                     )));
                 continue;
@@ -101,7 +101,7 @@ pub fn check(
                 {
                     for method in &one_liners {
                         if FnBody(&method.block).is_delegate_call() && !is_one_line_body(method) {
-                            violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
                                     "one-liner method `{}` body must be on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
@@ -135,7 +135,7 @@ pub fn check(
                             ctors.join(", ")
                         )
                     };
-                    violations.push(RuleViolation::file(
+                    violations.push(RuleViolation::from_file(
                         project.src_dir.join(rel_path),
                         checkers::atomic_delegates::AtomicDelegates::CODE,
                         message,

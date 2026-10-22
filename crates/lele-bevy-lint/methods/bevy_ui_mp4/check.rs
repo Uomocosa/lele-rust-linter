@@ -5,7 +5,7 @@ use crate::checkers;
 use crate::scan;
 
 pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<RuleViolation> {
-    let graph = scan::CallGraph::collect(project);
+    let graph = scan::CallGraph::from(project);
     let extra = scan::BevyProject(project).require_visuals();
     let test_only = scan::BevyProject(project).test_only_files();
     let mut violations = Vec::new();

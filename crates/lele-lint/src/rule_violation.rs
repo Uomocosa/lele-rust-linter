@@ -12,7 +12,7 @@ pub struct RuleViolation {
 
 impl RuleViolation {
     #[must_use]
-    pub fn file(file: PathBuf, code: &'static str, message: String) -> Self {
+    pub fn from_file(file: PathBuf, code: &'static str, message: String) -> Self {
         Self {
             file,
             location: Location::File,
@@ -22,7 +22,7 @@ impl RuleViolation {
     }
 
     #[must_use]
-    pub fn site(
+    pub fn from_site(
         file: PathBuf,
         line: usize,
         col: usize,
@@ -47,10 +47,11 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let file_level = RuleViolation::file(PathBuf::from("a.rs"), "LELE001", String::from("m"));
+        let file_level =
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("m"));
         assert_eq!(file_level.location, Location::File);
         let site_level =
-            RuleViolation::site(PathBuf::from("a.rs"), 7, 3, "LELE002", String::from("m"));
+            RuleViolation::from_site(PathBuf::from("a.rs"), 7, 3, "LELE002", String::from("m"));
         assert_eq!(site_level.location, Location::Site { line: 7, col: 3 });
     }
 }

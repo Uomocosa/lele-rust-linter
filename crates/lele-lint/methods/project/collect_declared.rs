@@ -42,7 +42,9 @@ pub fn collect_declared(project: &Project) -> BTreeMap<String, common::DeclaredT
                         if entry.cfgs.is_empty() {
                             entry.cfgs = file_cfgs(&cfg_map, rel_path);
                         }
-                        entry.methods.insert(method.sig.ident.to_string());
+                        entry
+                            .methods
+                            .insert(ImplBlock(impl_block).delegate_body_name(&method.sig.ident));
                     }
                 }
             }
@@ -131,5 +133,20 @@ mod tests {
         assert!(declared
             .get("foo")
             .is_some_and(|d| d.methods.contains("check")));
+    }
+
+    #[test]
+    fn test_usage_names_generic_trait_shell_after_type_args() {
+        let mut project = Project::default();
+        let file: syn::File = syn::parse_str(
+            "pub struct Temperature;\n#[atomic_delegates]\nimpl From<Celsius> for Temperature { fn from(c: Celsius) -> Self {} }\n#[atomic_delegates]\nimpl From<Kelvin> for Temperature { fn from(k: Kelvin) -> Self {} }",
+        )
+        .unwrap();
+        project
+            .parsed_files
+            .insert(PathBuf::from("temperature.rs"), file);
+        let declared = collect_declared(&project);
+        let methods = &declared["temperature"].methods;
+        assert!(methods.contains("from_celsius") && methods.contains("from_kelvin"));
     }
 }

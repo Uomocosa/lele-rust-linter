@@ -13,7 +13,7 @@ impl NoFreeFunctions {
     pub const CODE: &'static str = "LELE034";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
-        summary: "A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `bin/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.",
+        summary: "A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.",
         why: "`src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.",
         bad: &[
             ExampleFile {

@@ -45,7 +45,7 @@ fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleViola
     }
     let name = struct_def.ident.to_string();
     let singular = singular_name(&name);
-    vec![RuleViolation::file(file_path.to_path_buf(), checkers::no_collection_newtype::NoCollectionNewtype::CODE, format!(
+    vec![RuleViolation::from_file(file_path.to_path_buf(), checkers::no_collection_newtype::NoCollectionNewtype::CODE, format!(
             "{name} wraps {collection}<T>; define singular {singular}(T) with Deref and use Vec<{singular}> at call sites"
         ))]
 }

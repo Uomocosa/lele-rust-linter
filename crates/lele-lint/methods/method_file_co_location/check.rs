@@ -42,14 +42,14 @@ pub fn check(
                     .map(|dir| dir.display().to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "method file `{}` must be co-located with `{type_snake}.rs`; found in: {candidates}",
                         rel_path.display()
                     )));
             }
         } else if let Some(suffix) = file_stem.rsplit('_').next() {
             if file_stem.contains('_') && pub_fn_names(file).iter().any(|n| n == suffix) {
-                violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "orphan method file `{file_stem}.rs` — no parent type found; rename to `{suffix}.rs` or `<type>_{suffix}.rs` with a `<type>.rs` defining the type",
                     )));
             }

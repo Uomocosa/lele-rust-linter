@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let graph = scan::CallGraph::collect(&Project::default());
+        let graph = scan::CallGraph::from(&Project::default());
         let file = syn::parse_str(
             "pub struct Spawner;
              pub fn setup(spawner: &mut Spawner) { spawner.spawn((Node, Text::new(\"x\"))); }",

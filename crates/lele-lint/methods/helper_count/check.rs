@@ -40,7 +40,7 @@ pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> 
         let private_count = count_unannotated_private_helpers(file, &text);
 
         if private_count > MAX_PRIVATE_HELPERS {
-            violations.push(RuleViolation::file(absolute.clone(), checkers::helper_count::HelperCount::CODE, format!(
+            violations.push(RuleViolation::from_file(absolute.clone(), checkers::helper_count::HelperCount::CODE, format!(
                     "{} unannotated helper functions (max {}). Annotate context-specific helpers with `{}` on the line above each function; extract reusable ones into atomic delegate files",
                     private_count,
                     MAX_PRIVATE_HELPERS,
@@ -52,7 +52,7 @@ pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> 
 
         if pub_like_fns.len() > 1 {
             for func in &pub_like_fns {
-                violations.push(RuleViolation::site(absolute.clone(), func.sig.fn_token.span().start().line, 0, checkers::helper_count::HelperCount::CODE, format!(
+                violations.push(RuleViolation::from_site(absolute.clone(), func.sig.fn_token.span().start().line, 0, checkers::helper_count::HelperCount::CODE, format!(
                         "{} public/pub(crate) top-level functions in this file (fn `{}` among them); only the file's single core function may be pub/pub(crate) — extract the others into their own files",
                         pub_like_fns.len(),
                         func.sig.ident

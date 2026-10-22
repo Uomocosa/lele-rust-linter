@@ -49,7 +49,7 @@ fn check_atomic_file(
         check_filename_match(&primary.name, file_stem, rel_path, project, known_stems);
     for extra in pub_items.get(1..).unwrap_or(&[]) {
         let suggested_file = format!("{}_{}.rs", file_stem, extra.name);
-        violations.push(RuleViolation::file(
+        violations.push(RuleViolation::from_file(
             project.src_dir.join(rel_path),
             checkers::atomic_file::AtomicFile::CODE,
             format!(
@@ -106,7 +106,7 @@ fn check_delegate_shape(
             "filename mismatch — `{file_stem}.rs` looks like a method file for `{type_name}` but `{rest}` is not an atomic delegate; rename to `{rest}.rs`"
         )
     };
-    vec![RuleViolation::file(
+    vec![RuleViolation::from_file(
         project.src_dir.join(rel_path),
         checkers::atomic_file::AtomicFile::CODE,
         message,
@@ -154,7 +154,7 @@ fn check_fn_file_purity(
         } else {
             &format!("`{}.rs`", name.to_snake_case())
         };
-        violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_file::AtomicFile::CODE, format!(
+        violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::atomic_file::AtomicFile::CODE, format!(
                 "SHAPE-F fn-file `{file_stem}.rs` must hold only the fn — move exposed `{kind} {name}` to {home} (O2-extraction)"
             )));
     }
@@ -237,7 +237,7 @@ fn check_filename_match(
         }
     }
 
-    vec![RuleViolation::file(
+    vec![RuleViolation::from_file(
         project.src_dir.join(rel_path),
         checkers::atomic_file::AtomicFile::CODE,
         format!("filename mismatch — `{file_stem}.rs` should be `{expected}.rs`"),

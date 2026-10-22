@@ -39,6 +39,9 @@ pub fn default() -> Linter {
     checkers::delegate_macro::DelegateMacro::register(&mut checkers);
     checkers::boundary_imports::BoundaryImports::register(&mut checkers);
     checkers::no_free_functions::NoFreeFunctions::register(&mut checkers);
+    checkers::methods_are_delegates::MethodsAreDelegates::register(&mut checkers);
+    checkers::conversion_is_from::ConversionIsFrom::register(&mut checkers);
+    checkers::constructor_naming::ConstructorNaming::register(&mut checkers);
     Linter {
         checkers,
         error_format: ErrorFormat::Clippy,

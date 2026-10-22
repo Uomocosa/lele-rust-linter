@@ -98,7 +98,7 @@ fn check_fn_file_const(name: &str, rel_path: &Path, project: &Project) -> Vec<Ru
         .any(|item| matches!(item, syn::Item::Fn(f) if Visibility(&f.vis).is_exposed()));
     if has_pub_fn {
         let sibling = sibling_constants(rel_path, project);
-        return vec![RuleViolation::file(
+        return vec![RuleViolation::from_file(
             project.src_dir.join(rel_path),
             checkers::constants_placement::ConstantsPlacement::CODE,
             format!(
@@ -122,7 +122,7 @@ fn check_lift_to_ancestor(
     let def_dir = parent_dir(rel_path);
     if ancestor.is_empty() && !def_dir.is_empty() {
         let target = constants_target(project, &PathBuf::new());
-        return vec![RuleViolation::file(project.src_dir.join(rel_path), checkers::constants_placement::ConstantsPlacement::CODE, format!(
+        return vec![RuleViolation::from_file(project.src_dir.join(rel_path), checkers::constants_placement::ConstantsPlacement::CODE, format!(
                 "const `{name}` is used across top-level dirs but lives in `{}` — lift it to `src/{}`",
                 rel_path.display(),
                 target.display(),
@@ -146,7 +146,7 @@ fn check_lower_to_subdir(
         return Vec::new();
     }
     let target = constants_target(project, &ancestor);
-    vec![RuleViolation::file(
+    vec![RuleViolation::from_file(
         project.src_dir.join(rel_path),
         checkers::constants_placement::ConstantsPlacement::CODE,
         format!(

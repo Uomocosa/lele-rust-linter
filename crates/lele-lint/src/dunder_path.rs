@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use atomic_delegate_macros::atomic_delegate;
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use serde::Deserialize;
 
@@ -31,10 +31,9 @@ impl DunderPath {
     }
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl TryFrom<PathBuf> for DunderPath {
     type Error = Error;
-    #[atomic_delegate(DunderPath)]
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {}
 }
 

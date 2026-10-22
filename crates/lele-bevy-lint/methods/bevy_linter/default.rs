@@ -4,7 +4,7 @@ use crate::bevy_linter::BevyLinter;
 
 pub fn default() -> BevyLinter {
     let error_format = ErrorFormat::Clippy;
-    BevyLinter::with_error_format(error_format)
+    BevyLinter::from(error_format)
 }
 
 #[cfg(test)]

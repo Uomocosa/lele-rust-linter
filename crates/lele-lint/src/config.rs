@@ -15,9 +15,13 @@ pub const CONFIG_FILENAME: &str = "lele.toml";
 pub struct Config(pub Option<LeleSection>);
 
 #[atomic_delegates]
+impl TryFrom<&Path> for Config {
+    type Error = Error;
+    fn try_from(path: &Path) -> Result<Self, Self::Error> {}
+}
+
+#[atomic_delegates]
 impl Config {
-    pub fn load(project_root: &Path) -> Result<Self, Error> {}
-    pub fn load_file(path: &Path) -> Result<Self, Error> {}
     pub fn dunder_paths(&self) -> Vec<DunderPath> {}
 }
 

@@ -166,7 +166,7 @@ fn check_free_file(
 
 // needed helper: whole-file container-placement finding
 fn file_violation(file_path: &Path, message: String) -> RuleViolation {
-    RuleViolation::file(
+    RuleViolation::from_file(
         file_path.to_path_buf(),
         checkers::container_placement::ContainerPlacement::CODE,
         message,

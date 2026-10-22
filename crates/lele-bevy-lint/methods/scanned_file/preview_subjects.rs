@@ -30,7 +30,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let graph = scan::CallGraph::collect(&Project::default());
+        let graph = scan::CallGraph::from(&Project::default());
         let file = syn::parse_str(
             "pub fn setup(s: &mut S) { s.spawn((Node,)); }
              pub struct Hud;

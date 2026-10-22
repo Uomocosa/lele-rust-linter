@@ -13,8 +13,12 @@ impl Default for BevyLinter {
 }
 
 #[atomic_delegates]
+impl From<ErrorFormat> for BevyLinter {
+    fn from(error_format: ErrorFormat) -> Self {}
+}
+
+#[atomic_delegates]
 impl BevyLinter {
-    pub fn with_error_format(error_format: ErrorFormat) -> BevyLinter {}
     pub fn skill_markdown(&self) -> String {}
 }
 
@@ -32,7 +36,7 @@ mod tests {
                 .iter()
                 .any(|checker| checker.name() == "bevy_ui")
         );
-        let markdown = BevyLinter::with_error_format(ErrorFormat::Clippy).skill_markdown();
+        let markdown = BevyLinter::from(ErrorFormat::Clippy).skill_markdown();
         assert_ne!(markdown, "");
     }
 }

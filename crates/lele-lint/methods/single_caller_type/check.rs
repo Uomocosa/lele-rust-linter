@@ -49,7 +49,7 @@ pub fn check(
             .collect();
 
         if let [caller] = callers.as_slice() {
-            violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::single_caller_type::SingleCallerType::CODE, format!(
+            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::single_caller_type::SingleCallerType::CODE, format!(
                     "type `{name}` has exactly one caller in `{}` and no atomic-delegate methods — define it in the caller's file instead of its own file",
                     caller.display()
                 )));

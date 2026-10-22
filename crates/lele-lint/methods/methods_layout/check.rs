@@ -138,7 +138,7 @@ fn file_violation(project: &Project, rel: &Path, message: String) -> RuleViolati
         .methods_dir
         .as_ref()
         .map_or_else(|| rel.to_path_buf(), |dir| dir.join(rel));
-    RuleViolation::file(file, checkers::methods_layout::MethodsLayout::CODE, message)
+    RuleViolation::from_file(file, checkers::methods_layout::MethodsLayout::CODE, message)
 }
 
 // needed helper: does the parsed file expose `pub fn <name>`

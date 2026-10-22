@@ -12,7 +12,7 @@ fn fixture_path(name: &str) -> PathBuf {
 
 fn findings(name: &str) -> BTreeSet<(String, String)> {
     let root = fixture_path(name);
-    let discovered = Project::discover(Some(&root), None);
+    let discovered = Project::try_from_start_dir_and_scan_folders(Some(&root), None);
     assert!(discovered.is_ok(), "fixture discover failed for {name}");
     let Ok(project) = discovered else {
         return BTreeSet::new();

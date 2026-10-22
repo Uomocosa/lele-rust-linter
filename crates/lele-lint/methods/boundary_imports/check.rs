@@ -129,7 +129,7 @@ fn validate_boundary(boundary: &BoundaryEntry, base: &Path) -> Vec<RuleViolation
 
 // needed helper: a boundary config error is reported on `lele.toml` line 1
 fn config_violation(base: &Path, message: &str) -> RuleViolation {
-    RuleViolation::file(
+    RuleViolation::from_file(
         base.join("lele.toml"),
         checkers::boundary_imports::BoundaryImports::CODE,
         message.to_string(),
@@ -220,7 +220,7 @@ fn use_violation(
         .collect::<Vec<_>>()
         .join(", ");
     let why = &boundary.why;
-    RuleViolation::site(
+    RuleViolation::from_site(
         file.to_path_buf(),
         line,
         0,

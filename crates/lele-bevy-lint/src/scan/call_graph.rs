@@ -12,9 +12,8 @@ pub struct CallGraph {
     systems: HashSet<String>,
 }
 
-impl CallGraph {
-    #[must_use]
-    pub fn collect(project: &Project) -> Self {
+impl From<&Project> for CallGraph {
+    fn from(project: &Project) -> Self {
         let mut graph = Self {
             callees: HashMap::new(),
             systems: HashSet::new(),
@@ -22,7 +21,9 @@ impl CallGraph {
         visit_production(&mut graph, project);
         graph
     }
+}
 
+impl CallGraph {
     #[must_use]
     pub fn reaches_production(&self, owner: &str) -> bool {
         if owner.is_empty() {
@@ -174,7 +175,7 @@ mod tests {
             PathBuf::from("a.rs"),
             syn::parse_str("pub fn build() { setup(); } pub fn setup() {}").unwrap(),
         );
-        let graph = CallGraph::collect(&project);
+        let graph = CallGraph::from(&project);
         assert!(graph.reaches_production("setup"));
         assert!(!graph.reaches_production("unrelated"));
     }
@@ -193,7 +194,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let graph = CallGraph::collect(&project);
+        let graph = CallGraph::from(&project);
         assert!(graph.reaches_production("spawn_hud"));
         assert!(graph.reaches_production("tick_hud"));
     }
@@ -209,7 +210,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let graph = CallGraph::collect(&project);
+        let graph = CallGraph::from(&project);
         assert!(graph.reaches_production("spawn_on_ready"));
     }
 }

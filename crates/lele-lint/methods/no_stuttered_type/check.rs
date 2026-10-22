@@ -30,7 +30,7 @@ pub fn check(
             continue;
         };
         let suggested = Identifier(&suffix).to_pascal_case();
-        violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_stuttered_type::NoStutteredType::CODE, format!(
+        violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_stuttered_type::NoStutteredType::CODE, format!(
                 "type `{name}` repeats parent module `{dir}` — rename to `{suggested}` (`{dir}::{suggested}`)"
             )));
     }

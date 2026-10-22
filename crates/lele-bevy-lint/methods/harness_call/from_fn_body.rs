@@ -6,7 +6,7 @@ use crate::scan::basic::constants::{HARNESS_CRATE, HARNESS_RUN};
 const CHECKING_METHODS: [&str; 2] = ["expect", "unwrap"];
 
 #[must_use]
-pub fn detect(body: &syn::Block, is_run_imported: bool) -> scan::HarnessCall {
+pub fn from_fn_body(body: &syn::Block, is_run_imported: bool) -> scan::HarnessCall {
     let mut scanner = HarnessScanner {
         is_run_imported,
         is_called: false,
@@ -89,11 +89,11 @@ fn is_harness_path(func: &syn::Expr, is_run_imported: bool) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::detect;
+    use super::from_fn_body;
     use crate::scan::HarnessCall;
 
     fn call(body: &str, is_run_imported: bool) -> HarnessCall {
-        detect(&syn::parse_str(body).unwrap(), is_run_imported)
+        from_fn_body(&syn::parse_str(body).unwrap(), is_run_imported)
     }
 
     #[test]

@@ -34,13 +34,13 @@ pub fn check(
             continue;
         }
         for missing in missing_reexports(stem, file, &reexported) {
-            violations.push(RuleViolation::site(project.src_dir.join(rel_path), missing.line, 0, checkers::root_reexport::RootReexport::CODE, format!(
+            violations.push(RuleViolation::from_site(project.src_dir.join(rel_path), missing.line, 0, checkers::root_reexport::RootReexport::CODE, format!(
                     "public type `{}` in root module `{stem}` is not re-exported at the crate root — add `pub use {stem}::{};` to lib.rs",
                     missing.ty, missing.ty
                 )));
         }
         for missing in missing_fn_flatten(stem, file, lib) {
-            violations.push(RuleViolation::file(
+            violations.push(RuleViolation::from_file(
                 project.src_dir.join("lib.rs"),
                 checkers::root_reexport::RootReexport::CODE,
                 missing,

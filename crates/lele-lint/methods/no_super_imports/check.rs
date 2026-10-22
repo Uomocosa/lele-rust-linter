@@ -25,7 +25,7 @@ pub fn check(
         }
         for hit in hits {
             let (import, replacement) = suggestion(rel_path, &hit.path);
-            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_super_imports::NoSuperImports::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_super_imports::NoSuperImports::CODE, format!(
                     "`{}` used outside `#[cfg(test)]` — write `{replacement}` instead and add `{import}` at the top of the file",
                     hit.path
                 )));

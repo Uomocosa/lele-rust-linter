@@ -28,13 +28,13 @@ pub fn check(
     let content = match std::fs::read_to_string(&cargo_path) {
         Ok(c) => c,
         Err(_) => {
-            return vec![RuleViolation::file(cargo_path, checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "Cargo.toml not found or unreadable — add [lints.clippy] with minimum clippy config".to_string())];
+            return vec![RuleViolation::from_file(cargo_path, checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "Cargo.toml not found or unreadable — add [lints.clippy] with minimum clippy config".to_string())];
         }
     };
     let value: toml::Value = match content.parse() {
         Ok(v) => v,
         Err(e) => {
-            return vec![RuleViolation::file(
+            return vec![RuleViolation::from_file(
                 cargo_path,
                 checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
                 format!("Cargo.toml parse error: {e}"),
@@ -59,7 +59,7 @@ pub fn check(
             }
             violations
         }
-        None => vec![RuleViolation::file(cargo_path.clone(), checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)".to_string())],
+        None => vec![RuleViolation::from_file(cargo_path.clone(), checkers::clippy_config_cargo::ClippyConfigCargo::CODE, "missing [lints.clippy] in Cargo.toml — add minimum clippy config (pedantic/nursery + 13 deny lints)".to_string())],
     }
 }
 
@@ -160,7 +160,7 @@ fn is_deny_with_priority(value: &toml::Value, require_priority: bool) -> bool {
 
 // needed helper:
 fn violation_for_key(path: &PathBuf, key: &str, expected: &str) -> RuleViolation {
-    RuleViolation::file(
+    RuleViolation::from_file(
         path.clone(),
         checkers::clippy_config_cargo::ClippyConfigCargo::CODE,
         format!("Cargo.toml [lints.clippy].{key} {expected} — minimum clippy config requires it"),

@@ -5,7 +5,6 @@ use clap::ValueEnum;
 use lele_bevy_lint::BevyLinter;
 use lele_bevy_lint::scan;
 use lele_lint::CommonArgs;
-use lele_lint::Config;
 use lele_lint::Project;
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -33,7 +32,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let linter = BevyLinter::with_error_format(args.common.error_format);
+    let linter = BevyLinter::from(args.common.error_format);
 
     if args.common.checker_list {
         linter.print_checker_list();
@@ -61,7 +60,7 @@ fn main() {
         return;
     }
 
-    let mut project = match Project::discover(
+    let mut project = match Project::try_from_start_dir_and_scan_folders(
         args.common.path.as_deref(),
         args.common.scan_folder.as_deref(),
     ) {
@@ -72,7 +71,7 @@ fn main() {
         }
     };
 
-    let config = match Config::load(&project.root) {
+    let config = match project.load_config() {
         Ok(c) => c,
         Err(e) => {
             eprintln!("lele_bevy_lint: lele.toml: {e}");

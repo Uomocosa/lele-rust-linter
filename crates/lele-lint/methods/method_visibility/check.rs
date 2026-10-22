@@ -38,7 +38,7 @@ pub fn check(
             if let Some(declared_pub) =
                 declared_as_pub_mod(&project.module_info, parent_dir, method_mod_name)
             {
-                violations.push(RuleViolation::file(declared_pub, checkers::method_visibility::MethodVisibility::CODE, format!(
+                violations.push(RuleViolation::from_file(declared_pub, checkers::method_visibility::MethodVisibility::CODE, format!(
                         "method file `{}` of struct `{}` must be declared with `mod` (private), not `pub mod`",
                         file_name, struct_name
                     )));
@@ -47,7 +47,7 @@ pub fn check(
             if let Some(reexported_at) =
                 reexported_in_pub_use(&project.module_info, parent_dir, method_mod_name)
             {
-                violations.push(RuleViolation::file(
+                violations.push(RuleViolation::from_file(
                     reexported_at,
                     checkers::method_visibility::MethodVisibility::CODE,
                     format!(

@@ -20,7 +20,7 @@ pub fn check(_self: &checkers::bevy_export::BevyExport, project: &Project) -> Ve
                     .find(|e| e.relative_path == *mod_rs_path)
                     .map(|e| e.absolute_path.clone());
 
-                violations.push(RuleViolation::file(module_file
+                violations.push(RuleViolation::from_file(module_file
                         .unwrap_or_else(|| project.root.join("src").join(mod_rs_path)), checkers::bevy_export::BevyExport::CODE, format!(
                         "pub use {} re-exports bevy_systems items at the domain root; remove it — access via `{{domain}}::bevy_systems::{{name}}`",
                         reexported_path

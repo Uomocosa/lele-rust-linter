@@ -44,8 +44,8 @@ impl<'ast> Visit<'ast> for PreviewFinder<'_, 'ast> {
                 kind,
                 line: node.sig.fn_token.span().start().line,
                 is_test: node.attrs.iter().any(|attr| attr.path().is_ident("test")),
-                harness: scan::HarnessCall::detect(&node.block, self.is_run_imported),
-                scene: scan::SceneUsage::detect(&node.block, &self.module_fns),
+                harness: scan::HarnessCall::from_fn_body(&node.block, self.is_run_imported),
+                scene: scan::SceneUsage::from_fn_body(&node.block, &self.module_fns),
             });
         }
         syn::visit::visit_item_fn(self, node);

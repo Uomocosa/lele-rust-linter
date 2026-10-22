@@ -8,7 +8,7 @@ pub fn check(
     _self: &checkers::bevy_ui_restyle::BevyUiRestyle,
     project: &Project,
 ) -> Vec<RuleViolation> {
-    let graph = scan::CallGraph::collect(project);
+    let graph = scan::CallGraph::from(project);
     let mut violations = Vec::new();
 
     for source in project.sources() {

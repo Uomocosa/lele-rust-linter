@@ -14,7 +14,7 @@ pub fn violation(
     message: String,
 ) -> RuleViolation {
     let absolute = project.absolute_path(origin, rel_path);
-    RuleViolation::site(absolute, line, 0, code, message)
+    RuleViolation::from_site(absolute, line, 0, code, message)
 }
 
 #[cfg(test)]

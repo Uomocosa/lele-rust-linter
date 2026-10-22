@@ -2,7 +2,6 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use lele_lint::config::Config;
 use lele_lint::Checker;
 use lele_lint::ExampleFile;
 use lele_lint::Linter;
@@ -69,8 +68,8 @@ fn materialize(root: &Path, files: &[ExampleFile]) -> Result<(), Box<dyn std::er
 fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let dir = tempfile::tempdir()?;
     materialize(dir.path(), files)?;
-    let mut project = Project::discover(Some(dir.path()), None)?;
-    let config = Config::load(&project.root).unwrap_or_default();
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(dir.path()), None)?;
+    let config = project.load_config().unwrap_or_default();
     project.apply_layout(&config)?;
     let root: PathBuf = dir.path().to_path_buf();
     let mut lines: Vec<String> = Linter::default()

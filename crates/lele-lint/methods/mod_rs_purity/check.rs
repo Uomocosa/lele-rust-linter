@@ -24,7 +24,7 @@ pub fn check(
             let Some(message) = violation_message(item) else {
                 continue;
             };
-            violations.push(RuleViolation::site(
+            violations.push(RuleViolation::from_site(
                 project.absolute_path(source.origin, rel_path),
                 item.span().start().line,
                 0,

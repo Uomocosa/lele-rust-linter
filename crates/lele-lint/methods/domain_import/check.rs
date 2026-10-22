@@ -17,7 +17,7 @@ pub fn check(
         for item in &file.items {
             if let syn::Item::Use(item_use) = item {
                 if let Some(msg) = check_import(item_use, &project.dunder_paths) {
-                    violations.push(RuleViolation::site(
+                    violations.push(RuleViolation::from_site(
                         project.absolute_path(source.origin, rel_path),
                         find_use_line(item_use),
                         0,

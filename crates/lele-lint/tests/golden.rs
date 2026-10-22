@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use lele_lint::config::Config;
 use lele_lint::Linter;
 use lele_lint::Location;
 use lele_lint::Project;
@@ -19,8 +18,8 @@ fn manifest_dir() -> PathBuf {
 
 fn render(fixture: &str) -> Result<String, Box<dyn std::error::Error>> {
     let root = manifest_dir().join("test_fixtures").join(fixture);
-    let mut project = Project::discover(Some(&root), None)?;
-    let config = Config::load(&project.root).unwrap_or_default();
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(&root), None)?;
+    let config = project.load_config().unwrap_or_default();
     project.apply_layout(&config)?;
     let mut lines: Vec<String> = Linter::default()
         .checkers

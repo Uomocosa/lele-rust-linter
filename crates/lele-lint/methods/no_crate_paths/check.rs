@@ -25,7 +25,7 @@ pub fn check(
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_crate_paths::NoCratePaths::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_crate_paths::NoCratePaths::CODE, format!(
                     "`{}` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead",
                     hit.path
                 )));

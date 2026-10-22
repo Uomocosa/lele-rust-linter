@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::DunderPath;
 use crate::Error;
 
-pub fn try_from(path: PathBuf) -> Result<DunderPath, Error> {
+pub fn try_from_path_buf(path: PathBuf) -> Result<DunderPath, Error> {
     let is_dunder = path
         .file_stem()
         .and_then(|stem| stem.to_str())

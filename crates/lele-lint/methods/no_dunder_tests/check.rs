@@ -20,7 +20,7 @@ pub fn check(
             let Some(line) = cfg_test_line(item) else {
                 continue;
             };
-            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), line, 0, checkers::no_dunder_tests::NoDunderTests::CODE, "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), line, 0, checkers::no_dunder_tests::NoDunderTests::CODE, "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
                     .to_string()));
         }
     }

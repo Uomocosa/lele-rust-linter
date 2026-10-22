@@ -12,7 +12,7 @@ const CODE: &str = checkers::no_free_functions::NoFreeFunctions::CODE;
 
 const WRAPPERS: [&str; 4] = ["Result", "Option", "Vec", "Box"];
 
-const EXEMPT_DIRS: [&str; 3] = ["bevy_systems", "bin", "tests"];
+const EXEMPT_DIRS: [&str; 2] = ["bevy_systems", "tests"];
 
 const EXEMPT_FILES: [&str; 5] = ["mod.rs", "lib.rs", "main.rs", "build.rs", "constants.rs"];
 
@@ -47,7 +47,7 @@ pub fn check(
                 matched_entry_points.insert(index);
                 continue;
             }
-            violations.push(RuleViolation::site(
+            violations.push(RuleViolation::from_site(
                 absolute.clone(),
                 func.sig.fn_token.span().start().line,
                 0,
@@ -60,7 +60,7 @@ pub fn check(
     for (index, entry) in project.entry_points.iter().enumerate() {
         let path = project.root.join(&entry.file);
         if !matched_entry_points.contains(&index) && path.is_file() {
-            violations.push(RuleViolation::file(
+            violations.push(RuleViolation::from_file(
                 path,
                 CODE,
                 format!(
@@ -247,7 +247,6 @@ mod tests {
     fn test_exemptions_and_entry_points() {
         let mut project = project_with(&[
             ("game/bevy_systems/tick.rs", "pub fn tick() {}"),
-            ("bin/tool.rs", "pub fn helper() {}"),
             ("main.rs", "pub fn run() {}"),
             (
                 "run.rs",
@@ -260,5 +259,13 @@ mod tests {
             reason: "task".to_string(),
         });
         assert!(check(&NoFreeFunctions, &project).is_empty());
+    }
+
+    #[test]
+    fn test_binaries_are_not_exempt() {
+        let project = project_with(&[("bin/tool.rs", "pub fn helper() {}")]);
+        let violations = check(&NoFreeFunctions, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("helper"));
     }
 }

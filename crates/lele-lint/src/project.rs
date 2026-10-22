@@ -41,7 +41,8 @@ pub struct Project {
 #[atomic_delegates]
 impl Project {
     pub fn apply_layout(&mut self, config: &Config) -> Result<(), Error> {}
-    pub fn discover(
+    pub fn load_config(&self) -> Result<Config, Error> {}
+    pub fn try_from_start_dir_and_scan_folders(
         start_dir: Option<&Path>,
         scan_folders: Option<&[PathBuf]>,
     ) -> Result<Self, Error> {

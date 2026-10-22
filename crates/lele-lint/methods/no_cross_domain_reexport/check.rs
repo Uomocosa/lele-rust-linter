@@ -27,7 +27,7 @@ pub fn check(
                         .find(|e| e.relative_path == *mod_rs_path)
                         .map(|e| e.absolute_path.clone());
 
-                    violations.push(RuleViolation::file(
+                    violations.push(RuleViolation::from_file(
                         module_file.unwrap_or_else(|| project.root.join("src").join(mod_rs_path)),
                         checkers::no_cross_domain_reexport::NoCrossDomainReexport::CODE,
                         format!(

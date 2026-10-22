@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use lele_lint::config::Config;
 use lele_lint::Linter;
 use lele_lint::Project;
 use lele_lint::RuleViolation;
@@ -12,8 +11,8 @@ fn fixture_path(name: &str) -> PathBuf {
 }
 
 fn run_checkers(path: &str) -> Result<Vec<RuleViolation>, Box<dyn std::error::Error>> {
-    let mut p = Project::discover(Some(&fixture_path(path)), None)?;
-    let config = Config::load(&p.root).unwrap_or_default();
+    let mut p = Project::try_from_start_dir_and_scan_folders(Some(&fixture_path(path)), None)?;
+    let config = p.load_config().unwrap_or_default();
     p.apply_layout(&config)?;
     let checkers = Linter::default().checkers;
     Ok(checkers.iter().flat_map(|c| c.check(&p)).collect())

@@ -28,7 +28,7 @@ pub fn check(
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            violations.push(RuleViolation::site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_stuttered_path::NoStutteredPath::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_stuttered_path::NoStutteredPath::CODE, format!(
                     "stuttered path `{}` adds no information — import `{}` once and use `{}` directly",
                     hit.path, hit.ty, hit.ty
                 )));

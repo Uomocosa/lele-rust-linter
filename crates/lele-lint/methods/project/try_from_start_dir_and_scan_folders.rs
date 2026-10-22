@@ -7,7 +7,7 @@ use crate::ModuleInfo;
 use crate::Project;
 use crate::ScannedDir;
 
-pub fn discover(
+pub fn try_from_start_dir_and_scan_folders(
     start_dir: Option<&Path>,
     scan_folders: Option<&[PathBuf]>,
 ) -> Result<Project, Error> {
@@ -86,7 +86,7 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    use super::discover;
+    use super::try_from_start_dir_and_scan_folders;
     use crate::Error;
 
     fn write_file(base: &Path, p: &str) {
@@ -106,7 +106,7 @@ mod tests {
         .unwrap();
         fs::create_dir_all(root.join("src")).unwrap();
         write_file(root, "src/a.rs");
-        let project = discover(Some(root), None).unwrap();
+        let project = try_from_start_dir_and_scan_folders(Some(root), None).unwrap();
         assert!(project.parsed_files.contains_key(&PathBuf::from("a.rs")));
     }
 
@@ -122,7 +122,7 @@ mod tests {
         fs::create_dir_all(root.join("src")).unwrap();
         write_file(root, "src/a.rs");
         write_file(root, "examples/demo.rs");
-        let project = discover(Some(root), None).unwrap();
+        let project = try_from_start_dir_and_scan_folders(Some(root), None).unwrap();
         assert!(project
             .example_parsed_files
             .contains_key(&PathBuf::from("demo.rs")));
@@ -135,7 +135,7 @@ mod tests {
         write_file(root, "src/a.rs");
         write_file(root, "contract/src/lib.rs");
         let folders = vec![PathBuf::from("src"), PathBuf::from("contract")];
-        let project = discover(Some(root), Some(&folders)).unwrap();
+        let project = try_from_start_dir_and_scan_folders(Some(root), Some(&folders)).unwrap();
         assert!(project
             .parsed_files
             .contains_key(&PathBuf::from("src/a.rs")));
@@ -151,7 +151,7 @@ mod tests {
         let root = base.path();
         let folders = vec![PathBuf::from("nope")];
         assert!(matches!(
-            discover(Some(root), Some(&folders)),
+            try_from_start_dir_and_scan_folders(Some(root), Some(&folders)),
             Err(Error::NoScanFolder(_))
         ));
     }

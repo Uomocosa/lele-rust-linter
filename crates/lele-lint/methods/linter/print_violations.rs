@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let violations = vec![RuleViolation::site(
+        let violations = vec![RuleViolation::from_site(
             PathBuf::from("a.rs"),
             1,
             0,

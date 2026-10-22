@@ -683,7 +683,8 @@ mod tests {
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage`.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type; `new` is never delegated.
-- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `bin/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `methods/<type>/<method>.rs` file exposes only its delegate body `pub fn <method>`; every other item is private (helpers carry `// needed helper: <why>`).
 
 ### LELE004 `method_visibility`
 
@@ -1372,7 +1373,7 @@ mod tests {
 
 ### LELE034 `no_free_functions`
 
-A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `bin/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
@@ -1503,6 +1504,214 @@ use crate::player;
 pub fn heal(player: &mut player::Player, amount: u32) {
     let healed = player.health.saturating_add(amount);
     player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+### LELE035 `methods_are_delegates`
+
+A `methods/<type>/<method>.rs` file exposes only its delegate body `pub fn <method>`; every other item is private (helpers carry `// needed helper: <why>`).
+
+**Why:** `methods/` holds bodies of the type's `#[atomic_delegates]` shells and nothing else; a second public item there is an API nobody finds from the type.
+
+**Bad** (reports LELE035):
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = capped(healed);
+}
+
+// needed helper: health never exceeds the maximum
+pub(crate) fn capped(health: u32) -> u32 {
+    health.min(100)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = capped(healed);
+}
+
+// needed helper: health never exceeds the maximum
+fn capped(health: u32) -> u32 {
+    health.min(100)
 }
 
 #[cfg(test)]
@@ -2359,6 +2568,8 @@ mod tests {
 - [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
 - [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
 - [LELE027 `single_caller_type`](#lele027-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
+- [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>` and trait impls are exempt.
+- [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new` and trait impls are exempt.
 
 ### LELE010 `no_positional`
 
@@ -2897,6 +3108,198 @@ mod tests {
             body: "b".to_string(),
         };
         assert_eq!(render(&card), "# A\nb");
+    }
+}
+```
+
+### LELE036 `conversion_is_from`
+
+An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>` and trait impls are exempt.
+
+**Why:** A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.
+
+**Bad** (reports LELE036):
+
+`src/lib.rs`
+
+```rust
+pub mod reading;
+```
+
+`src/reading/mod.rs`
+
+```rust
+mod reading;
+
+pub use reading::Reading;
+```
+
+`src/reading/reading.rs`
+
+```rust
+pub struct Reading {
+    pub sensor: String,
+    pub celsius: i32,
+}
+
+impl Reading {
+    pub fn from_sensor(sensor: &str) -> Self {
+        Self {
+            sensor: sensor.to_string(),
+            celsius: 21,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reading;
+
+    #[test]
+    fn test_usage() {
+        let reading = reading::Reading::from_sensor("kitchen");
+        assert_eq!(reading.celsius, 21);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod reading;
+```
+
+`src/reading/mod.rs`
+
+```rust
+mod reading;
+
+pub use reading::Reading;
+```
+
+`src/reading/reading.rs`
+
+```rust
+pub struct Reading {
+    pub sensor: String,
+    pub celsius: i32,
+}
+
+impl From<&str> for Reading {
+    fn from(sensor: &str) -> Self {
+        Self {
+            sensor: sensor.to_string(),
+            celsius: 21,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reading;
+
+    #[test]
+    fn test_usage() {
+        let reading = reading::Reading::from("kitchen");
+        assert_eq!(reading.celsius, 21);
+    }
+}
+```
+
+### LELE037 `constructor_naming`
+
+An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new` and trait impls are exempt.
+
+**Why:** Every constructor reads the same way at the call site: `from_` says it builds the type, `try_` says it can fail.
+
+**Bad** (reports LELE037):
+
+`src/lib.rs`
+
+```rust
+pub mod reading;
+```
+
+`src/reading/mod.rs`
+
+```rust
+mod reading;
+
+pub use reading::Reading;
+```
+
+`src/reading/reading.rs`
+
+```rust
+pub struct Reading {
+    pub sensor: String,
+    pub celsius: i32,
+}
+
+impl Reading {
+    pub fn at(sensor: &str, celsius: i32) -> Self {
+        Self {
+            sensor: sensor.to_string(),
+            celsius,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reading;
+
+    #[test]
+    fn test_usage() {
+        let reading = reading::Reading::at("kitchen", 21);
+        assert_eq!(reading.celsius, 21);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod reading;
+```
+
+`src/reading/mod.rs`
+
+```rust
+mod reading;
+
+pub use reading::Reading;
+```
+
+`src/reading/reading.rs`
+
+```rust
+pub struct Reading {
+    pub sensor: String,
+    pub celsius: i32,
+}
+
+impl Reading {
+    pub fn from_sensor_and_celsius(sensor: &str, celsius: i32) -> Self {
+        Self {
+            sensor: sensor.to_string(),
+            celsius,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reading;
+
+    #[test]
+    fn test_usage() {
+        let reading = reading::Reading::from_sensor_and_celsius("kitchen", 21);
+        assert_eq!(reading.celsius, 21);
     }
 }
 ```

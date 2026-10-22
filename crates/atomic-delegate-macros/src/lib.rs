@@ -42,7 +42,7 @@ fn expand_fn(
     })?;
     let method: syn::ImplItemFn = syn::parse2(item)?;
     let module = format_ident!("{}", type_ident.to_string().to_snake_case());
-    let delegate = expand_method(&module, &method, "`#[atomic_delegate]`")?;
+    let delegate = expand_method(&module, &method, "", "`#[atomic_delegate]`")?;
     Ok(quote!(#delegate))
 }
 
@@ -50,6 +50,7 @@ fn expand_fn(
 fn expand_method(
     module: &syn::Ident,
     method: &syn::ImplItemFn,
+    body_suffix: &str,
     macro_name: &str,
 ) -> syn::Result<syn::ImplItemFn> {
     if !method.block.stmts.is_empty() {
@@ -87,7 +88,8 @@ fn expand_method(
             }
         }
     }
-    let call = quote!(crate::methods::#module::#name(#(#args),*));
+    let body_fn = format_ident!("{}{}", name, body_suffix);
+    let call = quote!(crate::methods::#module::#body_fn(#(#args),*));
     let body = if method.sig.asyncness.is_some() {
         quote!(#call.await)
     } else {
@@ -103,23 +105,68 @@ fn expand(item: proc_macro2::TokenStream) -> syn::Result<proc_macro2::TokenStrea
 
     let type_ident = last_type_ident(&impl_block.self_ty)?;
     let module = format_ident!("{}", type_ident.to_string().to_snake_case());
+    let body_suffix = trait_args_suffix(impl_block.trait_.as_ref());
 
     let mut out = impl_block.clone();
     out.attrs.push(syn::parse_quote!(#[rustfmt::skip]));
     out.items.clear();
 
     for item in &impl_block.items {
-        let syn::ImplItem::Fn(method) = item else {
-            return Err(syn::Error::new(
-                item.span(),
-                "`#[atomic_delegates]` impl may only contain functions",
-            ));
+        let method = match item {
+            syn::ImplItem::Fn(method) => method,
+            syn::ImplItem::Type(_) | syn::ImplItem::Const(_) if impl_block.trait_.is_some() => {
+                out.items.push(item.clone());
+                continue;
+            }
+            _ => {
+                return Err(syn::Error::new(
+                    item.span(),
+                    "`#[atomic_delegates]` impl may only contain functions (plus associated types and consts in a trait impl)",
+                ));
+            }
         };
-        let delegate = expand_method(&module, method, "`#[atomic_delegates]`")?;
+        let delegate = expand_method(&module, method, &body_suffix, "`#[atomic_delegates]`")?;
         out.items.push(syn::ImplItem::Fn(delegate));
     }
 
     Ok(quote!(#out))
+}
+
+// needed helper: `From<Celsius>` dispatches `from` to `from_celsius`, so two `From` impls never share a body file
+fn trait_args_suffix(
+    trait_: Option<&(Option<syn::token::Not>, syn::Path, syn::token::For)>,
+) -> String {
+    fn type_name(ty: &syn::Type) -> Option<String> {
+        match ty {
+            syn::Type::Reference(reference) => type_name(&reference.elem),
+            syn::Type::Paren(paren) => type_name(&paren.elem),
+            syn::Type::Slice(slice) => type_name(&slice.elem),
+            syn::Type::Path(path) => path
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string()),
+            _ => None,
+        }
+    }
+
+    let Some((_, path, _)) = trait_ else {
+        return String::new();
+    };
+    let Some(syn::PathArguments::AngleBracketed(args)) =
+        path.segments.last().map(|segment| &segment.arguments)
+    else {
+        return String::new();
+    };
+    args.args
+        .iter()
+        .filter_map(|arg| match arg {
+            syn::GenericArgument::Type(ty) => type_name(ty),
+            _ => None,
+        })
+        .map(|name| format!("_{}", name.to_snake_case()))
+        .collect::<Vec<_>>()
+        .concat()
 }
 
 // needed helper: last path segment of an impl self type
@@ -168,6 +215,36 @@ mod tests {
         assert!(expanded.contains("impl Checker for Foo"));
         assert!(expanded.contains("crate :: methods :: foo :: check (self , project)"));
         assert!(expanded.contains("# [rustfmt :: skip]"));
+    }
+
+    #[test]
+    fn test_usage_generic_trait_names_body_after_type_args() {
+        let celsius = quote! {
+            impl From<Celsius> for Temperature {
+                fn from(celsius: Celsius) -> Self {}
+            }
+        };
+        let expanded = expand(celsius).unwrap().to_string();
+        assert!(expanded.contains("crate :: methods :: temperature :: from_celsius (celsius)"));
+        let text = quote! {
+            impl<'a> TryFrom<&'a str> for Temperature {
+                type Error = Error;
+                fn try_from(text: &'a str) -> Result<Self, Self::Error> {}
+            }
+        };
+        let expanded = expand(text).unwrap().to_string();
+        assert!(expanded.contains("type Error = Error"));
+        assert!(expanded.contains("crate :: methods :: temperature :: try_from_str (text)"));
+        assert!(expand(quote! { impl Foo { type Error = Error; } }).is_err());
+        let text = quote! {
+            impl<'a> TryFrom<&'a [HttpHeader]> for Temperature {
+                fn try_from(text: &'a [HttpHeader]) -> Result<Self, Error> {}
+            }
+        };
+        let expanded = expand(text).unwrap().to_string();
+        assert!(
+            expanded.contains("crate :: methods :: temperature :: try_from_http_header (text)")
+        );
     }
 
     #[test]

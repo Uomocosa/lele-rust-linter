@@ -32,7 +32,7 @@ struct PositionalVisitor {
 impl<'ast> Visit<'ast> for PositionalVisitor {
     fn visit_expr_field(&mut self, node: &'ast syn::ExprField) {
         if matches!(node.member, syn::Member::Unnamed(_)) {
-            self.violations.push(RuleViolation::file(
+            self.violations.push(RuleViolation::from_file(
                 self.file_path.clone(),
                 checkers::no_positional::NoPositional::CODE,
                 "positional field access is not allowed, use named fields".to_string(),

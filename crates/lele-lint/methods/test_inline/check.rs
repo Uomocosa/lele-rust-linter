@@ -11,7 +11,7 @@ pub fn check(_self: &checkers::test_inline::TestInline, project: &Project) -> Ve
             continue;
         }
         if has_tests_component(&entry.relative_path) {
-            violations.push(RuleViolation::file(entry.absolute_path.clone(), checkers::test_inline::TestInline::CODE, format!(
+            violations.push(RuleViolation::from_file(entry.absolute_path.clone(), checkers::test_inline::TestInline::CODE, format!(
                     "unit tests must be in the same file as the primary item — delete `{}` and move the tests inline",
                     entry.relative_path.display()
                 )));

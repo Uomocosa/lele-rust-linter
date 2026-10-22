@@ -116,7 +116,7 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("ui/gate.rs"), file.clone());
-        let graph = scan::CallGraph::collect(&project);
+        let graph = scan::CallGraph::from(&project);
         (file, graph)
     }
 

@@ -147,7 +147,7 @@ pub fn check(
 
 // needed helper: build an LELE032 violation anchored to a src file
 fn file_violation(project: &Project, rel_path: &Path, message: String) -> RuleViolation {
-    RuleViolation::file(
+    RuleViolation::from_file(
         project.src_dir.join(rel_path),
         checkers::delegate_macro::DelegateMacro::CODE,
         message,
@@ -287,7 +287,8 @@ fn check_delegated_methods(
                 ),
             ));
         }
-        if !seen.insert(format!("{primary}::{ident}")) {
+        let body_name = ImplBlock(impl_block).delegate_body_name(ident);
+        if !seen.insert(format!("{primary}::{body_name}")) {
             violations.push(duplicate_violation(project, rel_path, primary, ident));
         }
     }
@@ -321,7 +322,18 @@ fn check_fn_shells(
                 ),
             ));
         }
-        if !seen.insert(format!("{primary}::{ident}")) {
+        let body_name = ImplBlock(impl_block).delegate_body_name(ident);
+        if *ident != body_name {
+            violations.push(file_violation(
+                project,
+                rel_path,
+                format!(
+                    "`{ident}` in a generic trait impl dispatches to `methods/{}/{body_name}.rs`; annotate the whole block with `#[atomic_delegates]` instead of `#[atomic_delegate]`",
+                    primary.to_snake_case()
+                ),
+            ));
+        }
+        if !seen.insert(format!("{primary}::{body_name}")) {
             violations.push(duplicate_violation(project, rel_path, primary, ident));
         }
     }
@@ -419,6 +431,26 @@ mod tests {
         );
         let violations = check(&DelegateMacro, &project);
         assert!(violations.iter().any(|d| d.message.contains("duplicate")));
+    }
+
+    #[test]
+    fn test_usage_two_from_impls_are_not_duplicates() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("temperature.rs"),
+            syn::parse_str(
+                "pub struct Temperature;\n#[atomic_delegates]\nimpl From<Celsius> for Temperature { fn from(c: Celsius) -> Self {} }\n#[atomic_delegates]\nimpl From<Kelvin> for Temperature { fn from(k: Kelvin) -> Self {} }\nimpl From<Rankine> for Temperature { #[atomic_delegate(Temperature)] fn from(r: Rankine) -> Self {} }\n",
+            )
+            .unwrap(),
+        );
+        let messages: Vec<String> = check(&DelegateMacro, &project)
+            .into_iter()
+            .map(|v| v.message)
+            .collect();
+        assert!(!messages.iter().any(|m| m.contains("duplicate")));
+        assert!(messages
+            .iter()
+            .any(|m| m.contains("methods/temperature/from_rankine.rs")));
     }
 
     #[test]

@@ -5,7 +5,7 @@ use lele_lint::Linter;
 use crate::bevy_linter::BevyLinter;
 use crate::checkers;
 
-pub fn with_error_format(error_format: ErrorFormat) -> BevyLinter {
+pub fn from_error_format(error_format: ErrorFormat) -> BevyLinter {
     let mut checkers: Vec<Box<dyn Checker>> = Vec::new();
     checkers::bevy_export::BevyExport::register(&mut checkers);
     checkers::bevy_folder::BevyFolder::register(&mut checkers);
@@ -23,12 +23,12 @@ pub fn with_error_format(error_format: ErrorFormat) -> BevyLinter {
 
 #[cfg(test)]
 mod tests {
-    use super::with_error_format;
+    use super::from_error_format;
     use lele_lint::ErrorFormat;
 
     #[test]
     fn test_usage() {
-        let linter = with_error_format(ErrorFormat::Clippy);
+        let linter = from_error_format(ErrorFormat::Clippy);
         assert_eq!(linter.checkers.len(), 8);
     }
 }

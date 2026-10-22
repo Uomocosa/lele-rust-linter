@@ -37,13 +37,13 @@ pub fn check(
                         }
                         if let Some(field) = is_trivial_accessor(method, &pub_fields) {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial accessor `{}` reads {vis} field `{field}`, make field public/pub(crate) and access directly",
                                     method.sig.ident
                                 )));
                         } else if let Some(field) = is_trivial_setter(method, &pub_fields) {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial setter `{}` assigns {vis} field `{field}`, make field public/pub(crate) and assign directly",
                                     method.sig.ident
                                 )));

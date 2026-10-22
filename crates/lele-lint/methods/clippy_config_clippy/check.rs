@@ -17,13 +17,13 @@ pub fn check(
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
         Err(_) => {
-            return vec![RuleViolation::file(path, checkers::clippy_config_clippy::ClippyConfigClippy::CODE, "clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true".to_string())];
+            return vec![RuleViolation::from_file(path, checkers::clippy_config_clippy::ClippyConfigClippy::CODE, "clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true".to_string())];
         }
     };
     let value: toml::Value = match content.parse() {
         Ok(v) => v,
         Err(e) => {
-            return vec![RuleViolation::file(
+            return vec![RuleViolation::from_file(
                 path,
                 checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
                 format!("clippy.toml parse error: {e}"),
@@ -33,7 +33,7 @@ pub fn check(
     let table = match value.as_table() {
         Some(t) => t,
         None => {
-            return vec![RuleViolation::file(
+            return vec![RuleViolation::from_file(
                 path,
                 checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
                 "clippy.toml must be a table with allow-* = true entries".to_string(),
@@ -44,7 +44,7 @@ pub fn check(
     for key in REQUIRED_KEYS {
         match table.get(*key) {
             Some(toml::Value::Boolean(true)) => {}
-            _ => violations.push(RuleViolation::file(
+            _ => violations.push(RuleViolation::from_file(
                 path.clone(),
                 checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
                 format!("clippy.toml missing {key} = true — minimum clippy config requires it"),

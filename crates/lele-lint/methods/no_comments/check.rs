@@ -30,7 +30,7 @@ fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
             if matches!(&hit.kind, common::CommentKind::Line(text) if is_allowlisted(text)) {
                 continue;
             }
-            violations.push(RuleViolation::site(
+            violations.push(RuleViolation::from_site(
                 base.join(&entry.relative_path),
                 hit.line,
                 0,

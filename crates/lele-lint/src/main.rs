@@ -48,7 +48,7 @@ fn main() {
         return;
     }
 
-    let mut project = match Project::discover(
+    let mut project = match Project::try_from_start_dir_and_scan_folders(
         args.common.path.as_deref(),
         args.common.scan_folder.as_deref(),
     ) {
@@ -59,7 +59,7 @@ fn main() {
         }
     };
 
-    let config = match resolve_config(args.common.config.as_deref(), &project.root) {
+    let config = match resolve_config(args.common.config.as_deref(), &project) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("lele_lint: lele.toml: {e}");
@@ -99,8 +99,9 @@ fn main() {
 // needed helper: a workspace keeps one lele.toml; prefer --config, else CWD, else the crate's own
 fn resolve_config(
     explicit: Option<&Path>,
-    project_root: &Path,
+    project: &Project,
 ) -> Result<(Config, PathBuf), lele_lint::Error> {
+    let project_root = project.root.as_path();
     if let Some(path) = explicit {
         return load_at(path, project_root);
     }
@@ -110,7 +111,7 @@ fn resolve_config(
         .filter(|path| path.exists());
     match cwd {
         Some(path) => load_at(&path, project_root),
-        None => Ok((Config::load(project_root)?, project_root.to_path_buf())),
+        None => Ok((project.load_config()?, project_root.to_path_buf())),
     }
 }
 
@@ -121,5 +122,5 @@ fn load_at(path: &Path, fallback: &Path) -> Result<(Config, PathBuf), lele_lint:
         .parent()
         .map(Path::to_path_buf)
         .unwrap_or_else(|| fallback.to_path_buf());
-    Ok((Config::load_file(&path)?, dir))
+    Ok((Config::try_from(path.as_path())?, dir))
 }

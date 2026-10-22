@@ -26,7 +26,7 @@ pub fn check(
             if !RawCode(&text).is_annotated_as_helper(line) {
                 continue;
             }
-            violations.push(RuleViolation::site(
+            violations.push(RuleViolation::from_site(
                 absolute.clone(),
                 line,
                 0,

@@ -9,7 +9,7 @@ pub enum HarnessCall {
 
 #[atomic_delegates]
 impl HarnessCall {
-    pub fn detect(body: &syn::Block, is_run_imported: bool) -> Self {}
+    pub fn from_fn_body(body: &syn::Block, is_run_imported: bool) -> Self {}
 }
 
 #[cfg(test)]
@@ -19,6 +19,6 @@ mod tests {
     #[test]
     fn test_usage() {
         let body: syn::Block = syn::parse_quote! {{ let _ = 1; }};
-        assert_eq!(HarnessCall::detect(&body, true), HarnessCall::Missing);
+        assert_eq!(HarnessCall::from_fn_body(&body, true), HarnessCall::Missing);
     }
 }

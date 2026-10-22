@@ -1,7 +1,7 @@
 use crate::scan;
 
 #[must_use]
-pub fn detect(body: &syn::Block, module_fns: &scan::ModuleFns) -> scan::SceneUsage {
+pub fn from_fn_body(body: &syn::Block, module_fns: &scan::ModuleFns) -> scan::SceneUsage {
     let start = syn::Expr::Block(syn::ExprBlock {
         attrs: Vec::new(),
         label: None,
@@ -51,7 +51,7 @@ fn field<'a>(literal: &'a syn::ExprStruct, name: &str) -> Option<&'a syn::Expr> 
 
 #[cfg(test)]
 mod tests {
-    use super::detect;
+    use super::from_fn_body;
     use crate::scan;
 
     #[test]
@@ -79,7 +79,7 @@ mod tests {
             .collect();
         let body: syn::Block =
             syn::parse_str("{ run(&scene(), &config(), \"x\").expect(\"preview\"); }").unwrap();
-        let usage = detect(&body, &module_fns);
+        let usage = from_fn_body(&body, &module_fns);
         assert!(usage.build_uses.contains(&"gate_create".to_string()));
         assert_eq!(usage.state_count, 2);
     }

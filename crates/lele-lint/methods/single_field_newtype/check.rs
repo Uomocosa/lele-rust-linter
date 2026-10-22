@@ -67,7 +67,7 @@ fn has_deref_derive(struct_def: &syn::ItemStruct) -> bool {
 
 // needed helper: whole-file single-field finding
 fn file_violation(file_path: &Path, message: String) -> RuleViolation {
-    RuleViolation::file(
+    RuleViolation::from_file(
         file_path.to_path_buf(),
         checkers::single_field_newtype::SingleFieldNewtype::CODE,
         message,

@@ -80,7 +80,7 @@ impl<'ast> Visit<'ast> for AllowFinder<'_> {
             return;
         }
         let start = attr.span().start();
-        self.violations.push(RuleViolation::site(self.file.clone(), start.line, start.column, checkers::no_allow_attributes::NoAllowAttributes::CODE, format!(
+        self.violations.push(RuleViolation::from_site(self.file.clone(), start.line, start.column, checkers::no_allow_attributes::NoAllowAttributes::CODE, format!(
                 "`{kind}` attribute is banned — add an [[lele.lint.clippy_allow_whitelist]] entry with the exact `allow` lint path, `file` and a non-empty `reason` in lele.toml to whitelist it"
             )));
     }

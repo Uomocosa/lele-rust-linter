@@ -40,7 +40,7 @@ pub fn check(
                     continue;
                 };
 
-                violations.push(RuleViolation::file(
+                violations.push(RuleViolation::from_file(
                     project.src_dir.join(rel_path),
                     checkers::constructor_no_skip::ConstructorNoSkip::CODE,
                     format!("{blurb} must not have #[rustfmt::skip]",),

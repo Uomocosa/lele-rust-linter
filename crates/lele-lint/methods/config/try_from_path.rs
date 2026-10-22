@@ -4,29 +4,22 @@ use crate::Config;
 use crate::Error;
 use crate::LeleToml;
 
-pub fn load(project_root: &Path) -> Result<Config, Error> {
-    let config_path = project_root.join("lele.toml");
-    let content = match std::fs::read_to_string(&config_path) {
-        Ok(c) => c,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(Config::default());
-        }
-        Err(error) => return Err(Error::Io(error)),
-    };
+pub fn try_from_path(path: &Path) -> Result<Config, Error> {
+    let content = std::fs::read_to_string(path).map_err(Error::Io)?;
     let parsed: LeleToml = toml::from_str(&content)?;
     Ok(Config(Some(parsed.lele)))
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
-    use super::load;
+    use crate::Config;
 
     #[test]
     fn test_usage() {
-        let config = load(Path::new("/nonexistent-lele-lint-probe")).unwrap();
-        assert!(config.as_ref().is_none());
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("lele.toml");
+        std::fs::write(&path, "[lele.lint]\n").unwrap();
+        assert!(Config::try_from(path.as_path()).unwrap().as_ref().is_some());
     }
 
     #[test]
@@ -37,7 +30,9 @@ mod tests {
             "[lele.lint.checkers]\ncontainer_placement = false\n",
         )
         .unwrap();
-        let err = load(dir.path()).unwrap_err().to_string();
+        let err = Config::try_from(dir.path().join("lele.toml").as_path())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("checkers"), "{err}");
     }
 
@@ -49,7 +44,7 @@ mod tests {
             "[[lele.boundary]]\nname = \"session\"\nwhy = \"pure\"\nfolders = [\"src/session\"]\ncannot_use = [\"tokio\"]\nrequire = \"honest\"\n",
         )
         .unwrap();
-        let config = load(dir.path()).unwrap();
+        let config = Config::try_from(dir.path().join("lele.toml").as_path()).unwrap();
         let section = config.as_ref().unwrap();
         assert_eq!(section.boundary.len(), 1);
         assert_eq!(
@@ -70,7 +65,9 @@ mod tests {
             "[[lele.boundary]]\nname = \"session\"\nwhy = \"pure\"\nfolders = [\"src/session\"]\nunknown = 1\n",
         )
         .unwrap();
-        let err = load(dir.path()).unwrap_err().to_string();
+        let err = Config::try_from(dir.path().join("lele.toml").as_path())
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("unknown"), "{err}");
     }
 
@@ -82,6 +79,9 @@ mod tests {
             "[honesty]\nhonesty_depth = 1\n\n[ui_preview.bevy]\nresource = \"Snapshot\"\n\n[lele.config]\nexclude = [\"target\"]\n\n[lele.lint]\n",
         )
         .unwrap();
-        assert!(load(dir.path()).unwrap().as_ref().is_some());
+        assert!(Config::try_from(dir.path().join("lele.toml").as_path())
+            .unwrap()
+            .as_ref()
+            .is_some());
     }
 }

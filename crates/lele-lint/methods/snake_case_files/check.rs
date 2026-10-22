@@ -23,7 +23,7 @@ pub fn check(
                 } else {
                     "filename"
                 };
-                violations.push(RuleViolation::file(entry.absolute_path.clone(), checkers::snake_case_files::SnakeCaseFiles::CODE, format!(
+                violations.push(RuleViolation::from_file(entry.absolute_path.clone(), checkers::snake_case_files::SnakeCaseFiles::CODE, format!(
                         "{kind} `{name}` is not snake_case — rename it to use lowercase letters, digits, and underscores",
                         kind = kind,
                         name = name

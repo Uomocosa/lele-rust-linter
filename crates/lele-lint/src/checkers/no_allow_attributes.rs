@@ -18,24 +18,30 @@ impl NoAllowAttributes {
         bad: &[
             ExampleFile {
                 path: "src/lib.rs",
-                source: r"mod greet;
-pub use greet::greet;
+                source: r"mod guest;
+pub use guest::Guest;
 ",
             },
             ExampleFile {
-                path: "src/greet.rs",
-                source: r#"#[allow(clippy::needless_pass_by_value)]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+                path: "src/guest.rs",
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 "#,
@@ -44,24 +50,30 @@ mod tests {
         good: &[
             ExampleFile {
                 path: "src/lib.rs",
-                source: r"mod greet;
-pub use greet::greet;
+                source: r"mod guest;
+pub use guest::Guest;
 ",
             },
             ExampleFile {
-                path: "src/greet.rs",
-                source: r#"#[allow(clippy::needless_pass_by_value)]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+                path: "src/guest.rs",
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 "#,
@@ -72,7 +84,7 @@ mod tests {
 
 [[lele.lint.clippy_allow_whitelist]]
 allow = "clippy::needless_pass_by_value"
-file = "src/greet.rs"
+file = "src/guest.rs"
 reason = "example: the signature is fixed by a trait in another crate"
 "#,
             },

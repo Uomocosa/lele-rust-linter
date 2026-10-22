@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
-use lele_bevy_lint::checkers::build_checkers;
+use lele_bevy_lint::BevyLinter;
 use lele_lint::Project;
 
 fn fixture_path(name: &str) -> PathBuf {
@@ -17,7 +17,8 @@ fn findings(name: &str) -> BTreeSet<(String, String)> {
     let Ok(project) = discovered else {
         return BTreeSet::new();
     };
-    build_checkers()
+    BevyLinter::default()
+        .checkers
         .iter()
         .flat_map(|checker| checker.check(&project))
         .map(|violation| {
@@ -51,7 +52,8 @@ fn compliant_crate_has_no_violations() {
 #[test]
 fn violation_crate_reports_exactly_the_expected_findings() {
     let code_of = |name: &str| {
-        build_checkers()
+        BevyLinter::default()
+            .checkers
             .iter()
             .find(|checker| checker.name() == name)
             .map(|checker| checker.code())

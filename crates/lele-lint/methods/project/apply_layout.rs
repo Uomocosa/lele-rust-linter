@@ -1,6 +1,5 @@
-use crate::parse_source_files;
-use crate::walk_entries;
 use crate::Config;
+use crate::Entry;
 use crate::Error;
 use crate::Project;
 
@@ -10,6 +9,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
         project
             .clippy_allow_whitelist
             .clone_from(&section.lint.clippy_allow_whitelist);
+        project.entry_points.clone_from(&section.lint.entry_points);
         project.boundaries.clone_from(&section.boundary);
     }
 
@@ -18,8 +18,8 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
         return Ok(());
     }
 
-    let entries = walk_entries::walk_entries(&methods_dir, &methods_dir)?;
-    let (parsed_files, parse_failures) = parse_source_files::parse_source_files(&entries);
+    let entries = Entry::walk(&methods_dir, &methods_dir)?;
+    let (parsed_files, parse_failures) = Entry::parse_all(&entries);
     project.methods_dir = Some(methods_dir);
     project.methods_entries = entries;
     project.methods_parsed_files = parsed_files;

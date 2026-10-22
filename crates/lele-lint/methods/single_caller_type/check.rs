@@ -5,7 +5,9 @@ use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
 use crate::checkers;
-use crate::common;
+use crate::FnBody;
+use crate::ImplBlock;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -24,7 +26,7 @@ pub fn check(
     ));
 
     for (name, rel_path) in &defined_types {
-        if common::is_exempt_source_path(rel_path, &project.dunder_paths) {
+        if project.is_exempt_source_path(rel_path) {
             continue;
         }
         if embedded.contains(name) {
@@ -121,10 +123,13 @@ fn has_atomic_delegates(file: &syn::File, type_name: &str) -> bool {
         let syn::Item::Impl(impl_block) = item else {
             return false;
         };
-        if common::self_type_last(&impl_block.self_ty).as_deref() != Some(type_name) {
+        if ImplBlock(impl_block).self_type_last().as_deref() != Some(type_name) {
             return false;
         }
-        common::has_atomic_delegates(&impl_block.attrs)
+        impl_block
+            .attrs
+            .iter()
+            .any(|attr| ItemMarker(attr).is_atomic_delegates())
             || has_fn_shell(impl_block)
             || impl_is_all_delegate(impl_block)
     })
@@ -133,7 +138,7 @@ fn has_atomic_delegates(file: &syn::File, type_name: &str) -> bool {
 // needed helper: per-function atomic shell presence check
 fn has_fn_shell(impl_block: &syn::ItemImpl) -> bool {
     impl_block.items.iter().any(
-        |item| matches!(item, syn::ImplItem::Fn(method) if common::has_atomic_fn(&method.attrs)),
+        |item| matches!(item, syn::ImplItem::Fn(method) if method.attrs.iter().any(|attr| ItemMarker(attr).is_atomic_delegate())),
     )
 }
 
@@ -146,14 +151,14 @@ fn has_real_inherent_method(file: &syn::File, type_name: &str) -> bool {
         if impl_block.trait_.is_some() {
             return false;
         }
-        if common::self_type_last(&impl_block.self_ty).as_deref() != Some(type_name) {
+        if ImplBlock(impl_block).self_type_last().as_deref() != Some(type_name) {
             return false;
         }
         impl_block.items.iter().any(|item| {
             matches!(
                 item,
                 syn::ImplItem::Fn(method)
-                    if !method.block.stmts.is_empty() && !common::is_delegate_call(&method.block)
+                    if !method.block.stmts.is_empty() && !FnBody(&method.block).is_delegate_call()
             )
         })
     })
@@ -219,7 +224,7 @@ fn collect_refs_from_items(
     }
     impl<'ast> syn::visit::Visit<'ast> for RefCollector<'_> {
         fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
-            if common::is_cfg_test_mod(node) {
+            if node.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
                 return;
             }
             syn::visit::visit_item_mod(self, node);

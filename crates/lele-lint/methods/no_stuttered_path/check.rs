@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 use std::path::Path;
-
 use syn::spanned::Spanned;
+
 use syn::visit::Visit;
 
 use crate::checkers;
-use crate::common;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -86,7 +86,7 @@ fn collect_stutter(path: &syn::Path, root_stems: &HashSet<String>, hits: &mut Ve
     }
     for pair in segments.windows(2) {
         if let [module, ty] = pair {
-            if root_stems.contains(module) && common::is_stuttered_path(module, ty) {
+            if root_stems.contains(module) && Identifier(ty).is_stuttered_in(module) {
                 hits.push(StutterHit {
                     line: path.span().start().line,
                     path: segments.join("::"),

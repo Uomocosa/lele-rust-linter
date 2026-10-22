@@ -27,16 +27,22 @@ impl NoSuperImports {
 pub mod basic;
 
 pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
+mod shelf;
+pub use shelf::Shelf;
 "#,
             },
             ExampleFile {
-                path: "src/stock/price_of.rs",
+                path: "src/stock/shelf.rs",
                 source: r"use super::Item;
 
-pub fn price_of(item: &Item) -> u32 {
-    item.price
+pub struct Shelf {
+    pub label: String,
+    pub items: Vec<Item>,
+}
+
+#[rustfmt::skip]
+impl Shelf {
+    pub fn total_price(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 ",
             },
@@ -66,30 +72,39 @@ pub fn price_of(item: &Item) -> u32 {
 pub mod basic;
 
 pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
+mod shelf;
+pub use shelf::Shelf;
 "#,
             },
             ExampleFile {
-                path: "src/stock/price_of.rs",
+                path: "src/stock/shelf.rs",
                 source: r#"use crate::stock;
 
-pub fn price_of(item: &stock::Item) -> u32 {
-    item.price
+pub struct Shelf {
+    pub label: String,
+    pub items: Vec<stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Shelf {
+    pub fn total_price(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::price_of;
+    use super::Shelf;
     use crate::stock::Item;
 
     #[test]
     fn test_usage() {
-        let item = Item {
-            name: "apple".to_string(),
-            price: 3,
+        let shelf = Shelf {
+            label: "fruit".to_string(),
+            items: vec![Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
         };
-        assert_eq!(price_of(&item), 3);
+        assert_eq!(shelf.total_price(), 3);
     }
 }
 "#,

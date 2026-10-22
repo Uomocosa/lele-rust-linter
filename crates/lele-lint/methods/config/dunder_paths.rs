@@ -1,9 +1,8 @@
-use crate::common;
 use crate::Config;
 use crate::DunderPath;
 
 pub fn dunder_paths(config: &Config) -> Vec<DunderPath> {
-    let mut merged = common::default_dunder_paths();
+    let mut merged = DunderPath::defaults();
     if let Some(section) = config.as_ref() {
         merged.extend(section.lint.dunder_paths.iter().cloned());
     }

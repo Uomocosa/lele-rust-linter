@@ -1,9 +1,12 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
 use crate::common;
+use crate::FnBody;
+use crate::ImplBlock;
+use crate::ImplMethod;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 pub fn check(
     _self: &checkers::atomic_delegates::AtomicDelegates,
@@ -15,7 +18,7 @@ pub fn check(
         let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        let Some(primary) = common::primary_type_name(file, file_stem) else {
+        let Some(primary) = common::SourceFile(file).primary_type_name(file_stem) else {
             continue;
         };
 
@@ -24,11 +27,11 @@ pub fn check(
                 continue;
             };
 
-            if common::self_type_last(&impl_block.self_ty).as_deref() != Some(primary.as_str()) {
+            if ImplBlock(impl_block).self_type_last().as_deref() != Some(primary.as_str()) {
                 continue;
             }
 
-            if common::is_default_impl(impl_block) {
+            if ImplBlock(impl_block).is_default_impl() {
                 continue;
             }
 
@@ -36,7 +39,11 @@ pub fn check(
                 continue;
             }
 
-            if common::has_cfg_test(&impl_block.attrs) {
+            if impl_block
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).is_cfg_test())
+            {
                 continue;
             }
 
@@ -47,7 +54,7 @@ pub fn check(
                 .iter()
                 .filter_map(|item| {
                     if let syn::ImplItem::Fn(method) = item {
-                        if common::is_short_body(&method.block) {
+                        if FnBody(&method.block).is_short() {
                             None
                         } else {
                             Some(&method.sig.ident)
@@ -83,21 +90,27 @@ pub fn check(
                 .collect();
 
             if !one_liners.is_empty() {
-                if common::has_rustfmt_skip(impl_block)
-                    || common::has_atomic_delegates(&impl_block.attrs)
+                if impl_block
+                    .attrs
+                    .iter()
+                    .any(|attr| ItemMarker(attr).is_rustfmt_skip())
+                    || impl_block
+                        .attrs
+                        .iter()
+                        .any(|attr| ItemMarker(attr).is_atomic_delegates())
                 {
                     for method in &one_liners {
-                        if common::is_delegate_call(&method.block) && !is_one_line_body(method) {
+                        if FnBody(&method.block).is_delegate_call() && !is_one_line_body(method) {
                             violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
                                     "one-liner method `{}` body must be on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
                         }
                     }
-                } else if !common::is_default_impl(impl_block) {
+                } else if !ImplBlock(impl_block).is_default_impl() {
                     let plain: Vec<&&syn::ImplItemFn> = one_liners
                         .iter()
-                        .filter(|m| !common::is_real_constructor(m))
+                        .filter(|m| !ImplMethod(m).is_real_constructor())
                         .collect();
                     if plain.is_empty() {
                         continue;
@@ -109,7 +122,7 @@ pub fn check(
                         .join(", ");
                     let ctors: Vec<String> = one_liners
                         .iter()
-                        .filter(|m| common::is_real_constructor(m))
+                        .filter(|m| ImplMethod(m).is_real_constructor())
                         .map(|m| m.sig.ident.to_string())
                         .collect();
                     let message = if ctors.is_empty() || is_trait_impl {

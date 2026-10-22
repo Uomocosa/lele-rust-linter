@@ -42,13 +42,13 @@ impl CallGraph {
 
 // needed helper: walks every production item, skipping test modules and test-only files
 fn visit_production(graph: &mut CallGraph, project: &Project) {
-    let test_only = scan::test_only_files(project);
+    let test_only = scan::BevyProject(project).test_only_files();
     for source in project.sources() {
         if test_only.contains(source.relative_path) {
             continue;
         }
         for item in &source.file.items {
-            if !scan::is_test_module(item) {
+            if !scan::ScannedItem(item).is_test_module() {
                 visit_item(graph, item);
             }
         }
@@ -147,11 +147,11 @@ impl<'ast> Visit<'ast> for CallCollector<'_> {
     }
 
     fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let Some(idents) = scan::system_args(node) {
+        if let Some(idents) = scan::AppMethodCall(node).system_args() {
             self.calls.extend(idents.iter().cloned());
             self.systems.extend(idents);
             self.visit_expr(&node.receiver);
-        } else if let Some(idents) = scan::observer_args(node) {
+        } else if let Some(idents) = scan::AppMethodCall(node).observer_args() {
             self.calls.extend(idents.iter().cloned());
             self.systems.extend(idents);
             self.visit_expr(&node.receiver);

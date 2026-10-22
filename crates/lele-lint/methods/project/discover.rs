@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::methods;
-use crate::parse_source_files;
-use crate::walk_entries;
+use crate::Entry;
 use crate::Error;
 use crate::ModuleInfo;
 use crate::Project;
@@ -24,9 +23,9 @@ pub fn discover(
     if !src_dir.exists() || !src_dir.is_dir() {
         return Err(Error::NoSrcDirectory(src_dir));
     }
-    let entries = walk_entries::walk_entries(&src_dir, &src_dir)?;
+    let entries = Entry::walk(&src_dir, &src_dir)?;
     let module_info = ModuleInfo::build(&entries);
-    let (parsed_files, mut parse_failures) = parse_source_files::parse_source_files(&entries);
+    let (parsed_files, mut parse_failures) = Entry::parse_all(&entries);
     let examples = scan_examples(&root)?;
     parse_failures.extend(examples.parse_failures);
     Ok(Project {
@@ -48,8 +47,8 @@ fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {
     if !dir.is_dir() {
         return Ok(ScannedDir::default());
     }
-    let entries = walk_entries::walk_entries(&dir, &dir)?;
-    let (parsed_files, parse_failures) = parse_source_files::parse_source_files(&entries);
+    let entries = Entry::walk(&dir, &dir)?;
+    let (parsed_files, parse_failures) = Entry::parse_all(&entries);
     Ok(ScannedDir {
         entries,
         parsed_files,
@@ -66,10 +65,10 @@ fn discover_folders(base_path: &Path, folders: &[PathBuf]) -> Result<Project, Er
         if !abs_dir.exists() || !abs_dir.is_dir() {
             return Err(Error::NoScanFolder(abs_dir));
         }
-        entries.extend(walk_entries::walk_entries(&abs_dir, base_path)?);
+        entries.extend(Entry::walk(&abs_dir, base_path)?);
     }
     let module_info = ModuleInfo::build(&entries);
-    let (parsed_files, parse_failures) = parse_source_files::parse_source_files(&entries);
+    let (parsed_files, parse_failures) = Entry::parse_all(&entries);
     let owned_base = base_path.to_path_buf();
     Ok(Project {
         root: owned_base.clone(),

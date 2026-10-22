@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::checkers;
 use crate::common;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -21,7 +22,10 @@ pub fn check(
             continue;
         };
 
-        if common::primary_type_name(file, file_stem).is_some() {
+        if common::SourceFile(file)
+            .primary_type_name(file_stem)
+            .is_some()
+        {
             continue;
         }
 
@@ -29,7 +33,8 @@ pub fn check(
 
         if let Some(candidate_dirs) = find_parent_type(file_stem, &known_stems, &type_dirs) {
             if !candidate_dirs.iter().any(|dir| dir == file_dir) {
-                let Some(type_snake) = common::longest_type_prefix(file_stem, &known_stems) else {
+                let Some(type_snake) = Identifier(file_stem).longest_type_prefix(&known_stems)
+                else {
                     continue;
                 };
                 let candidates = candidate_dirs
@@ -74,7 +79,7 @@ fn build_type_map(project: &Project) -> HashMap<String, Vec<PathBuf>> {
         let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        if common::primary_type_name(file, stem).is_some() {
+        if common::SourceFile(file).primary_type_name(stem).is_some() {
             let dir = rel_path.parent().unwrap_or(Path::new("")).to_path_buf();
             map.entry(stem.to_string()).or_default().push(dir);
         }
@@ -88,18 +93,20 @@ fn find_parent_type(
     known_stems: &HashSet<String>,
     type_dirs: &HashMap<String, Vec<PathBuf>>,
 ) -> Option<Vec<PathBuf>> {
-    common::longest_type_prefix(stem, known_stems).and_then(|prefix| type_dirs.get(prefix).cloned())
+    Identifier(stem)
+        .longest_type_prefix(known_stems)
+        .and_then(|prefix| type_dirs.get(prefix).cloned())
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::Identifier;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use std::path::PathBuf;
 
     use super::{check, find_parent_type, pub_fn_names};
     use crate::checkers::method_file_co_location::MethodFileCoLocation;
-    use crate::common;
     use crate::Project;
 
     fn known_stems(dirs: &HashMap<String, Vec<PathBuf>>) -> HashSet<String> {
@@ -133,7 +140,7 @@ mod tests {
         dirs.insert("freenet_client".to_string(), vec![PathBuf::from("freenet")]);
 
         assert_eq!(
-            common::longest_type_prefix("freenet_client_connect", &known_stems(&dirs)),
+            Identifier("freenet_client_connect").longest_type_prefix(&known_stems(&dirs)),
             Some("freenet_client")
         );
     }

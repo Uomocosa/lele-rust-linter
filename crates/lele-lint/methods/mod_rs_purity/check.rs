@@ -1,9 +1,8 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 pub fn check(
     _self: &checkers::mod_rs_purity::ModRsPurity,
@@ -41,7 +40,7 @@ pub fn check(
 // needed helper: mod.rs item violation classification
 fn violation_message(item: &syn::Item) -> Option<String> {
     match item {
-        syn::Item::Mod(module) if common::is_cfg_test_mod(module) => Some(
+        syn::Item::Mod(module) if module.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) => Some(
             "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — `#[cfg(test)] mod` test modules are not allowed"
                 .to_string(),
         ),

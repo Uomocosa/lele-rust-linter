@@ -18,14 +18,20 @@ impl HelperCount {
         bad: &[
             ExampleFile {
                 path: "src/lib.rs",
-                source: r"mod score;
-pub use score::score;
+                source: r"mod round;
+pub use round::Round;
 ",
             },
             ExampleFile {
-                path: "src/score.rs",
-                source: r"pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+                path: "src/round.rs",
+                source: r"pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { bonus(self.hits).saturating_add(base(self.hits)).saturating_sub(penalty(self.misses)) }
 }
 
 fn base(hits: u32) -> u32 {
@@ -42,11 +48,11 @@ fn penalty(misses: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::score;
+    use super::Round;
 
     #[test]
     fn test_usage() {
-        assert_eq!(score(1, 0), 10);
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
     }
 }
 ",
@@ -55,14 +61,20 @@ mod tests {
         good: &[
             ExampleFile {
                 path: "src/lib.rs",
-                source: r"mod score;
-pub use score::score;
+                source: r"mod round;
+pub use round::Round;
 ",
             },
             ExampleFile {
-                path: "src/score.rs",
-                source: r"pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+                path: "src/round.rs",
+                source: r"pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { bonus(self.hits).saturating_add(base(self.hits)).saturating_sub(penalty(self.misses)) }
 }
 
 // needed helper: points per hit
@@ -82,11 +94,11 @@ fn penalty(misses: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::score;
+    use super::Round;
 
     #[test]
     fn test_usage() {
-        assert_eq!(score(1, 0), 10);
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
     }
 }
 ",

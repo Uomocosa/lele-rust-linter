@@ -1,9 +1,11 @@
 use std::path::{Path, PathBuf};
 
 use crate::checkers;
-use crate::common;
+use crate::ImplBlock;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
+use crate::Visibility;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Role {
@@ -53,7 +55,7 @@ pub fn check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
-    let Some(folder) = common::dunder_dir(&project.dunder_paths) else {
+    let Some(folder) = project.dunder_dir() else {
         return violations;
     };
 
@@ -61,7 +63,7 @@ pub fn check(
         let rel_path = source.relative_path;
         let file = source.file;
         let file_path = project.absolute_path(source.origin, rel_path);
-        if common::in_dunder_dir(rel_path, &project.dunder_paths) {
+        if project.is_in_dunder_dir(rel_path) {
             violations.extend(check_container_file(rel_path, file, project, &file_path));
         } else {
             violations.extend(check_free_file(rel_path, file, &folder, &file_path));
@@ -88,7 +90,7 @@ fn check_container_file(
     let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
         return Vec::new();
     };
-    if stem == "mod.rs" || common::is_dunder_file_path(rel_path, &project.dunder_paths) {
+    if stem == "mod.rs" || project.is_dunder_file_path(rel_path) {
         return Vec::new();
     }
     let Some(role) = role_of_stem(stem) else {
@@ -174,11 +176,11 @@ fn file_violation(file_path: &Path, message: String) -> RuleViolation {
 // needed helper: exposed (pub/pub(crate)) primary item name
 fn exposed_name(item: &syn::Item) -> Option<String> {
     match item {
-        syn::Item::Struct(s) if common::is_exposed(&s.vis) => Some(s.ident.to_string()),
-        syn::Item::Enum(e) if common::is_exposed(&e.vis) => Some(e.ident.to_string()),
-        syn::Item::Type(t) if common::is_exposed(&t.vis) => Some(t.ident.to_string()),
-        syn::Item::Const(c) if common::is_exposed(&c.vis) => Some(c.ident.to_string()),
-        syn::Item::Static(s) if common::is_exposed(&s.vis) => Some(s.ident.to_string()),
+        syn::Item::Struct(s) if Visibility(&s.vis).is_exposed() => Some(s.ident.to_string()),
+        syn::Item::Enum(e) if Visibility(&e.vis).is_exposed() => Some(e.ident.to_string()),
+        syn::Item::Type(t) if Visibility(&t.vis).is_exposed() => Some(t.ident.to_string()),
+        syn::Item::Const(c) if Visibility(&c.vis).is_exposed() => Some(c.ident.to_string()),
+        syn::Item::Static(s) if Visibility(&s.vis).is_exposed() => Some(s.ident.to_string()),
         _ => None,
     }
 }
@@ -264,10 +266,14 @@ fn has_behavior(file: &syn::File, type_name: &str) -> bool {
         let syn::Item::Impl(impl_block) = item else {
             return false;
         };
-        if common::has_atomic_delegates(&impl_block.attrs) {
+        if impl_block
+            .attrs
+            .iter()
+            .any(|attr| ItemMarker(attr).is_atomic_delegates())
+        {
             return true;
         }
-        common::self_type_last(&impl_block.self_ty).as_deref() == Some(type_name)
+        ImplBlock(impl_block).self_type_last().as_deref() == Some(type_name)
     })
 }
 
@@ -283,16 +289,16 @@ fn container_dir(rel_path: &Path, folder: &str) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
+    use crate::DunderPath;
     use std::path::PathBuf;
 
     use super::{check, container_dir};
     use crate::checkers::container_placement::ContainerPlacement;
-    use crate::common;
     use crate::Project;
 
     fn project(files: &[(&str, &str)]) -> Project {
         let mut project = Project {
-            dunder_paths: common::default_dunder_paths(),
+            dunder_paths: DunderPath::defaults(),
             ..Project::default()
         };
         for (path, source) in files {

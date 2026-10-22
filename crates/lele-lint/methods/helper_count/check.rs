@@ -1,10 +1,10 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Origin;
 use crate::Project;
+use crate::RawCode;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 const MAX_PRIVATE_HELPERS: usize = 2;
 
@@ -65,20 +65,20 @@ pub fn check(_self: &checkers::helper_count::HelperCount, project: &Project) -> 
 }
 
 fn count_unannotated_private_helpers(file: &syn::File, source: &str) -> usize {
-    let lines: Vec<&str> = source.lines().collect();
-
     file.items
         .iter()
         .filter_map(|item| match item {
             syn::Item::Fn(func)
                 if matches!(func.vis, syn::Visibility::Inherited)
-                    && !common::has_attr(&func.attrs, "test") =>
+                    && !func.attrs.iter().any(|attr| ItemMarker(attr).is_test()) =>
             {
                 Some(func)
             }
             _ => None,
         })
-        .filter(|func| !common::annotated_as_helper(&lines, func.sig.fn_token.span().start().line))
+        .filter(|func| {
+            !RawCode(source).is_annotated_as_helper(func.sig.fn_token.span().start().line)
+        })
         .count()
 }
 

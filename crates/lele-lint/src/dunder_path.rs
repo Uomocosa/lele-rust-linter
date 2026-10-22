@@ -23,6 +23,14 @@ impl DunderPath {
     pub fn is_dunder_file(&self) -> bool { self.extension().is_some() }
 }
 
+impl DunderPath {
+    pub fn defaults() -> Vec<Self> {
+        Self::try_from(PathBuf::from("__basic__"))
+            .into_iter()
+            .collect()
+    }
+}
+
 #[rustfmt::skip]
 impl TryFrom<PathBuf> for DunderPath {
     type Error = Error;

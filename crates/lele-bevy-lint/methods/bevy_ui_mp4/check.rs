@@ -6,8 +6,8 @@ use crate::scan;
 
 pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::collect(project);
-    let extra = scan::require_visuals(project);
-    let test_only = scan::test_only_files(project);
+    let extra = scan::BevyProject(project).require_visuals();
+    let test_only = scan::BevyProject(project).test_only_files();
     let mut violations = Vec::new();
 
     for source in project.sources() {
@@ -16,20 +16,16 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
         }
         let rel_path = source.relative_path;
         let file = source.file;
-        let found_drivers = scan::time_drivers(file);
+        let found_drivers = scan::ScannedFile(file).time_drivers();
         if found_drivers.is_empty() {
             continue;
         }
-        let Some(visual) = scan::reachable_visual(file, &graph, &extra) else {
+        let Some(visual) = scan::ScannedFile(file).reachable_visual(&graph, &extra) else {
             continue;
         };
 
-        let missing = scan::require_preview(file, scan::PreviewKind::Mp4, || {
-            scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                visual.line,
+        let missing = scan::ScannedFile(file).require_preview(scan::PreviewKind::Mp4, || {
+            scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
                 checkers::bevy_ui_mp4::BevyUiMp4::CODE,
                 format!(
                     "file spawns UI `{}` and drives it over time ({}) but defines no `*_ui_mp4_preview` test",
@@ -43,16 +39,12 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
             continue;
         }
 
-        let previews = scan::collect_previews(file);
-        let subjects = scan::preview_subjects(file, &graph, &extra);
+        let previews = scan::ScannedFile(file).collect_previews();
+        let subjects = scan::ScannedFile(file).preview_subjects(&graph, &extra);
         if let Some(preview) =
-            scan::preview_missing_subject(&previews, scan::PreviewKind::Mp4, &subjects)
+            scan::Preview::missing_subject(&previews, scan::PreviewKind::Mp4, &subjects)
         {
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                preview.line,
+            violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
                 checkers::bevy_ui_mp4::BevyUiMp4::CODE,
                 format!(
                     "`fn {}` does not record this file's UI: its `Scene::build` must register, call or add one of `{}`, not a copy of it",

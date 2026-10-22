@@ -29,26 +29,32 @@ pub mod player;
             },
             ExampleFile {
                 path: "src/player/mod.rs",
-                source: r"mod clamp_health;
+                source: r"mod health;
 
-pub use clamp_health::clamp_health;
+pub use health::Health;
 ",
             },
             ExampleFile {
-                path: "src/player/clamp_health.rs",
-                source: r"use crate::constants;
+                path: "src/player/health.rs",
+                source: r"use derive_more::Deref;
 
-pub fn clamp_health(health: u32) -> u32 {
-    health.min(constants::MAX_HEALTH)
+use crate::constants;
+
+#[derive(Deref)]
+pub struct Health(pub u32);
+
+#[rustfmt::skip]
+impl Health {
+    pub fn clamped(&self) -> u32 { (**self).min(constants::MAX_HEALTH) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::clamp_health;
+    use super::Health;
 
     #[test]
     fn test_usage() {
-        assert_eq!(clamp_health(150), 100);
+        assert_eq!(Health(150).clamped(), 100);
     }
 }
 ",
@@ -62,12 +68,12 @@ mod tests {
             },
             ExampleFile {
                 path: "src/player/mod.rs",
-                source: r#"mod clamp_health;
+                source: r#"mod health;
 #[path = "__basic__/mod.rs"]
 pub mod basic;
 
 pub use basic::constants::MAX_HEALTH;
-pub use clamp_health::clamp_health;
+pub use health::Health;
 "#,
             },
             ExampleFile {
@@ -81,20 +87,26 @@ pub use clamp_health::clamp_health;
 ",
             },
             ExampleFile {
-                path: "src/player/clamp_health.rs",
-                source: r"use crate::player;
+                path: "src/player/health.rs",
+                source: r"use derive_more::Deref;
 
-pub fn clamp_health(health: u32) -> u32 {
-    health.min(player::MAX_HEALTH)
+use crate::player;
+
+#[derive(Deref)]
+pub struct Health(pub u32);
+
+#[rustfmt::skip]
+impl Health {
+    pub fn clamped(&self) -> u32 { (**self).min(player::MAX_HEALTH) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::clamp_health;
+    use super::Health;
 
     #[test]
     fn test_usage() {
-        assert_eq!(clamp_health(150), 100);
+        assert_eq!(Health(150).clamped(), 100);
     }
 }
 ",

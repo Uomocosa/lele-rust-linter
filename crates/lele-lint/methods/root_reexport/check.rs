@@ -1,8 +1,9 @@
+use lele_snake_case::ToLeleSnakeCase;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::checkers;
-use crate::common;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -58,7 +59,7 @@ fn missing_fn_flatten(stem: &str, file: &syn::File, lib: &syn::File) -> Vec<Stri
             if !matches!(f.vis, syn::Visibility::Public(_)) {
                 continue;
             }
-            if common::to_snake_case(&f.sig.ident.to_string()) == stem {
+            if f.sig.ident.to_string().to_snake_case() == stem {
                 fns.push(f.sig.ident.to_string());
             }
         }
@@ -114,7 +115,7 @@ fn missing_reexports(
             }
             _ => continue,
         };
-        if !common::is_stuttered_path(stem, &name) {
+        if !Identifier(&name).is_stuttered_in(stem) {
             continue;
         }
         if !reexported.contains(&(stem.to_string(), name.clone())) {

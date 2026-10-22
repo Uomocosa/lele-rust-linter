@@ -1,5 +1,8 @@
 use crate::checkers;
-use crate::common;
+use crate::FnBody;
+use crate::ImplBlock;
+use crate::ImplMethod;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -12,11 +15,15 @@ pub fn check(
     for (rel_path, file) in &project.parsed_files {
         for item in &file.items {
             if let syn::Item::Impl(impl_block) = item {
-                if impl_block.trait_.is_some() && !common::is_default_impl(impl_block) {
+                if impl_block.trait_.is_some() && !ImplBlock(impl_block).is_default_impl() {
                     continue;
                 }
 
-                if !common::has_rustfmt_skip(impl_block) {
+                if !impl_block
+                    .attrs
+                    .iter()
+                    .any(|attr| ItemMarker(attr).is_rustfmt_skip())
+                {
                     continue;
                 }
 
@@ -25,7 +32,7 @@ pub fn check(
                 }
 
                 let type_name = type_name_string(&impl_block.self_ty);
-                let blurb = if common::is_default_impl(impl_block) {
+                let blurb = if ImplBlock(impl_block).is_default_impl() {
                     format!("impl Default for {type_name}")
                 } else if has_any_real_constructor(impl_block) {
                     format!("constructor impl for {type_name}")
@@ -64,12 +71,12 @@ fn is_atomic_delegates(impl_block: &syn::ItemImpl) -> bool {
     if impl_block.items.is_empty() {
         return false;
     }
-    if common::is_default_impl(impl_block) {
+    if ImplBlock(impl_block).is_default_impl() {
         return false;
     }
     for item in &impl_block.items {
         if let syn::ImplItem::Fn(method) = item {
-            if !common::is_delegate_call(&method.block) {
+            if !FnBody(&method.block).is_delegate_call() {
                 return false;
             }
         }
@@ -80,7 +87,7 @@ fn is_atomic_delegates(impl_block: &syn::ItemImpl) -> bool {
 // needed helper: real constructor detection (non-delegate static method)
 fn has_any_real_constructor(impl_block: &syn::ItemImpl) -> bool {
     impl_block.items.iter().any(
-        |item| matches!(item, syn::ImplItem::Fn(method) if common::is_real_constructor(method)),
+        |item| matches!(item, syn::ImplItem::Fn(method) if ImplMethod(method).is_real_constructor()),
     )
 }
 

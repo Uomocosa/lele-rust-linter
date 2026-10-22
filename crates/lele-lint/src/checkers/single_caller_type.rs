@@ -54,27 +54,72 @@ pub fn render(title: &str) -> Result<String, card::card_lines::CardLines> {
         good: &[
             ExampleFile {
                 path: "src/lib.rs",
+                source: r#"pub mod card;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
+"#,
+            },
+            ExampleFile {
+                path: "src/card/mod.rs",
+                source: r"mod card;
+
+pub use card::Card;
+",
+            },
+            ExampleFile {
+                path: "src/card/card.rs",
+                source: r##"use atomic_delegate_macros::atomic_delegates;
+
+pub struct Card {
+    pub title: String,
+    pub body: String,
+}
+
+#[atomic_delegates]
+impl Card {
+    pub fn render(&self) -> String {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::card;
+
+    #[test]
+    fn test_usage() {
+        let card = card::Card {
+            title: "A".to_string(),
+            body: "b".to_string(),
+        };
+        assert_eq!(card.render(), "# A\nb");
+    }
+}
+"##,
+            },
+            ExampleFile {
+                path: "methods/mod.rs",
                 source: r"pub mod card;
 ",
             },
             ExampleFile {
-                path: "src/card/mod.rs",
+                path: "methods/card/mod.rs",
                 source: r"mod render;
-
 pub use render::render;
 ",
             },
             ExampleFile {
-                path: "src/card/render.rs",
-                source: r##"struct Lines {
+                path: "methods/card/render.rs",
+                source: r##"use crate::card;
+
+struct Lines {
     title: String,
     body: String,
 }
 
-pub fn render(title: &str, body: &str) -> String {
+pub fn render(card: &card::Card) -> String {
     let lines = Lines {
-        title: title.to_string(),
-        body: body.to_string(),
+        title: card.title.clone(),
+        body: card.body.clone(),
     };
     format!("# {}\n{}", lines.title, lines.body)
 }
@@ -82,10 +127,15 @@ pub fn render(title: &str, body: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::render;
+    use crate::card;
 
     #[test]
     fn test_usage() {
-        assert_eq!(render("A", "b"), "# A\nb");
+        let card = card::Card {
+            title: "A".to_string(),
+            body: "b".to_string(),
+        };
+        assert_eq!(render(&card), "# A\nb");
     }
 }
 "##,

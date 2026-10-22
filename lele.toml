@@ -8,7 +8,7 @@ exclude = ["target", ".devenv", ".git"]
 
 [[lele.boundary]]
 name       = "syntax analysis is pure"
-why        = "crates/lele-lint/src/common holds pure helpers over syn ASTs, paths and strings; filesystem and process I/O live in Project::discover/walk_entries/parse_source_files."
+why        = "crates/lele-lint/src/common holds pure wrappers over syn ASTs and source paths; filesystem and process I/O live in Project::discover/walk_entries/parse_source_files."
 folders    = ["crates/lele-lint/src/common"]
 cannot_use = ["std::fs", "std::env", "std::process", "std::net", "std::time"]
 require    = "honest"

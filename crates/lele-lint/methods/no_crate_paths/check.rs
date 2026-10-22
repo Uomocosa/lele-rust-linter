@@ -16,7 +16,7 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if common::is_crate_root(rel_path) {
+        if common::SourcePath(rel_path).is_crate_root() {
             continue;
         }
         let mut hits = Vec::new();

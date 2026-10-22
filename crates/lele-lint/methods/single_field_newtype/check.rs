@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -13,11 +13,7 @@ pub fn check(
 
     for source in project.content_sources() {
         let file_path = project.absolute_path(source.origin, source.relative_path);
-        violations.extend(common::scan_struct_items(
-            &source.file.items,
-            &file_path,
-            check_struct,
-        ));
+        violations.extend(source.scan_struct_items(&file_path, check_struct));
     }
 
     violations
@@ -30,7 +26,11 @@ fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleViola
 
     if field_count == 1 {
         if let syn::Fields::Named(_) = struct_def.fields {
-            if common::has_data_shape_derive(struct_def) {
+            if struct_def
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).derives_data_shape())
+            {
                 return Vec::new();
             }
             if has_deref_derive(struct_def) {
@@ -59,7 +59,10 @@ fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleViola
 
 // needed helper: derive Deref attribute presence check
 fn has_deref_derive(struct_def: &syn::ItemStruct) -> bool {
-    common::has_derive_name(struct_def, &["Deref"])
+    struct_def
+        .attrs
+        .iter()
+        .any(|attr| ItemMarker(attr).derives_any_of(&["Deref"]))
 }
 
 // needed helper: whole-file single-field finding
@@ -75,13 +78,14 @@ fn file_violation(file_path: &Path, message: String) -> RuleViolation {
 mod tests {
     use std::path::Path;
 
+    use crate::ItemMarker;
     use crate::Project;
 
     use super::check;
     use super::check_struct;
     use super::has_deref_derive;
     use crate::checkers;
-    use crate::common;
+
     use syn::ItemStruct;
 
     #[test]
@@ -149,7 +153,10 @@ mod tests {
             "#[derive(Args)] struct Cmd { root: String }",
         ] {
             let s = parse(code);
-            assert!(common::has_data_shape_derive(&s));
+            assert!(s
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).derives_data_shape()));
             let violations = check_struct(&s, Path::new("x.rs"));
             assert!(violations.is_empty());
         }
@@ -158,7 +165,10 @@ mod tests {
     #[test]
     fn test_usage_non_shape_single_field_rejected() {
         let s = parse("#[derive(Clone, Debug)] struct X { value: u64 }");
-        assert!(!common::has_data_shape_derive(&s));
+        assert!(!s
+            .attrs
+            .iter()
+            .any(|attr| ItemMarker(attr).derives_data_shape()));
         let violations = check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);
     }

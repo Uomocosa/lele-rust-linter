@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
+use lele_lint::Linter;
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
@@ -15,7 +15,7 @@ fn run_checkers(path: &str) -> Result<Vec<RuleViolation>, Box<dyn std::error::Er
     let mut p = Project::discover(Some(&fixture_path(path)), None)?;
     let config = Config::load(&p.root).unwrap_or_default();
     p.apply_layout(&config)?;
-    let checkers = build_checkers();
+    let checkers = Linter::default().checkers;
     Ok(checkers.iter().flat_map(|c| c.check(&p)).collect())
 }
 
@@ -35,7 +35,8 @@ fn violation_crate_catches_all_errors() -> Result<(), Box<dyn std::error::Error>
     let violations = run_checkers("violation_crate")?;
     let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
     let code_of = |name: &str| {
-        build_checkers()
+        Linter::default()
+            .checkers
             .iter()
             .find(|checker| checker.name() == name)
             .map(|checker| checker.code())
@@ -86,7 +87,8 @@ fn methods_violation_crate_catches_layout_errors() -> Result<(), Box<dyn std::er
     let violations = run_checkers("methods_violation_crate")?;
     let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
     let code_of = |name: &str| {
-        build_checkers()
+        Linter::default()
+            .checkers
             .iter()
             .find(|checker| checker.name() == name)
             .map(|checker| checker.code())

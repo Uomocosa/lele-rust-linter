@@ -1,0 +1,38 @@
+use atomic_delegate_macros::atomic_delegate;
+use atomic_delegate_macros::atomic_delegates;
+use derive_more::Deref;
+use lele_lint::ErrorFormat;
+use lele_lint::Linter;
+
+#[derive(Deref)]
+pub struct BevyLinter(pub Linter);
+
+impl Default for BevyLinter {
+    #[atomic_delegate(BevyLinter)]
+    fn default() -> Self {}
+}
+
+#[atomic_delegates]
+impl BevyLinter {
+    pub fn with_error_format(error_format: ErrorFormat) -> BevyLinter {}
+    pub fn skill_markdown(&self) -> String {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BevyLinter;
+    use lele_lint::ErrorFormat;
+
+    #[test]
+    fn test_usage() {
+        let linter = BevyLinter::default();
+        assert!(
+            linter
+                .checkers
+                .iter()
+                .any(|checker| checker.name() == "bevy_ui")
+        );
+        let markdown = BevyLinter::with_error_format(ErrorFormat::Clippy).skill_markdown();
+        assert_ne!(markdown, "");
+    }
+}

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -13,11 +13,7 @@ pub fn check(
 
     for source in project.content_sources() {
         let file_path = project.absolute_path(source.origin, source.relative_path);
-        violations.extend(common::scan_struct_items(
-            &source.file.items,
-            &file_path,
-            check_struct,
-        ));
+        violations.extend(source.scan_struct_items(&file_path, check_struct));
     }
 
     violations
@@ -34,7 +30,11 @@ fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleViola
     let Some(field) = fields.unnamed.first() else {
         return Vec::new();
     };
-    if common::has_data_shape_derive(struct_def) {
+    if struct_def
+        .attrs
+        .iter()
+        .any(|attr| ItemMarker(attr).derives_data_shape())
+    {
         return Vec::new();
     }
     let Some(collection) = collection_name(&field.ty) else {

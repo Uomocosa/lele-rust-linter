@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
+use lele_lint::Linter;
 use lele_lint::Location;
 use lele_lint::Project;
 
@@ -22,7 +22,8 @@ fn render(fixture: &str) -> Result<String, Box<dyn std::error::Error>> {
     let mut project = Project::discover(Some(&root), None)?;
     let config = Config::load(&project.root).unwrap_or_default();
     project.apply_layout(&config)?;
-    let mut lines: Vec<String> = build_checkers()
+    let mut lines: Vec<String> = Linter::default()
+        .checkers
         .iter()
         .flat_map(|c| c.check(&project))
         .map(|d| {

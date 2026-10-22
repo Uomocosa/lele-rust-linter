@@ -1,7 +1,6 @@
 pub(crate) mod atomic_delegates;
 pub(crate) mod atomic_file;
 pub(crate) mod boundary_imports;
-mod build_checkers;
 pub(crate) mod clippy_config_cargo;
 pub(crate) mod clippy_config_clippy;
 pub(crate) mod constants_placement;
@@ -20,6 +19,7 @@ pub(crate) mod no_comments;
 pub(crate) mod no_crate_paths;
 pub(crate) mod no_cross_domain_reexport;
 pub(crate) mod no_dunder_tests;
+pub(crate) mod no_free_functions;
 pub(crate) mod no_positional;
 pub(crate) mod no_stuttered_path;
 pub(crate) mod no_stuttered_type;
@@ -32,5 +32,3 @@ pub(crate) mod snake_case_files;
 pub(crate) mod test_inline;
 pub(crate) mod test_is_not_helper;
 pub(crate) mod test_usage;
-
-pub use build_checkers::build_checkers;

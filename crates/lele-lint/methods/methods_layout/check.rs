@@ -3,6 +3,8 @@ use std::path::Path;
 use crate::checkers;
 use crate::common;
 use crate::EntryKind;
+use crate::Origin;
+use crate::ParsedSource;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -11,7 +13,7 @@ pub fn check(
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
-    let declared = common::collect_declared(project);
+    let declared = project.collect_declared();
 
     for (type_snake, declared_type) in &declared {
         for method in &declared_type.methods {
@@ -36,7 +38,13 @@ pub fn check(
                             ),
                         ));
                     }
-                    if !common::has_test_usage(file) {
+                    if !(ParsedSource {
+                        origin: Origin::Methods,
+                        relative_path: &rel,
+                        file,
+                    })
+                    .has_test_usage()
+                    {
                         violations.push(file_violation(
                             project,
                             &rel,
@@ -57,7 +65,7 @@ pub fn check(
         }
 
         let mod_rel = Path::new(type_snake).join("mod.rs");
-        let expected = common::type_index_content(&declared_type.methods);
+        let expected = declared_type.index_content();
         if project.methods_parsed_files.contains_key(&mod_rel) {
             if read_methods_file(project, &mod_rel).as_deref() != Some(expected.as_str()) {
                 violations.push(file_violation(
@@ -103,7 +111,7 @@ pub fn check(
 
     if !declared.is_empty() {
         let root_mod = Path::new("mod.rs");
-        let expected = common::root_index_content(&declared);
+        let expected = common::DeclaredType::root_index_content(&declared);
         if project.methods_parsed_files.contains_key(root_mod) {
             if read_methods_file(project, root_mod).as_deref() != Some(expected.as_str()) {
                 violations.push(file_violation(

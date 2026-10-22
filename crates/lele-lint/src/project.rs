@@ -1,14 +1,17 @@
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
 use atomic_delegate_macros::atomic_delegates;
 
+use crate::common;
 use crate::AllowWhitelistEntry;
 use crate::BoundaryEntry;
 use crate::Config;
 use crate::DunderPath;
 use crate::Entry;
+use crate::EntryPoint;
 use crate::Error;
 use crate::ModuleInfoMap;
 use crate::Origin;
@@ -25,6 +28,7 @@ pub struct Project {
     pub parsed_files: HashMap<PathBuf, syn::File>,
     pub dunder_paths: Vec<DunderPath>,
     pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
+    pub entry_points: Vec<EntryPoint>,
     pub methods_dir: Option<PathBuf>,
     pub methods_entries: Vec<Entry>,
     pub methods_parsed_files: HashMap<PathBuf, syn::File>,
@@ -44,6 +48,12 @@ impl Project {
     }
     pub fn find_cargo_root(start: &Path) -> Result<PathBuf, Error> {}
     pub fn sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {}
+    pub fn collect_declared(&self) -> BTreeMap<String, common::DeclaredType> {}
+    pub fn sync_methods(&self) -> Result<(), Error> {}
+    pub fn is_in_dunder_dir(&self, rel_path: &Path) -> bool {}
+    pub fn is_dunder_file_path(&self, rel_path: &Path) -> bool {}
+    pub fn is_dunder_path(&self, rel_path: &Path) -> bool {}
+    pub fn is_exempt_source_path(&self, rel_path: &Path) -> bool {}
 }
 
 #[rustfmt::skip]
@@ -64,6 +74,9 @@ impl Project {
             Origin::Methods => self.methods_dir.clone().unwrap_or_else(|| self.root.join("methods")).join(rel_path),
             Origin::Examples => self.root.join("examples").join(rel_path),
         }
+    }
+    pub fn dunder_dir(&self) -> Option<String> {
+        self.dunder_paths.iter().find(|dunder| dunder.is_dunder_dir()).and_then(|dunder| dunder.file_name()).and_then(|name| name.to_str()).map(String::from)
     }
     pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {
         self.sources()

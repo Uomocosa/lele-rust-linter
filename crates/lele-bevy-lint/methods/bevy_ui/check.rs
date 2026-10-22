@@ -6,8 +6,8 @@ use crate::scan;
 
 pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::collect(project);
-    let extra = scan::require_visuals(project);
-    let test_only = scan::test_only_files(project);
+    let extra = scan::BevyProject(project).require_visuals();
+    let test_only = scan::BevyProject(project).test_only_files();
     let mut violations = Vec::new();
 
     for source in project.sources() {
@@ -16,17 +16,13 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleVi
         }
         let rel_path = source.relative_path;
         let file = source.file;
-        let Some(visual) = scan::reachable_visual(file, &graph, &extra) else {
+        let Some(visual) = scan::ScannedFile(file).reachable_visual(&graph, &extra) else {
             continue;
         };
 
-        let previews = scan::collect_previews(file);
+        let previews = scan::ScannedFile(file).collect_previews();
         if !previews.iter().any(|p| p.kind == scan::PreviewKind::Png) {
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                visual.line,
+            violations.push(scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
                 checkers::bevy_ui::BevyUi::CODE,
                 format!(
                     "file spawns UI `{}` reachable from production but defines no `*_ui_png_preview` test that renders it through `lele_bevy_preview::run`",
@@ -36,15 +32,11 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleVi
             continue;
         }
 
-        let subjects = scan::preview_subjects(file, &graph, &extra);
+        let subjects = scan::ScannedFile(file).preview_subjects(&graph, &extra);
         if let Some(preview) =
-            scan::preview_missing_subject(&previews, scan::PreviewKind::Png, &subjects)
+            scan::Preview::missing_subject(&previews, scan::PreviewKind::Png, &subjects)
         {
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                preview.line,
+            violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
                 checkers::bevy_ui::BevyUi::CODE,
                 format!(
                     "`fn {}` does not render this file's UI: its `Scene::build` must register, call or add one of `{}`, not a copy of it",

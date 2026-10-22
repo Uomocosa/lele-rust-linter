@@ -9,12 +9,7 @@ pub fn build(entries: &[Entry]) -> ModuleInfoMap {
     let mut map = ModuleInfoMap::new();
 
     for entry in entries {
-        if !entry
-            .relative_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(common::is_index_file)
-        {
+        if !common::SourcePath(&entry.relative_path).is_index_file() {
             continue;
         }
 

@@ -1,9 +1,8 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 pub fn check(
     _self: &checkers::no_dunder_tests::NoDunderTests,
@@ -14,7 +13,7 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if !common::in_dunder_dir(rel_path, &project.dunder_paths) {
+        if !project.is_in_dunder_dir(rel_path) {
             continue;
         }
         for item in &file.items {
@@ -32,10 +31,20 @@ pub fn check(
 // needed helper: cfg(test) item start line, if the item is a test
 fn cfg_test_line(item: &syn::Item) -> Option<usize> {
     match item {
-        syn::Item::Mod(module) if common::is_cfg_test_mod(module) => {
+        syn::Item::Mod(module)
+            if module
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).is_cfg_test()) =>
+        {
             Some(module.span().start().line)
         }
-        syn::Item::Fn(function) if common::has_cfg_test(&function.attrs) => {
+        syn::Item::Fn(function)
+            if function
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).is_cfg_test()) =>
+        {
             Some(function.span().start().line)
         }
         _ => None,
@@ -44,16 +53,16 @@ fn cfg_test_line(item: &syn::Item) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
+    use crate::DunderPath;
     use std::path::PathBuf;
 
     use super::check;
     use crate::checkers::no_dunder_tests::NoDunderTests;
-    use crate::common;
     use crate::Project;
 
     fn project(files: &[(&str, &str)]) -> Project {
         let mut project = Project {
-            dunder_paths: common::default_dunder_paths(),
+            dunder_paths: DunderPath::defaults(),
             ..Project::default()
         };
         for (path, source) in files {

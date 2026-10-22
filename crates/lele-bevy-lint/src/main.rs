@@ -2,16 +2,11 @@ use std::process;
 
 use clap::Parser;
 use clap::ValueEnum;
-use lele_bevy_lint::checkers::build_checkers;
-use lele_bevy_lint::inventory;
-use lele_bevy_lint::skill_markdown;
+use lele_bevy_lint::BevyLinter;
+use lele_bevy_lint::scan;
 use lele_lint::CommonArgs;
 use lele_lint::Config;
 use lele_lint::Project;
-use lele_lint::explain;
-use lele_lint::print_checker_list;
-use lele_lint::rules_markdown;
-use lele_lint::run_checkers;
 
 #[derive(Clone, Copy, ValueEnum)]
 enum Emit {
@@ -38,25 +33,27 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
+    let linter = BevyLinter::with_error_format(args.common.error_format);
+
     if args.common.checker_list {
-        print_checker_list(&build_checkers());
+        linter.print_checker_list();
         return;
     }
 
     match args.emit {
         Some(Emit::RulesMd) => {
-            print!("{}", rules_markdown(&build_checkers()));
+            print!("{}", linter.rules_markdown());
             return;
         }
         Some(Emit::SkillMd) => {
-            print!("{}", skill_markdown());
+            print!("{}", linter.skill_markdown());
             return;
         }
         None => {}
     }
 
     if let Some(code) = args.common.explain {
-        let Some(text) = explain(&build_checkers(), &code) else {
+        let Some(text) = linter.explain(&code) else {
             eprintln!("lele_bevy_lint: no rule with code or name `{code}`");
             process::exit(1);
         };
@@ -89,11 +86,9 @@ fn main() {
     }
 
     if args.ui_inventory {
-        print!("{}", inventory::report(&project));
+        print!("{}", scan::BevyProject(&project).ui_inventory());
         return;
     }
 
-    let checkers = build_checkers();
-
-    process::exit(run_checkers(&project, &checkers, args.common.error_format));
+    process::exit(linter.run(&project));
 }

@@ -1,10 +1,9 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
-use crate::common;
 use crate::DunderPath;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 pub fn check(
     _self: &checkers::domain_import::DomainImport,
@@ -47,7 +46,7 @@ fn check_import(item_use: &syn::ItemUse, dunder_paths: &[DunderPath]) -> Option<
             return None;
         }
         if let [.., prev, last] = &segments[..] {
-            if common::is_stuttered_path(prev, last) {
+            if Identifier(last).is_stuttered_in(prev) {
                 return None;
             }
         }
@@ -90,12 +89,12 @@ fn find_use_line(item_use: &syn::ItemUse) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use crate::DunderPath;
     use std::path::PathBuf;
 
     use super::{check, check_import, is_pub_use};
     use crate::checkers;
     use crate::checkers::domain_import::DomainImport;
-    use crate::common;
     use crate::Entry;
     use crate::EntryKind;
     use crate::Location;
@@ -112,25 +111,25 @@ mod tests {
     #[test]
     fn test_usage_flags_direct_type_import() {
         let u: syn::ItemUse = parse_quote! { use crate::player::PlayerId; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_some());
+        assert!(check_import(&u, &DunderPath::defaults()).is_some());
     }
 
     #[test]
     fn test_usage_allows_domain_import() {
         let u: syn::ItemUse = parse_quote! { use crate::player; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_none());
+        assert!(check_import(&u, &DunderPath::defaults()).is_none());
     }
 
     #[test]
     fn test_usage_flags_subfolder_import() {
         let u: syn::ItemUse = parse_quote! { use crate::clicker::plugin::ClickerPlugin; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_some());
+        assert!(check_import(&u, &DunderPath::defaults()).is_some());
     }
 
     #[test]
     fn test_usage_allows_super_import() {
         let u: syn::ItemUse = parse_quote! { use super::player_new; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_none());
+        assert!(check_import(&u, &DunderPath::defaults()).is_none());
     }
 
     #[test]
@@ -142,13 +141,13 @@ mod tests {
     #[test]
     fn test_usage_allows_direct_stutter_import() {
         let u: syn::ItemUse = parse_quote! { use crate::diagnostic::Diagnostic; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_none());
+        assert!(check_import(&u, &DunderPath::defaults()).is_none());
     }
 
     #[test]
     fn test_usage_still_flags_direct_non_stutter_import() {
         let u: syn::ItemUse = parse_quote! { use crate::module_info::ModuleInfoMap; };
-        assert!(check_import(&u, &common::default_dunder_paths()).is_some());
+        assert!(check_import(&u, &DunderPath::defaults()).is_some());
     }
 
     #[test]

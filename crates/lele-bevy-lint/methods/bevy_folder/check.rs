@@ -4,6 +4,7 @@ use derive_more::{Deref, DerefMut};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 
+use lele_lint::ItemMarker;
 use lele_lint::Origin;
 use lele_lint::Project;
 use lele_lint::RuleViolation;
@@ -57,11 +58,7 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
                 continue;
             }
 
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                source.relative_path,
-                func.sig.fn_token.span().start().line,
+            violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, func.sig.fn_token.span().start().line,
                 checkers::bevy_folder::BevyFolder::CODE,
                 format!(
                     "pub fn `{}` is registered with `app.add_systems()` but lives outside bevy_systems/; move it into the domain's bevy_systems/ folder",
@@ -105,14 +102,14 @@ struct RegisteredCollector<'a>(&'a mut Vec<String>);
 
 impl<'ast> Visit<'ast> for RegisteredCollector<'_> {
     fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
-        if scan::is_test_attrs(&node.attrs) {
+        if node.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
             return;
         }
         syn::visit::visit_item_mod(self, node);
     }
 
     fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let Some(idents) = scan::system_args(node) {
+        if let Some(idents) = scan::AppMethodCall(node).system_args() {
             self.extend(idents);
             self.visit_expr(&node.receiver);
         } else {

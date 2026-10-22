@@ -10,10 +10,9 @@ pub fn check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.sources() {
-        for preview in scan::collect_previews(source.file) {
+        for preview in scan::ScannedFile(source.file).collect_previews() {
             for message in problems(&preview) {
-                violations.push(scan::site_violation(
-                    project,
+                violations.push(scan::BevyProject(project).violation(
                     source.origin,
                     source.relative_path,
                     preview.line,

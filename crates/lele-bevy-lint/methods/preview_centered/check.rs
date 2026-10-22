@@ -12,16 +12,12 @@ pub fn check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.sources() {
-        for preview in scan::collect_previews(source.file) {
+        for preview in scan::ScannedFile(source.file).collect_previews() {
             for kind in &preview.scene.uncentered_kinds {
                 if !CENTERED_KINDS.contains(&kind.as_str()) {
                     continue;
                 }
-                violations.push(scan::site_violation(
-                    project,
-                    source.origin,
-                    source.relative_path,
-                    preview.line,
+                violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, preview.line,
                     checkers::preview_centered::PreviewCentered::CODE,
                     format!(
                         "`fn {}` previews a `Kind::{kind}` scene without centring it; parent its nodes under `lele_bevy_preview::scene::centered_root()` or chain `lele_bevy_preview::scene::bevy_systems::center_roots` after the spawning system",

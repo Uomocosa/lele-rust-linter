@@ -1,19 +1,22 @@
+use lele_snake_case::ToLeleSnakeCase;
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::path::Path;
 
 use crate::checkers;
 use crate::common;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
+use crate::Visibility;
 
 pub fn check(_self: &checkers::atomic_file::AtomicFile, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     let known_stems = known_type_stems(project);
-    let declared = common::collect_declared(project);
+    let declared = project.collect_declared();
 
     for (rel_path, file) in &project.parsed_files {
-        if common::is_exempt_source_path(rel_path, &project.dunder_paths) {
+        if project.is_exempt_source_path(rel_path) {
             continue;
         }
         violations.extend(check_delegate_shape(
@@ -72,10 +75,13 @@ fn check_delegate_shape(
     let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
         return Vec::new();
     };
-    if common::primary_type_name(file, file_stem).is_some() {
+    if common::SourceFile(file)
+        .primary_type_name(file_stem)
+        .is_some()
+    {
         return Vec::new();
     }
-    let Some(type_snake) = common::longest_type_prefix(file_stem, known_stems) else {
+    let Some(type_snake) = Identifier(file_stem).longest_type_prefix(known_stems) else {
         return Vec::new();
     };
     let Some(rest) = file_stem
@@ -87,7 +93,7 @@ fn check_delegate_shape(
     if rest.is_empty() {
         return Vec::new();
     }
-    let type_name = common::to_pascal_case(type_snake);
+    let type_name = Identifier(type_snake).to_pascal_case();
     let is_delegate = declared
         .get(type_snake)
         .is_some_and(|entry| entry.methods.contains(rest));
@@ -117,26 +123,36 @@ fn check_fn_file_purity(
     let has_pub_fn = file
         .items
         .iter()
-        .any(|item| matches!(item, syn::Item::Fn(f) if common::is_exposed(&f.vis)));
+        .any(|item| matches!(item, syn::Item::Fn(f) if Visibility(&f.vis).is_exposed()));
     if !has_pub_fn {
         return Vec::new();
     }
     let mut violations = Vec::new();
     for item in &file.items {
         let (name, kind) = match item {
-            syn::Item::Struct(s) if common::is_exposed(&s.vis) => (s.ident.to_string(), "struct"),
-            syn::Item::Enum(e) if common::is_exposed(&e.vis) => (e.ident.to_string(), "enum"),
-            syn::Item::Const(c) if common::is_exposed(&c.vis) => (c.ident.to_string(), "const"),
-            syn::Item::Static(s) if common::is_exposed(&s.vis) => (s.ident.to_string(), "static"),
-            syn::Item::Type(t) if common::is_exposed(&t.vis) => (t.ident.to_string(), "type"),
-            syn::Item::Trait(t) if common::is_exposed(&t.vis) => (t.ident.to_string(), "trait"),
-            syn::Item::Union(u) if common::is_exposed(&u.vis) => (u.ident.to_string(), "union"),
+            syn::Item::Struct(s) if Visibility(&s.vis).is_exposed() => {
+                (s.ident.to_string(), "struct")
+            }
+            syn::Item::Enum(e) if Visibility(&e.vis).is_exposed() => (e.ident.to_string(), "enum"),
+            syn::Item::Const(c) if Visibility(&c.vis).is_exposed() => {
+                (c.ident.to_string(), "const")
+            }
+            syn::Item::Static(s) if Visibility(&s.vis).is_exposed() => {
+                (s.ident.to_string(), "static")
+            }
+            syn::Item::Type(t) if Visibility(&t.vis).is_exposed() => (t.ident.to_string(), "type"),
+            syn::Item::Trait(t) if Visibility(&t.vis).is_exposed() => {
+                (t.ident.to_string(), "trait")
+            }
+            syn::Item::Union(u) if Visibility(&u.vis).is_exposed() => {
+                (u.ident.to_string(), "union")
+            }
             _ => continue,
         };
         let home = if kind == "const" || kind == "static" {
             "nearest `constants.rs`"
         } else {
-            &format!("`{}.rs`", common::to_snake_case(&name))
+            &format!("`{}.rs`", name.to_snake_case())
         };
         violations.push(RuleViolation::file(project.src_dir.join(rel_path), checkers::atomic_file::AtomicFile::CODE, format!(
                 "SHAPE-F fn-file `{file_stem}.rs` must hold only the fn — move exposed `{kind} {name}` to {home} (O2-extraction)"
@@ -203,13 +219,17 @@ fn check_filename_match(
     project: &Project,
     known_stems: &HashSet<String>,
 ) -> Vec<RuleViolation> {
-    let expected = common::to_snake_case(name);
+    let expected = name.to_snake_case();
 
     if expected == file_stem {
         return Vec::new();
     }
 
-    if file_stem.contains('_') && common::longest_type_prefix(file_stem, known_stems).is_some() {
+    if file_stem.contains('_')
+        && Identifier(file_stem)
+            .longest_type_prefix(known_stems)
+            .is_some()
+    {
         if let Some((_prefix, suffix)) = file_stem.rsplit_once('_') {
             if expected.ends_with(suffix) {
                 return Vec::new();
@@ -231,7 +251,7 @@ fn known_type_stems(project: &Project) -> HashSet<String> {
         .iter()
         .filter_map(|(rel_path, file)| {
             let stem = rel_path.file_stem()?.to_str()?;
-            common::primary_type_name(file, stem)?;
+            common::SourceFile(file).primary_type_name(stem)?;
             Some(stem.to_string())
         })
         .collect()
@@ -239,11 +259,12 @@ fn known_type_stems(project: &Project) -> HashSet<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::DunderPath;
+    use crate::Identifier;
     use std::collections::HashSet;
 
     use super::{check, check_filename_match, check_fn_file_purity, collect_pub_items};
     use crate::checkers::atomic_file::AtomicFile;
-    use crate::common;
     use crate::Project;
     use std::path::{Path, PathBuf};
 
@@ -256,14 +277,12 @@ mod tests {
         assert_eq!(items[0].name, "AtomicFile");
         assert_eq!(items[1].name, "helper");
 
-        assert!(common::is_exempt_source_path(
-            Path::new("checkers/mod.rs"),
-            &common::default_dunder_paths()
-        ));
-        assert!(!common::is_exempt_source_path(
-            Path::new("checkers/atomic_file.rs"),
-            &common::default_dunder_paths()
-        ));
+        let project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        assert!(project.is_exempt_source_path(Path::new("checkers/mod.rs")));
+        assert!(!project.is_exempt_source_path(Path::new("checkers/atomic_file.rs")));
     }
 
     #[test]
@@ -298,10 +317,12 @@ mod tests {
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("filename mismatch"));
 
-        assert!(common::longest_type_prefix("freenet_client_connect", &known).is_none());
+        assert!(Identifier("freenet_client_connect")
+            .longest_type_prefix(&known)
+            .is_none());
         let with_prefix: HashSet<String> = HashSet::from(["freenet_client".to_string()]);
         assert_eq!(
-            common::longest_type_prefix("freenet_client_connect", &with_prefix),
+            Identifier("freenet_client_connect").longest_type_prefix(&with_prefix),
             Some("freenet_client")
         );
     }

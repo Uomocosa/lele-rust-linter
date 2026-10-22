@@ -2,10 +2,10 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use lele_lint::checkers::build_checkers;
 use lele_lint::config::Config;
 use lele_lint::Checker;
 use lele_lint::ExampleFile;
+use lele_lint::Linter;
 use lele_lint::Location;
 use lele_lint::Project;
 
@@ -73,7 +73,8 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
     let config = Config::load(&project.root).unwrap_or_default();
     project.apply_layout(&config)?;
     let root: PathBuf = dir.path().to_path_buf();
-    let mut lines: Vec<String> = build_checkers()
+    let mut lines: Vec<String> = Linter::default()
+        .checkers
         .iter()
         .flat_map(|c| c.check(&project))
         .map(|d| {
@@ -121,7 +122,7 @@ fn check_rule(checker: &dyn Checker) -> Result<Vec<String>, Box<dyn std::error::
 #[test]
 fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     let mut problems = Vec::new();
-    for checker in build_checkers() {
+    for checker in Linter::default().checkers {
         problems.extend(check_rule(checker.as_ref())?);
     }
     if problems.is_empty() {
@@ -130,7 +131,7 @@ fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     Err(problems.join("\n").into())
 }
 
-/// Every file in `src/checkers/` is registered in `build_checkers`, and codes are unique.
+/// Every file in `src/checkers/` is registered in `Linter::default`, and codes are unique.
 #[test]
 fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/checkers");
@@ -140,11 +141,11 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
         let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        if stem != "mod" && stem != "build_checkers" {
+        if stem != "mod" {
             files.insert(stem.to_string());
         }
     }
-    let checkers = build_checkers();
+    let checkers = Linter::default().checkers;
     let names: BTreeSet<String> = checkers.iter().map(|c| c.name().to_string()).collect();
     let codes: BTreeSet<&str> = checkers.iter().map(|c| c.code()).collect();
     if files != names {
@@ -159,7 +160,7 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
 /// Codes are exactly `LELE001..LELE<count>`, in registration order.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    for (index, checker) in build_checkers().iter().enumerate() {
+    for (index, checker) in Linter::default().checkers.iter().enumerate() {
         assert_eq!(
             checker.code(),
             format!("LELE{:03}", index + 1),

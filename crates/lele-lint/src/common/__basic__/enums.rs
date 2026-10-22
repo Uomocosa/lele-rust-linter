@@ -1,4 +1,4 @@
-pub(crate) enum CommentKind {
+pub enum CommentKind {
     Line(String),
     Block,
 }

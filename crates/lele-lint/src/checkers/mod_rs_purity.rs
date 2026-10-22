@@ -23,8 +23,14 @@ impl ModRsPurity {
             },
             ExampleFile {
                 path: "src/greeting/mod.rs",
-                source: r#"pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 "#,
             },
@@ -37,24 +43,30 @@ impl ModRsPurity {
             },
             ExampleFile {
                 path: "src/greeting/mod.rs",
-                source: r"mod greet;
+                source: r"mod guest;
 
-pub use greet::greet;
+pub use guest::Guest;
 ",
             },
             ExampleFile {
-                path: "src/greeting/greet.rs",
-                source: r#"pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+                path: "src/greeting/guest.rs",
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 "#,

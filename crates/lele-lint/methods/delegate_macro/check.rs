@@ -1,8 +1,12 @@
+use lele_snake_case::ToLeleSnakeCase;
 use std::collections::HashSet;
 use std::path::Path;
 
 use crate::checkers;
 use crate::common;
+use crate::FnBody;
+use crate::ImplBlock;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -17,7 +21,7 @@ pub fn check(
         let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
-        let Some(primary) = common::primary_type_name(file, stem) else {
+        let Some(primary) = common::SourceFile(file).primary_type_name(stem) else {
             continue;
         };
         let annotated_inherent = annotated_inherent_blocks(file, &primary);
@@ -35,15 +39,22 @@ pub fn check(
             let syn::Item::Impl(impl_block) = item else {
                 continue;
             };
-            if common::has_cfg_test(&impl_block.attrs) {
+            if impl_block
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).is_cfg_test())
+            {
                 continue;
             }
             if impl_block.trait_.is_some() {
-                if common::self_type_last(&impl_block.self_ty).as_deref() != Some(primary.as_str())
-                {
+                if ImplBlock(impl_block).self_type_last().as_deref() != Some(primary.as_str()) {
                     continue;
                 }
-                if common::has_atomic_delegates(&impl_block.attrs) {
+                if impl_block
+                    .attrs
+                    .iter()
+                    .any(|attr| ItemMarker(attr).is_atomic_delegates())
+                {
                     violations.extend(check_delegated_methods(
                         project, rel_path, &primary, impl_block, &mut seen,
                     ));
@@ -56,7 +67,7 @@ pub fn check(
                 if migratable.is_empty() {
                     continue;
                 }
-                let type_snake = common::to_snake_case(&primary);
+                let type_snake = primary.to_snake_case();
                 let mirrors = migratable
                     .iter()
                     .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
@@ -71,14 +82,18 @@ pub fn check(
                 ));
                 continue;
             }
-            if common::self_type_last(&impl_block.self_ty).as_deref() != Some(primary.as_str()) {
+            if ImplBlock(impl_block).self_type_last().as_deref() != Some(primary.as_str()) {
                 continue;
             }
             if !has_fn(impl_block) {
                 continue;
             }
 
-            if common::has_atomic_delegates(&impl_block.attrs) {
+            if impl_block
+                .attrs
+                .iter()
+                .any(|attr| ItemMarker(attr).is_atomic_delegates())
+            {
                 violations.extend(check_delegated_methods(
                     project, rel_path, &primary, impl_block, &mut seen,
                 ));
@@ -96,7 +111,7 @@ pub fn check(
             if migratable.is_empty() {
                 continue;
             }
-            let type_snake = common::to_snake_case(&primary);
+            let type_snake = primary.to_snake_case();
             let mirrors = migratable
                 .iter()
                 .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
@@ -160,9 +175,15 @@ fn annotated_inherent_blocks(file: &syn::File, primary: &str) -> usize {
         .filter(|item| match item {
             syn::Item::Impl(block) => {
                 block.trait_.is_none()
-                    && !common::has_cfg_test(&block.attrs)
-                    && common::has_atomic_delegates(&block.attrs)
-                    && common::self_type_last(&block.self_ty).as_deref() == Some(primary)
+                    && !block
+                        .attrs
+                        .iter()
+                        .any(|attr| ItemMarker(attr).is_cfg_test())
+                    && block
+                        .attrs
+                        .iter()
+                        .any(|attr| ItemMarker(attr).is_atomic_delegates())
+                    && ImplBlock(block).self_type_last().as_deref() == Some(primary)
             }
             _ => false,
         })
@@ -184,10 +205,13 @@ fn migratable_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
         .iter()
         .filter_map(|item| match item {
             syn::ImplItem::Fn(method)
-                if !common::has_atomic_fn(&method.attrs)
+                if !method
+                    .attrs
+                    .iter()
+                    .any(|attr| ItemMarker(attr).is_atomic_delegate())
                     && (method.block.stmts.is_empty()
-                        || common::is_delegate_call(&method.block)
-                        || common::is_methods_dispatch(&method.block)) =>
+                        || FnBody(&method.block).is_delegate_call()
+                        || FnBody(&method.block).is_methods_dispatch()) =>
             {
                 Some(&method.sig.ident)
             }
@@ -203,10 +227,13 @@ fn real_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
         .iter()
         .filter_map(|item| match item {
             syn::ImplItem::Fn(method)
-                if !common::has_atomic_fn(&method.attrs)
+                if !method
+                    .attrs
+                    .iter()
+                    .any(|attr| ItemMarker(attr).is_atomic_delegate())
                     && !method.block.stmts.is_empty()
-                    && !common::is_delegate_call(&method.block)
-                    && !common::is_methods_dispatch(&method.block) =>
+                    && !FnBody(&method.block).is_delegate_call()
+                    && !FnBody(&method.block).is_methods_dispatch() =>
             {
                 Some(&method.sig.ident)
             }
@@ -247,7 +274,11 @@ fn check_delegated_methods(
                 ),
             ));
         }
-        if common::has_atomic_fn(&method.attrs) {
+        if method
+            .attrs
+            .iter()
+            .any(|attr| ItemMarker(attr).is_atomic_delegate())
+        {
             violations.push(file_violation(
                 project,
                 rel_path,
@@ -273,7 +304,11 @@ fn check_fn_shells(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for method in fn_methods(impl_block) {
-        if !common::has_atomic_fn(&method.attrs) {
+        if !method
+            .attrs
+            .iter()
+            .any(|attr| ItemMarker(attr).is_atomic_delegate())
+        {
             continue;
         }
         let ident = &method.sig.ident;
@@ -309,7 +344,7 @@ fn all_methods_are_real_reserved(impl_block: &syn::ItemImpl) -> bool {
         if !is_reserved(&method.sig.ident) {
             return false;
         }
-        if method.block.stmts.is_empty() || common::is_delegate_call(&method.block) {
+        if method.block.stmts.is_empty() || FnBody(&method.block).is_delegate_call() {
             return false;
         }
     }

@@ -1,11 +1,11 @@
 use std::path::Path;
+use syn::spanned::Spanned;
 
 use derive_more::{Deref, DerefMut};
-use syn::spanned::Spanned;
 use syn::visit::Visit;
 
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -46,7 +46,7 @@ struct SuperPathVisitor<'a>(&'a mut Vec<SuperPathHit>);
 
 impl<'ast> Visit<'ast> for SuperPathVisitor<'_> {
     fn visit_item_use(&mut self, item: &'ast syn::ItemUse) {
-        if common::has_cfg_test(&item.attrs) {
+        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
             return;
         }
         if starts_with_super(&item.tree) {
@@ -78,14 +78,14 @@ impl<'ast> Visit<'ast> for SuperPathVisitor<'_> {
     }
 
     fn visit_item_mod(&mut self, item: &'ast syn::ItemMod) {
-        if common::has_cfg_test(&item.attrs) {
+        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
             return;
         }
         syn::visit::visit_item_mod(self, item);
     }
 
     fn visit_item_fn(&mut self, item: &'ast syn::ItemFn) {
-        if common::has_cfg_test(&item.attrs) {
+        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
             return;
         }
         syn::visit::visit_item_fn(self, item);

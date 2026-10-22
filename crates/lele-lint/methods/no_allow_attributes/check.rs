@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::path::PathBuf;
-
 use syn::spanned::Spanned;
+
 use syn::visit::Visit;
 
 use crate::checkers;

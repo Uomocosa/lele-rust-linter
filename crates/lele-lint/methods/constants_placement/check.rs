@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 use syn::visit::Visit;
 
 use crate::checkers;
-use crate::common;
 use crate::Project;
 use crate::RuleViolation;
+use crate::Visibility;
 
 pub fn check(
     _self: &checkers::constants_placement::ConstantsPlacement,
@@ -34,8 +34,8 @@ fn collect_defined_consts(parsed_files: &HashMap<PathBuf, syn::File>) -> HashMap
     for (rel_path, file) in parsed_files {
         for item in &file.items {
             let (name, exposed) = match item {
-                syn::Item::Const(c) => (c.ident.to_string(), common::is_exposed(&c.vis)),
-                syn::Item::Static(s) => (s.ident.to_string(), common::is_exposed(&s.vis)),
+                syn::Item::Const(c) => (c.ident.to_string(), Visibility(&c.vis).is_exposed()),
+                syn::Item::Static(s) => (s.ident.to_string(), Visibility(&s.vis).is_exposed()),
                 _ => continue,
             };
             if exposed {
@@ -95,7 +95,7 @@ fn check_fn_file_const(name: &str, rel_path: &Path, project: &Project) -> Vec<Ru
     let has_pub_fn = file
         .items
         .iter()
-        .any(|item| matches!(item, syn::Item::Fn(f) if common::is_exposed(&f.vis)));
+        .any(|item| matches!(item, syn::Item::Fn(f) if Visibility(&f.vis).is_exposed()));
     if has_pub_fn {
         let sibling = sibling_constants(rel_path, project);
         return vec![RuleViolation::file(
@@ -159,7 +159,7 @@ fn check_lower_to_subdir(
 
 // needed helper: constants.rs target path for a domain directory
 fn constants_target(project: &Project, dir: &Path) -> PathBuf {
-    if let Some(folder) = common::dunder_dir(&project.dunder_paths) {
+    if let Some(folder) = project.dunder_dir() {
         return dir.join(folder).join("constants.rs");
     }
     if dir.as_os_str().is_empty() {
@@ -210,7 +210,7 @@ fn common_prefix(a: &Path, b: &Path) -> PathBuf {
 mod tests {
     use super::{check, common_ancestor_dir, common_prefix, sibling_constants};
     use crate::checkers;
-    use crate::common;
+    use crate::DunderPath;
     use crate::Project;
     use std::collections::HashSet;
     use std::path::PathBuf;
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn test_usage_sibling_constants() {
         let project = Project {
-            dunder_paths: common::default_dunder_paths(),
+            dunder_paths: DunderPath::defaults(),
             ..Project::default()
         };
         assert_eq!(

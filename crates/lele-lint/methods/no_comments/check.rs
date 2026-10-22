@@ -5,6 +5,7 @@ use crate::common;
 use crate::Entry;
 use crate::EntryKind;
 use crate::Project;
+use crate::RawCode;
 use crate::RuleViolation;
 
 pub fn check(_self: &checkers::no_comments::NoComments, project: &Project) -> Vec<RuleViolation> {
@@ -25,7 +26,7 @@ fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
         let Ok(content) = std::fs::read_to_string(&entry.absolute_path) else {
             continue;
         };
-        for hit in common::find_comments(&content) {
+        for hit in RawCode(&content).find_comments() {
             if matches!(&hit.kind, common::CommentKind::Line(text) if is_allowlisted(text)) {
                 continue;
             }

@@ -13,7 +13,7 @@ impl AtomicFile {
     pub const CODE: &'static str = "LELE001";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "One public item per file, and the file is named after it (`greet.rs` holds `pub fn greet`).",
+        summary: "One public item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).",
         why: "A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.",
         bad: &[
             ExampleFile {
@@ -37,42 +37,54 @@ pub fn farewell(name: &str) -> String {
         good: &[
             ExampleFile {
                 path: "src/lib.rs",
-                source: r"mod farewell;
-mod greet;
-pub use farewell::farewell;
-pub use greet::greet;
+                source: r"mod guest;
+mod host;
+pub use guest::Guest;
+pub use host::Host;
 ",
             },
             ExampleFile {
-                path: "src/greet.rs",
-                source: r#"pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+                path: "src/guest.rs",
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 "#,
             },
             ExampleFile {
-                path: "src/farewell.rs",
-                source: r#"pub fn farewell(name: &str) -> String {
-    format!("Bye, {name}!")
+                path: "src/host.rs",
+                source: r#"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Host(pub String);
+
+#[rustfmt::skip]
+impl Host {
+    pub fn farewell(&self) -> String { format!("Bye, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::farewell;
+    use super::Host;
 
     #[test]
     fn test_usage() {
-        assert_eq!(farewell("Ada"), "Bye, Ada!");
+        assert_eq!(Host("Ada".to_string()).farewell(), "Bye, Ada!");
     }
 }
 "#,

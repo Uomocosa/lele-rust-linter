@@ -3,14 +3,9 @@ use std::path::PathBuf;
 use std::process;
 
 use clap::Parser;
-use lele_lint::checkers::build_checkers;
-use lele_lint::explain;
-use lele_lint::print_checker_list;
-use lele_lint::rules_markdown;
-use lele_lint::run_checkers;
-use lele_lint::sync_methods;
 use lele_lint::CommonArgs;
 use lele_lint::Config;
+use lele_lint::Linter;
 use lele_lint::Project;
 
 #[derive(Parser)]
@@ -29,19 +24,23 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
+    let linter = Linter {
+        error_format: args.common.error_format,
+        ..Linter::default()
+    };
+
     if args.common.checker_list {
-        let checkers = build_checkers();
-        print_checker_list(&checkers);
+        linter.print_checker_list();
         return;
     }
 
     if args.rules_md {
-        print!("{}", rules_markdown(&build_checkers()));
+        print!("{}", linter.rules_markdown());
         return;
     }
 
     if let Some(code) = args.common.explain {
-        let Some(text) = explain(&build_checkers(), &code) else {
+        let Some(text) = linter.explain(&code) else {
             eprintln!("lele_lint: no rule with code or name `{code}`");
             process::exit(1);
         };
@@ -87,16 +86,14 @@ fn main() {
     }
 
     if args.sync_methods {
-        if let Err(e) = sync_methods(&project) {
+        if let Err(e) = project.sync_methods() {
             eprintln!("lele_lint: {e}", e = e);
             process::exit(1);
         }
         return;
     }
 
-    let checkers = build_checkers();
-
-    process::exit(run_checkers(&project, &checkers, args.common.error_format));
+    process::exit(linter.run(&project));
 }
 
 // needed helper: a workspace keeps one lele.toml; prefer --config, else CWD, else the crate's own

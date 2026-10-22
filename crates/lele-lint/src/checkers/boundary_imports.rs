@@ -33,16 +33,20 @@ require = "honest"
             },
             ExampleFile {
                 path: "src/session/mod.rs",
-                source: r"mod expire;
-pub use expire::expire;
+                source: r"mod session;
+pub use session::Session;
 ",
             },
             ExampleFile {
-                path: "src/session/expire.rs",
-                source: r"pub fn expire(now: u64) -> u64 {
-    let current = std::time::SystemTime::now();
-    let _ = current;
-    now.saturating_sub(1)
+                path: "src/session/session.rs",
+                source: r"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Session(pub u64);
+
+#[rustfmt::skip]
+impl Session {
+    pub fn expiry(&self) -> u64 { std::time::SystemTime::now().elapsed().map_or(**self, |_| self.saturating_sub(1)) }
 }
 ",
             },
@@ -65,23 +69,29 @@ require = "honest"
             },
             ExampleFile {
                 path: "src/session/mod.rs",
-                source: r"mod expire;
-pub use expire::expire;
+                source: r"mod session;
+pub use session::Session;
 ",
             },
             ExampleFile {
-                path: "src/session/expire.rs",
-                source: r"pub fn expire(now: u64) -> u64 {
-    now.saturating_sub(1)
+                path: "src/session/session.rs",
+                source: r"use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Session(pub u64);
+
+#[rustfmt::skip]
+impl Session {
+    pub fn expiry(&self) -> u64 { self.saturating_sub(1) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::expire;
+    use super::Session;
 
     #[test]
     fn test_usage() {
-        assert_eq!(expire(3), 2);
+        assert_eq!(Session(3).expiry(), 2);
     }
 }
 ",

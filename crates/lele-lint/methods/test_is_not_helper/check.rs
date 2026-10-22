@@ -1,9 +1,9 @@
-use syn::spanned::Spanned;
-
 use crate::checkers;
-use crate::common;
+use crate::ItemMarker;
 use crate::Project;
+use crate::RawCode;
 use crate::RuleViolation;
+use syn::spanned::Spanned;
 
 pub fn check(
     _self: &checkers::test_is_not_helper::TestIsNotHelper,
@@ -15,16 +15,15 @@ pub fn check(
         let Ok(text) = std::fs::read_to_string(&absolute) else {
             continue;
         };
-        let lines: Vec<&str> = text.lines().collect();
         for item in &source.file.items {
             let syn::Item::Fn(func) = item else {
                 continue;
             };
-            if !common::has_attr(&func.attrs, "test") {
+            if !func.attrs.iter().any(|attr| ItemMarker(attr).is_test()) {
                 continue;
             }
             let line = func.sig.fn_token.span().start().line;
-            if !common::annotated_as_helper(&lines, line) {
+            if !RawCode(&text).is_annotated_as_helper(line) {
                 continue;
             }
             violations.push(RuleViolation::site(

@@ -1,9 +1,11 @@
+use lele_snake_case::ToLeleSnakeCase;
 use std::path::Path;
 
 use crate::checkers;
-use crate::common;
+use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
+use crate::Visibility;
 
 pub fn check(
     _self: &checkers::no_stuttered_type::NoStutteredType,
@@ -14,7 +16,7 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if common::is_exempt_source_path(rel_path, &project.dunder_paths) {
+        if project.is_exempt_source_path(rel_path) {
             continue;
         }
         let Some(dir) = parent_dir_name(rel_path) else {
@@ -24,10 +26,10 @@ pub fn check(
         let Some(name) = primary_exposed_type(file, stem) else {
             continue;
         };
-        let Some(suffix) = strip_dir_prefix(&common::to_snake_case(&name), &dir) else {
+        let Some(suffix) = strip_dir_prefix(&name.to_snake_case(), &dir) else {
             continue;
         };
-        let suggested = common::to_pascal_case(&suffix);
+        let suggested = Identifier(&suffix).to_pascal_case();
         violations.push(RuleViolation::file(project.absolute_path(source.origin, rel_path), checkers::no_stuttered_type::NoStutteredType::CODE, format!(
                 "type `{name}` repeats parent module `{dir}` — rename to `{suggested}` (`{dir}::{suggested}`)"
             )));
@@ -54,11 +56,11 @@ fn primary_exposed_type(file: &syn::File, stem: &str) -> Option<String> {
             syn::Item::Enum(e) => (&e.ident, &e.vis),
             _ => return None,
         };
-        if !common::is_exposed(vis) {
+        if !Visibility(vis).is_exposed() {
             return None;
         }
         let name = ident.to_string();
-        if common::to_snake_case(&name) == stem {
+        if name.to_snake_case() == stem {
             Some(name)
         } else {
             None

@@ -1,8 +1,7 @@
 use std::path::Path;
 
 use crate::checkers;
-use crate::common;
-use crate::DunderPath;
+use crate::FnBody;
 use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
@@ -17,7 +16,7 @@ pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<
             continue;
         }
         let rel_path = source.relative_path;
-        if is_exempt(rel_path, source.file, &project.dunder_paths) {
+        if is_exempt(rel_path, source.file, project) {
             continue;
         }
 
@@ -26,7 +25,7 @@ pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<
             continue;
         }
 
-        if !common::has_test_usage(source.file) {
+        if !source.has_test_usage() {
             violations.push(RuleViolation::file(absolute, checkers::test_usage::TestUsage::CODE, format!(
                     "file `{}` must contain a `#[cfg(test)] mod tests {{ fn test_usage() {{ ... }} }}` block, or add `{OPT_OUT}` as its last line to opt out",
                     rel_path.display()
@@ -55,7 +54,7 @@ fn opt_out_at_end(content: &str) -> bool {
 }
 
 // needed helper: file exemption rules
-fn is_exempt(rel_path: &Path, file: &syn::File, dunder_paths: &[DunderPath]) -> bool {
+fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {
     let file_name = rel_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     if file_name == "main.rs" {
@@ -70,7 +69,7 @@ fn is_exempt(rel_path: &Path, file: &syn::File, dunder_paths: &[DunderPath]) -> 
         return true;
     }
 
-    if common::is_dunder_path(rel_path, dunder_paths) {
+    if project.is_dunder_path(rel_path) {
         return true;
     }
 
@@ -163,7 +162,7 @@ fn is_atomic_delegate_only(file: &syn::File) -> bool {
 fn is_likely_delegate_impl(impl_block: &syn::ItemImpl) -> bool {
     for item in &impl_block.items {
         if let syn::ImplItem::Fn(method) = item {
-            if !common::is_short_body(&method.block) {
+            if !FnBody(&method.block).is_short() {
                 return false;
             }
         }
@@ -175,7 +174,9 @@ fn is_likely_delegate_impl(impl_block: &syn::ItemImpl) -> bool {
 mod tests {
     use super::{check, opt_out_at_end};
     use crate::checkers;
-    use crate::common;
+    use crate::methods::test_usage::check::Path;
+    use crate::Origin;
+    use crate::ParsedSource;
     use crate::Project;
 
     #[test]
@@ -190,13 +191,23 @@ mod tests {
         let file: syn::File =
             syn::parse_str("#[cfg(test)] mod tests { #[test] fn test_usage() { assert!(true); } }")
                 .unwrap();
-        assert!(common::has_test_usage(&file));
+        assert!(ParsedSource {
+            origin: Origin::Src,
+            relative_path: Path::new("a.rs"),
+            file: &file
+        }
+        .has_test_usage());
     }
 
     #[test]
     fn test_usage_missing() {
         let file: syn::File = syn::parse_str("pub fn compute(x: u32) -> u32 { x * 2 }").unwrap();
-        assert!(!common::has_test_usage(&file));
+        assert!(!ParsedSource {
+            origin: Origin::Src,
+            relative_path: Path::new("a.rs"),
+            file: &file
+        }
+        .has_test_usage());
     }
 
     #[test]

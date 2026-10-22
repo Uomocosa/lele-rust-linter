@@ -24,29 +24,38 @@ pub mod stock;
             },
             ExampleFile {
                 path: "src/shop/mod.rs",
-                source: r"mod total;
+                source: r"mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ",
             },
             ExampleFile {
-                path: "src/shop/total.rs",
-                source: r#"pub fn total(items: &[crate::stock::Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+                path: "src/shop/cart.rs",
+                source: r#"pub struct Cart {
+    pub owner: String,
+    pub items: Vec<crate::stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 "#,
@@ -82,31 +91,40 @@ pub mod stock;
             },
             ExampleFile {
                 path: "src/shop/mod.rs",
-                source: r"mod total;
+                source: r"mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ",
             },
             ExampleFile {
-                path: "src/shop/total.rs",
+                path: "src/shop/cart.rs",
                 source: r#"use crate::stock;
 
-pub fn total(items: &[stock::Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+pub struct Cart {
+    pub owner: String,
+    pub items: Vec<stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 "#,

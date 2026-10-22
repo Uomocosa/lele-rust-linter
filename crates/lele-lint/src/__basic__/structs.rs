@@ -3,6 +3,7 @@ use serde::Deserialize;
 use crate::basic;
 use crate::basic::enums::Requirement;
 use crate::DunderPath;
+use crate::Entry;
 
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +41,17 @@ pub struct LeleTomlLintSections {
     pub dunder_paths: Vec<DunderPath>,
     #[serde(default)]
     pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
+    #[serde(default)]
+    pub entry_points: Vec<EntryPoint>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct EntryPoint {
+    pub file: std::path::PathBuf,
+    #[serde(rename = "fn")]
+    pub function: String,
+    pub reason: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -61,18 +73,6 @@ pub struct ScannedDir {
     pub entries: Vec<Entry>,
     pub parsed_files: std::collections::HashMap<std::path::PathBuf, syn::File>,
     pub parse_failures: Vec<ParseFailure>,
-}
-
-pub struct Entry {
-    pub relative_path: std::path::PathBuf,
-    pub absolute_path: std::path::PathBuf,
-    pub kind: basic::enums::EntryKind,
-}
-
-pub struct ParsedSource<'a> {
-    pub origin: basic::enums::Origin,
-    pub relative_path: &'a std::path::Path,
-    pub file: &'a syn::File,
 }
 
 #[derive(Debug, Clone)]

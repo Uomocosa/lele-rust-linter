@@ -1,4 +1,4 @@
-use lele_snake_case::to_snake_case;
+use lele_snake_case::ToLeleSnakeCase;
 use proc_macro::TokenStream;
 use quote::format_ident;
 use quote::quote;
@@ -41,7 +41,7 @@ fn expand_fn(
         )
     })?;
     let method: syn::ImplItemFn = syn::parse2(item)?;
-    let module = format_ident!("{}", to_snake_case(&type_ident.to_string()));
+    let module = format_ident!("{}", type_ident.to_string().to_snake_case());
     let delegate = expand_method(&module, &method, "`#[atomic_delegate]`")?;
     Ok(quote!(#delegate))
 }
@@ -102,7 +102,7 @@ fn expand(item: proc_macro2::TokenStream) -> syn::Result<proc_macro2::TokenStrea
     let impl_block: syn::ItemImpl = syn::parse2(item)?;
 
     let type_ident = last_type_ident(&impl_block.self_ty)?;
-    let module = format_ident!("{}", to_snake_case(&type_ident.to_string()));
+    let module = format_ident!("{}", type_ident.to_string().to_snake_case());
 
     let mut out = impl_block.clone();
     out.attrs.push(syn::parse_quote!(#[rustfmt::skip]));
@@ -137,7 +137,8 @@ fn last_type_ident(ty: &syn::Type) -> syn::Result<syn::Ident> {
 
 #[cfg(test)]
 mod tests {
-    use super::{expand, expand_fn, to_snake_case};
+    use super::{expand, expand_fn};
+    use lele_snake_case::ToLeleSnakeCase;
     use quote::quote;
 
     #[test]
@@ -223,9 +224,9 @@ mod tests {
 
     #[test]
     fn test_usage_snake_case() {
-        assert_eq!(to_snake_case("ClickCounter"), "click_counter");
-        assert_eq!(to_snake_case("GamePlugin"), "game_plugin");
-        assert_eq!(to_snake_case("HTTPServer"), "http_server");
-        assert_eq!(to_snake_case("A"), "a");
+        assert_eq!("ClickCounter".to_snake_case(), "click_counter");
+        assert_eq!("GamePlugin".to_snake_case(), "game_plugin");
+        assert_eq!("HTTPServer".to_snake_case(), "http_server");
+        assert_eq!("A".to_snake_case(), "a");
     }
 }

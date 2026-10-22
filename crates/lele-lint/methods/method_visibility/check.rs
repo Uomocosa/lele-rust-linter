@@ -5,6 +5,7 @@ use crate::checkers;
 use crate::common;
 use crate::Entry;
 use crate::EntryKind;
+use crate::Identifier;
 use crate::ModuleInfoMap;
 use crate::Project;
 use crate::RuleViolation;
@@ -23,7 +24,7 @@ pub fn check(
         for file_name in files.iter().filter(|f| f.ends_with(".rs")) {
             let Some(struct_name) = file_name
                 .strip_suffix(".rs")
-                .and_then(|stem| common::longest_type_prefix(stem, &struct_names))
+                .and_then(|stem| Identifier(stem).longest_type_prefix(&struct_names))
                 .map(str::to_string)
             else {
                 continue;
@@ -133,7 +134,7 @@ fn collect_struct_names(
         let Some(parsed) = project.get_parsed(&rel_path) else {
             continue;
         };
-        if common::primary_type_name(parsed, stem).is_some() {
+        if common::SourceFile(parsed).primary_type_name(stem).is_some() {
             names.insert(stem.to_string());
         }
     }
@@ -190,14 +191,13 @@ fn reexported_in_pub_use(
 
 #[cfg(test)]
 mod tests {
+    use crate::Identifier;
     use std::collections::HashSet;
-
-    use crate::common;
 
     fn method_struct(file_name: &str, struct_names: &HashSet<String>) -> Option<String> {
         file_name
             .strip_suffix(".rs")
-            .and_then(|stem| common::longest_type_prefix(stem, struct_names))
+            .and_then(|stem| Identifier(stem).longest_type_prefix(struct_names))
             .map(str::to_string)
     }
 

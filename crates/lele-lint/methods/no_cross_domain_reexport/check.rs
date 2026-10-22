@@ -12,7 +12,7 @@ pub fn check(
     let mut violations = Vec::new();
 
     for (mod_rs_path, info) in &project.module_info {
-        if common::is_crate_root(mod_rs_path) {
+        if common::SourcePath(mod_rs_path).is_crate_root() {
             continue;
         }
         let own_domain = own_domain_of(mod_rs_path);

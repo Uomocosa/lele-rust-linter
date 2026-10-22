@@ -14,7 +14,7 @@ pub fn check(
     for source in project.sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        let restyled = scan::restyled_systems(file, &graph);
+        let restyled = scan::ScannedFile(file).restyled_systems(&graph);
         let Some(first) = restyled.first() else {
             continue;
         };
@@ -22,17 +22,17 @@ pub fn check(
             .iter()
             .map(|restyle| restyle.system.clone())
             .collect();
-        subjects.extend(scan::plugin_types(file));
+        subjects.extend(scan::ScannedFile(file).plugin_types());
         subjects.sort();
         subjects.dedup();
         let subject_list = subjects.join("`, `");
 
-        let kind = if scan::time_drivers(file).is_empty() {
+        let kind = if scan::ScannedFile(file).time_drivers().is_empty() {
             scan::PreviewKind::Png
         } else {
             scan::PreviewKind::Mp4
         };
-        let previews = scan::collect_previews(file);
+        let previews = scan::ScannedFile(file).collect_previews();
         let rendering = previews
             .iter()
             .filter(|preview| preview.kind == kind)
@@ -45,11 +45,7 @@ pub fn check(
             });
 
         let Some(preview) = rendering else {
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                first.line,
+            violations.push(scan::BevyProject(project).violation(source.origin, rel_path, first.line,
                 checkers::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
                     "`fn {}` restyles UI on `{}` but defines no `*_ui_{}_preview` test whose `Scene::build` renders it (register, call or add one of `{}`)",
@@ -63,11 +59,7 @@ pub fn check(
         };
 
         if kind == scan::PreviewKind::Png && preview.scene.state_count < 2 {
-            violations.push(scan::site_violation(
-                project,
-                source.origin,
-                rel_path,
-                preview.line,
+            violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
                 checkers::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
                     "`fn {}` shows one state; a restyle needs at least two `State`s (before, after)",

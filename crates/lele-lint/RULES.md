@@ -12,7 +12,7 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELE001 `atomic_file`](#lele001-atomic_file): One public item per file, and the file is named after it (`greet.rs` holds `pub fn greet`).
+- [LELE001 `atomic_file`](#lele001-atomic_file): One public item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).
 - [LELE002 `snake_case_files`](#lele002-snake_case_files): File and folder names are snake_case.
 - [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
 - [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
@@ -22,7 +22,7 @@ every **Good** example reports nothing at all.
 
 ### LELE001 `atomic_file`
 
-One public item per file, and the file is named after it (`greet.rs` holds `pub fn greet`).
+One public item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).
 
 **Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
 
@@ -52,44 +52,56 @@ pub fn farewell(name: &str) -> String {
 `src/lib.rs`
 
 ```rust
-mod farewell;
-mod greet;
-pub use farewell::farewell;
-pub use greet::greet;
+mod guest;
+mod host;
+pub use guest::Guest;
+pub use host::Host;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
 
-`src/farewell.rs`
+`src/host.rs`
 
 ```rust
-pub fn farewell(name: &str) -> String {
-    format!("Bye, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Host(pub String);
+
+#[rustfmt::skip]
+impl Host {
+    pub fn farewell(&self) -> String { format!("Bye, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::farewell;
+    use super::Host;
 
     #[test]
     fn test_usage() {
-        assert_eq!(farewell("Ada"), "Bye, Ada!");
+        assert_eq!(Host("Ada".to_string()).farewell(), "Bye, Ada!");
     }
 }
 ```
@@ -105,25 +117,31 @@ File and folder names are snake_case.
 `src/lib.rs`
 
 ```rust
-#[path = "Greet.rs"]
-mod greet;
-pub use greet::greet;
+#[path = "Guest.rs"]
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/Greet.rs`
+`src/Guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -133,24 +151,30 @@ mod tests {
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -334,27 +358,33 @@ pub const MAX_HEALTH: u32 = 100;
 `src/player/mod.rs`
 
 ```rust
-mod clamp_health;
+mod health;
 
-pub use clamp_health::clamp_health;
+pub use health::Health;
 ```
 
-`src/player/clamp_health.rs`
+`src/player/health.rs`
 
 ```rust
+use derive_more::Deref;
+
 use crate::constants;
 
-pub fn clamp_health(health: u32) -> u32 {
-    health.min(constants::MAX_HEALTH)
+#[derive(Deref)]
+pub struct Health(pub u32);
+
+#[rustfmt::skip]
+impl Health {
+    pub fn clamped(&self) -> u32 { (**self).min(constants::MAX_HEALTH) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::clamp_health;
+    use super::Health;
 
     #[test]
     fn test_usage() {
-        assert_eq!(clamp_health(150), 100);
+        assert_eq!(Health(150).clamped(), 100);
     }
 }
 ```
@@ -370,12 +400,12 @@ pub mod player;
 `src/player/mod.rs`
 
 ```rust
-mod clamp_health;
+mod health;
 #[path = "__basic__/mod.rs"]
 pub mod basic;
 
 pub use basic::constants::MAX_HEALTH;
-pub use clamp_health::clamp_health;
+pub use health::Health;
 ```
 
 `src/player/__basic__/mod.rs`
@@ -390,22 +420,28 @@ pub mod constants;
 pub const MAX_HEALTH: u32 = 100;
 ```
 
-`src/player/clamp_health.rs`
+`src/player/health.rs`
 
 ```rust
+use derive_more::Deref;
+
 use crate::player;
 
-pub fn clamp_health(health: u32) -> u32 {
-    health.min(player::MAX_HEALTH)
+#[derive(Deref)]
+pub struct Health(pub u32);
+
+#[rustfmt::skip]
+impl Health {
+    pub fn clamped(&self) -> u32 { (**self).min(player::MAX_HEALTH) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::clamp_health;
+    use super::Health;
 
     #[test]
     fn test_usage() {
-        assert_eq!(clamp_health(150), 100);
+        assert_eq!(Health(150).clamped(), 100);
     }
 }
 ```
@@ -484,15 +520,21 @@ A file has one public function; at most 2 private helpers unless each is marked 
 `src/lib.rs`
 
 ```rust
-mod score;
-pub use score::score;
+mod round;
+pub use round::Round;
 ```
 
-`src/score.rs`
+`src/round.rs`
 
 ```rust
-pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { bonus(self.hits).saturating_add(base(self.hits)).saturating_sub(penalty(self.misses)) }
 }
 
 fn base(hits: u32) -> u32 {
@@ -509,11 +551,11 @@ fn penalty(misses: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::score;
+    use super::Round;
 
     #[test]
     fn test_usage() {
-        assert_eq!(score(1, 0), 10);
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
     }
 }
 ```
@@ -523,15 +565,21 @@ mod tests {
 `src/lib.rs`
 
 ```rust
-mod score;
-pub use score::score;
+mod round;
+pub use round::Round;
 ```
 
-`src/score.rs`
+`src/round.rs`
 
 ```rust
-pub fn score(hits: u32, misses: u32) -> u32 {
-    bonus(hits).saturating_add(base(hits)).saturating_sub(penalty(misses))
+pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { bonus(self.hits).saturating_add(base(self.hits)).saturating_sub(penalty(self.misses)) }
 }
 
 // needed helper: points per hit
@@ -551,11 +599,11 @@ fn penalty(misses: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::score;
+    use super::Round;
 
     #[test]
     fn test_usage() {
-        assert_eq!(score(1, 0), 10);
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
     }
 }
 ```
@@ -577,8 +625,14 @@ pub mod greeting;
 `src/greeting/mod.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 ```
 
@@ -593,25 +647,31 @@ pub mod greeting;
 `src/greeting/mod.rs`
 
 ```rust
-mod greet;
+mod guest;
 
-pub use greet::greet;
+pub use guest::Guest;
 ```
 
-`src/greeting/greet.rs`
+`src/greeting/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -623,6 +683,7 @@ mod tests {
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage`.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type; `new` is never delegated.
+- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `bin/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 
 ### LELE004 `method_visibility`
 
@@ -1309,6 +1370,158 @@ mod tests {
 }
 ```
 
+### LELE034 `no_free_functions`
+
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `bin/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+
+**Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
+
+**Bad** (reports LELE034):
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod heal;
+mod player;
+
+pub use heal::heal;
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+```
+
+`src/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player { name: String::new(), health: 10 };
+        player::heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
 ## Imports and re-exports
 
 - [LELE005 `no_cross_domain_reexport`](#lele005-no_cross_domain_reexport): A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.
@@ -1418,8 +1631,8 @@ No `meters::Meters` paths for crate-root modules: import the type once and write
 ```rust
 pub mod meters;
 pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
+mod track;
+pub use track::Track;
 ```
 
 `src/meters.rs`
@@ -1446,22 +1659,30 @@ mod tests {
 }
 ```
 
-`src/race_length.rs`
+`src/track.rs`
 
 ```rust
 use crate::meters;
 
-pub fn race_length() -> meters::Meters {
-    meters::Meters(400)
+pub struct Track {
+    pub name: String,
+    pub length: meters::Meters,
+}
+
+#[rustfmt::skip]
+impl Track {
+    pub fn laps_for(&self, distance: u32) -> u32 { distance / *self.length }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::race_length;
+    use crate::meters;
+    use crate::Track;
 
     #[test]
     fn test_usage() {
-        assert_eq!(*race_length(), 400);
+        let track = Track { name: "oval".to_string(), length: meters::Meters(400) };
+        assert_eq!(track.laps_for(800), 2);
     }
 }
 ```
@@ -1473,8 +1694,8 @@ mod tests {
 ```rust
 pub mod meters;
 pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
+mod track;
+pub use track::Track;
 ```
 
 `src/meters.rs`
@@ -1501,22 +1722,30 @@ mod tests {
 }
 ```
 
-`src/race_length.rs`
+`src/track.rs`
 
 ```rust
 use crate::Meters;
 
-pub fn race_length() -> Meters {
-    Meters(400)
+pub struct Track {
+    pub name: String,
+    pub length: Meters,
+}
+
+#[rustfmt::skip]
+impl Track {
+    pub fn laps_for(&self, distance: u32) -> u32 { distance / *self.length }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::race_length;
+    use crate::Meters;
+    use crate::Track;
 
     #[test]
     fn test_usage() {
-        assert_eq!(*race_length(), 400);
+        let track = Track { name: "oval".to_string(), length: Meters(400) };
+        assert_eq!(track.laps_for(800), 2);
     }
 }
 ```
@@ -1542,17 +1771,23 @@ pub mod stock;
 pub mod basic;
 
 pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
+mod shelf;
+pub use shelf::Shelf;
 ```
 
-`src/stock/price_of.rs`
+`src/stock/shelf.rs`
 
 ```rust
 use super::Item;
 
-pub fn price_of(item: &Item) -> u32 {
-    item.price
+pub struct Shelf {
+    pub label: String,
+    pub items: Vec<Item>,
+}
+
+#[rustfmt::skip]
+impl Shelf {
+    pub fn total_price(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 ```
 
@@ -1586,31 +1821,40 @@ pub mod stock;
 pub mod basic;
 
 pub use basic::structs::Item;
-mod price_of;
-pub use price_of::price_of;
+mod shelf;
+pub use shelf::Shelf;
 ```
 
-`src/stock/price_of.rs`
+`src/stock/shelf.rs`
 
 ```rust
 use crate::stock;
 
-pub fn price_of(item: &stock::Item) -> u32 {
-    item.price
+pub struct Shelf {
+    pub label: String,
+    pub items: Vec<stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Shelf {
+    pub fn total_price(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::price_of;
+    use super::Shelf;
     use crate::stock::Item;
 
     #[test]
     fn test_usage() {
-        let item = Item {
-            name: "apple".to_string(),
-            price: 3,
+        let shelf = Shelf {
+            label: "fruit".to_string(),
+            items: vec![Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
         };
-        assert_eq!(price_of(&item), 3);
+        assert_eq!(shelf.total_price(), 3);
     }
 }
 ```
@@ -1719,32 +1963,41 @@ pub mod stock;
 `src/shop/mod.rs`
 
 ```rust
-mod total;
+mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ```
 
-`src/shop/total.rs`
+`src/shop/cart.rs`
 
 ```rust
 use crate::stock::Item;
 
-pub fn total(items: &[Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+pub struct Cart {
+    pub owner: String,
+    pub items: Vec<Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 ```
@@ -1785,32 +2038,41 @@ pub mod stock;
 `src/shop/mod.rs`
 
 ```rust
-mod total;
+mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ```
 
-`src/shop/total.rs`
+`src/shop/cart.rs`
 
 ```rust
 use crate::stock;
 
-pub fn total(items: &[stock::Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+pub struct Cart {
+    pub owner: String,
+    pub items: Vec<stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 ```
@@ -1857,30 +2119,39 @@ pub mod stock;
 `src/shop/mod.rs`
 
 ```rust
-mod total;
+mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ```
 
-`src/shop/total.rs`
+`src/shop/cart.rs`
 
 ```rust
-pub fn total(items: &[crate::stock::Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+pub struct Cart {
+    pub owner: String,
+    pub items: Vec<crate::stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 ```
@@ -1921,32 +2192,41 @@ pub mod stock;
 `src/shop/mod.rs`
 
 ```rust
-mod total;
+mod cart;
 
-pub use total::total;
+pub use cart::Cart;
 ```
 
-`src/shop/total.rs`
+`src/shop/cart.rs`
 
 ```rust
 use crate::stock;
 
-pub fn total(items: &[stock::Item]) -> u32 {
-    items.iter().map(|item| item.price).sum()
+pub struct Cart {
+    pub owner: String,
+    pub items: Vec<stock::Item>,
+}
+
+#[rustfmt::skip]
+impl Cart {
+    pub fn total(&self) -> u32 { self.items.iter().map(|item| item.price).sum() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::total;
-    use crate::stock::Item;
+    use crate::shop;
+    use crate::stock;
 
     #[test]
     fn test_usage() {
-        let items = vec![Item {
-            name: "apple".to_string(),
-            price: 3,
-        }];
-        assert_eq!(total(&items), 3);
+        let cart = shop::Cart {
+            owner: "ada".to_string(),
+            items: vec![stock::Item {
+                name: "apple".to_string(),
+                price: 3,
+            }],
+        };
+        assert_eq!(cart.total(), 3);
     }
 }
 ```
@@ -2003,17 +2283,21 @@ pub mod session;
 `src/session/mod.rs`
 
 ```rust
-mod expire;
-pub use expire::expire;
+mod session;
+pub use session::Session;
 ```
 
-`src/session/expire.rs`
+`src/session/session.rs`
 
 ```rust
-pub fn expire(now: u64) -> u64 {
-    let current = std::time::SystemTime::now();
-    let _ = current;
-    now.saturating_sub(1)
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Session(pub u64);
+
+#[rustfmt::skip]
+impl Session {
+    pub fn expiry(&self) -> u64 { std::time::SystemTime::now().elapsed().map_or(**self, |_| self.saturating_sub(1)) }
 }
 ```
 
@@ -2039,24 +2323,30 @@ pub mod session;
 `src/session/mod.rs`
 
 ```rust
-mod expire;
-pub use expire::expire;
+mod session;
+pub use session::Session;
 ```
 
-`src/session/expire.rs`
+`src/session/session.rs`
 
 ```rust
-pub fn expire(now: u64) -> u64 {
-    now.saturating_sub(1)
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Session(pub u64);
+
+#[rustfmt::skip]
+impl Session {
+    pub fn expiry(&self) -> u64 { self.saturating_sub(1) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::expire;
+    use super::Session;
 
     #[test]
     fn test_usage() {
-        assert_eq!(expire(3), 2);
+        assert_eq!(Session(3).expiry(), 2);
     }
 }
 ```
@@ -2521,28 +2811,76 @@ pub fn render(title: &str) -> Result<String, card::card_lines::CardLines> {
 
 ```rust
 pub mod card;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
 ```
 
 `src/card/mod.rs`
 
 ```rust
-mod render;
+mod card;
 
+pub use card::Card;
+```
+
+`src/card/card.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Card {
+    pub title: String,
+    pub body: String,
+}
+
+#[atomic_delegates]
+impl Card {
+    pub fn render(&self) -> String {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::card;
+
+    #[test]
+    fn test_usage() {
+        let card = card::Card {
+            title: "A".to_string(),
+            body: "b".to_string(),
+        };
+        assert_eq!(card.render(), "# A\nb");
+    }
+}
+```
+
+`methods/mod.rs`
+
+```rust
+pub mod card;
+```
+
+`methods/card/mod.rs`
+
+```rust
+mod render;
 pub use render::render;
 ```
 
-`src/card/render.rs`
+`methods/card/render.rs`
 
 ```rust
+use crate::card;
+
 struct Lines {
     title: String,
     body: String,
 }
 
-pub fn render(title: &str, body: &str) -> String {
+pub fn render(card: &card::Card) -> String {
     let lines = Lines {
-        title: title.to_string(),
-        body: body.to_string(),
+        title: card.title.clone(),
+        body: card.body.clone(),
     };
     format!("# {}\n{}", lines.title, lines.body)
 }
@@ -2550,10 +2888,15 @@ pub fn render(title: &str, body: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::render;
+    use crate::card;
 
     #[test]
     fn test_usage() {
-        assert_eq!(render("A", "b"), "# A\nb");
+        let card = card::Card {
+            title: "A".to_string(),
+            body: "b".to_string(),
+        };
+        assert_eq!(render(&card), "# A\nb");
     }
 }
 ```
@@ -2660,24 +3003,30 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2687,7 +3036,7 @@ mod tests {
 ```rust
 #[test]
 fn greets_empty_name() {
-    assert_eq!(crate::greet(""), "Hello, !");
+    assert_eq!(crate::Guest(String::new()).greet(), "Hello, !");
 }
 ```
 
@@ -2696,24 +3045,30 @@ fn greets_empty_name() {
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2758,15 +3113,21 @@ Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, 
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 ```
 
@@ -2775,24 +3136,30 @@ pub fn greet(name: &str) -> String {
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2813,25 +3180,31 @@ No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the e
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-#[allow(clippy::needless_pass_by_value)]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2841,25 +3214,31 @@ mod tests {
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-#[allow(clippy::needless_pass_by_value)]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2871,7 +3250,7 @@ mod tests {
 
 [[lele.lint.clippy_allow_whitelist]]
 allow = "clippy::needless_pass_by_value"
-file = "src/greet.rs"
+file = "src/guest.rs"
 reason = "example: the signature is fixed by a trait in another crate"
 ```
 
@@ -2886,25 +3265,31 @@ No comments in `src/` or `methods/`, except `// needed helper: <why>` and a fina
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
+use derive_more::Deref;
+
 // Builds the greeting shown on the title screen.
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```
@@ -2914,24 +3299,30 @@ mod tests {
 `src/lib.rs`
 
 ```rust
-mod greet;
-pub use greet::greet;
+mod guest;
+pub use guest::Guest;
 ```
 
-`src/greet.rs`
+`src/guest.rs`
 
 ```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::greet;
+    use super::Guest;
 
     #[test]
     fn test_usage() {
-        assert_eq!(greet("Ada"), "Hello, Ada!");
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
 ```

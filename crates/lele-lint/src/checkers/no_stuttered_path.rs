@@ -20,8 +20,8 @@ impl NoStutteredPath {
                 path: "src/lib.rs",
                 source: r"pub mod meters;
 pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
+mod track;
+pub use track::Track;
 ",
             },
             ExampleFile {
@@ -48,23 +48,31 @@ mod tests {
 ",
             },
             ExampleFile {
-                path: "src/race_length.rs",
-                source: r"use crate::meters;
+                path: "src/track.rs",
+                source: r#"use crate::meters;
 
-pub fn race_length() -> meters::Meters {
-    meters::Meters(400)
+pub struct Track {
+    pub name: String,
+    pub length: meters::Meters,
+}
+
+#[rustfmt::skip]
+impl Track {
+    pub fn laps_for(&self, distance: u32) -> u32 { distance / *self.length }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::race_length;
+    use crate::meters;
+    use crate::Track;
 
     #[test]
     fn test_usage() {
-        assert_eq!(*race_length(), 400);
+        let track = Track { name: "oval".to_string(), length: meters::Meters(400) };
+        assert_eq!(track.laps_for(800), 2);
     }
 }
-",
+"#,
             },
         ],
         good: &[
@@ -72,8 +80,8 @@ mod tests {
                 path: "src/lib.rs",
                 source: r"pub mod meters;
 pub use meters::Meters;
-mod race_length;
-pub use race_length::race_length;
+mod track;
+pub use track::Track;
 ",
             },
             ExampleFile {
@@ -100,23 +108,31 @@ mod tests {
 ",
             },
             ExampleFile {
-                path: "src/race_length.rs",
-                source: r"use crate::Meters;
+                path: "src/track.rs",
+                source: r#"use crate::Meters;
 
-pub fn race_length() -> Meters {
-    Meters(400)
+pub struct Track {
+    pub name: String,
+    pub length: Meters,
+}
+
+#[rustfmt::skip]
+impl Track {
+    pub fn laps_for(&self, distance: u32) -> u32 { distance / *self.length }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::race_length;
+    use crate::Meters;
+    use crate::Track;
 
     #[test]
     fn test_usage() {
-        assert_eq!(*race_length(), 400);
+        let track = Track { name: "oval".to_string(), length: Meters(400) };
+        assert_eq!(track.laps_for(800), 2);
     }
 }
-",
+"#,
             },
         ],
     };

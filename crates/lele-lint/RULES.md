@@ -2568,8 +2568,8 @@ mod tests {
 - [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
 - [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
 - [LELE027 `single_caller_type`](#lele027-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
-- [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>` and trait impls are exempt.
-- [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new` and trait impls are exempt.
+- [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
+- [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
 
 ### LELE010 `no_positional`
 
@@ -3114,7 +3114,7 @@ mod tests {
 
 ### LELE036 `conversion_is_from`
 
-An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>` and trait impls are exempt.
+An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
 
 **Why:** A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.
 
@@ -3210,7 +3210,7 @@ mod tests {
 
 ### LELE037 `constructor_naming`
 
-An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new` and trait impls are exempt.
+An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
 
 **Why:** Every constructor reads the same way at the call site: `from_` says it builds the type, `try_` says it can fail.
 

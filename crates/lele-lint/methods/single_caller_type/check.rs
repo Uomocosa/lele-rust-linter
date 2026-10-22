@@ -38,7 +38,7 @@ pub fn check(
         if has_atomic_delegates(file, name) {
             continue;
         }
-        if has_real_inherent_method(file, name) {
+        if has_real_inherent_method(file, name) || has_conversion_impl(file, name) {
             continue;
         }
 
@@ -161,6 +161,21 @@ fn has_real_inherent_method(file: &syn::File, type_name: &str) -> bool {
                     if !method.block.stmts.is_empty() && !FnBody(&method.block).is_delegate_call()
             )
         })
+    })
+}
+
+// needed helper: `conversion_is_from` moves constructors into `From`/`TryFrom`, which count as behaviour
+fn has_conversion_impl(file: &syn::File, type_name: &str) -> bool {
+    file.items.iter().any(|item| {
+        let syn::Item::Impl(impl_block) = item else {
+            return false;
+        };
+        let is_conversion = impl_block
+            .trait_
+            .as_ref()
+            .and_then(|(_, path, _)| path.segments.last())
+            .is_some_and(|segment| segment.ident == "From" || segment.ident == "TryFrom");
+        is_conversion && ImplBlock(impl_block).self_type_last().as_deref() == Some(type_name)
     })
 }
 
@@ -336,6 +351,17 @@ mod tests {
         let delegated: syn::File =
             syn::parse_str("impl Foo { pub fn new() -> Self { foo_new::new() } }").unwrap();
         assert!(!super::has_real_inherent_method(&delegated, "Foo"));
+    }
+
+    #[test]
+    fn test_usage_conversion_impl_is_exempt() {
+        let from: syn::File =
+            syn::parse_str("impl From<u64> for Foo { fn from(x: u64) -> Self { Self(x) } }")
+                .unwrap();
+        assert!(super::has_conversion_impl(&from, "Foo"));
+        let display: syn::File =
+            syn::parse_str("impl Display for Foo { fn fmt(&self) {} }").unwrap();
+        assert!(!super::has_conversion_impl(&display, "Foo"));
     }
 }
 

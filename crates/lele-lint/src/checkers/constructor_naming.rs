@@ -13,7 +13,7 @@ impl ConstructorNaming {
     pub const CODE: &'static str = "LELE037";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
-        summary: "An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new` and trait impls are exempt.",
+        summary: "An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.",
         why: "Every constructor reads the same way at the call site: `from_` says it builds the type, `try_` says it can fail.",
         bad: &[
             ExampleFile {

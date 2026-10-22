@@ -140,7 +140,7 @@ fn trait_args_suffix(
         match ty {
             syn::Type::Reference(reference) => type_name(&reference.elem),
             syn::Type::Paren(paren) => type_name(&paren.elem),
-            syn::Type::Slice(slice) => type_name(&slice.elem),
+            syn::Type::Slice(slice) => type_name(&slice.elem).map(|elem| format!("{elem}_slice")),
             syn::Type::Path(path) => path
                 .path
                 .segments
@@ -243,7 +243,8 @@ mod tests {
         };
         let expanded = expand(text).unwrap().to_string();
         assert!(
-            expanded.contains("crate :: methods :: temperature :: try_from_http_header (text)")
+            expanded
+                .contains("crate :: methods :: temperature :: try_from_http_header_slice (text)")
         );
     }
 

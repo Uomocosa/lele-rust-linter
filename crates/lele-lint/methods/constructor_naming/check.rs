@@ -35,7 +35,10 @@ pub fn check(
                     continue;
                 };
                 let sig = &method.sig;
-                if sig.receiver().is_some() || sig.ident == "new" {
+                if sig.receiver().is_some()
+                    || sig.ident == "new"
+                    || takes_self_typed_argument(sig, &self_name)
+                {
                     continue;
                 }
                 let Some(shape) = constructed_shape(&sig.output, &self_name) else {
@@ -83,6 +86,18 @@ fn advice(sig: &syn::Signature, self_name: &str, shape: &str) -> Option<String> 
         "`{self_name}::{name}` builds `{self_name}` from {} arguments — rename it `{prefix}<what it is built from>` (e.g. `{prefix}{suggested}`); `from_*` returns `Self`, `try_from_*` returns `Result<Self, _>`/`Option<Self>`",
         sig.inputs.len()
     ))
+}
+
+// needed helper: `merge(a: Self, b: Option<Self>) -> Self` is an operation on the type, not a constructor
+fn takes_self_typed_argument(sig: &syn::Signature, self_name: &str) -> bool {
+    sig.inputs.iter().any(|input| {
+        let syn::FnArg::Typed(typed) = input else {
+            return false;
+        };
+        quote::ToTokens::to_token_stream(&*typed.ty)
+            .into_iter()
+            .any(|token| matches!(token, proc_macro2::TokenTree::Ident(ident) if ident == "Self" || ident == self_name))
+    })
 }
 
 // needed helper: `Self`, `Result<Self, _>` or `Option<Self>` — the wrapper name, or `Self`
@@ -145,6 +160,8 @@ mod tests {
                     pub fn new(a: u8, b: u8) -> Self {}
                     pub fn single(a: u8) -> Self {}
                     pub fn sensor(&self, a: u8) -> Self {}
+                    pub fn merge(current: Option<Self>, incoming: Reading) -> Self {}
+                    pub fn copy(other: &Reading) -> Self {}
                 }",
             )
             .unwrap(),

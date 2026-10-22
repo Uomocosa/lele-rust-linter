@@ -13,7 +13,7 @@ impl ConversionIsFrom {
     pub const CODE: &'static str = "LELE036";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
-        summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>` and trait impls are exempt.",
+        summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.",
         why: "A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.",
         bad: &[
             ExampleFile {

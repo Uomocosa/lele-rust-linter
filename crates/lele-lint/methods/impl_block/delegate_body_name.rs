@@ -7,7 +7,7 @@ pub fn delegate_body_name(impl_block: &ImplBlock, method: &syn::Ident) -> String
         match ty {
             syn::Type::Reference(reference) => type_name(&reference.elem),
             syn::Type::Paren(paren) => type_name(&paren.elem),
-            syn::Type::Slice(slice) => type_name(&slice.elem),
+            syn::Type::Slice(slice) => type_name(&slice.elem).map(|elem| format!("{elem}_slice")),
             syn::Type::Path(path) => path
                 .path
                 .segments
@@ -57,6 +57,12 @@ mod tests {
         assert_eq!(
             delegate_body_name(&ImplBlock(&try_from), &ident),
             "try_from_str"
+        );
+        let bytes: syn::ItemImpl = syn::parse_quote! { impl From<&[u8]> for Hash {} };
+        let ident: syn::Ident = syn::parse_quote!(from);
+        assert_eq!(
+            delegate_body_name(&ImplBlock(&bytes), &ident),
+            "from_u8_slice"
         );
         let plain: syn::ItemImpl = syn::parse_quote! { impl Checker for Foo {} };
         let ident: syn::Ident = syn::parse_quote!(check);

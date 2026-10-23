@@ -9,7 +9,11 @@ use lele_lint::Linter;
 use lele_lint::Project;
 
 #[derive(Parser)]
-#[command(name = "lele_lint", about = "Enforce lele-syntax-rs conventions")]
+#[command(
+    name = "lele_lint",
+    version,
+    about = "Enforce lele-syntax-rs conventions"
+)]
 struct Args {
     #[command(flatten)]
     common: CommonArgs,

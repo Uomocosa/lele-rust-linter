@@ -16,6 +16,7 @@ enum Emit {
 #[derive(Parser)]
 #[command(
     name = "lele_bevy_lint",
+    version,
     about = "Enforce Bevy-specific lele-syntax-rs conventions"
 )]
 struct Args {

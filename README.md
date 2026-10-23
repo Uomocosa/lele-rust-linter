@@ -14,6 +14,25 @@ checkers over the same `Project`, not a fork. Per-rule rationale lives in each r
 | `atomic-delegate-macros` | `#[atomic_delegates]` proc-macro |
 | `lele-snake-case` | Shared `PascalCase -> snake_case` conversion |
 
+## Dependencies and releases
+
+This repo is the root of the lele fleet: it depends on no sibling repository,
+while the others pin `atomic-delegate-macros` and install the `lele-lint` /
+`lele-bevy-lint` binaries from here at release tags.
+
+A git content filter (`lele-pins`) rewrites those pins to sibling `path =`
+dependencies in your working tree, so an edit in a dependency is picked up by the
+next `cargo build` here with no release and no command. Install it once per
+machine:
+
+    cd ../lele-release && just setup
+
+Never hand-edit a pin. From the fleet root, `just release <patch|minor|major>`
+bumps every changed repo, re-pins its dependents, tags `vX.Y.Z` and pushes; see
+`lele-release/README.md` for `status`, `--only`/`--exclude` and `--dry-run`. A
+plain clone without the filter resolves the committed tags, which is exactly what
+CI sees.
+
 ## Environment
 
 Install the toolchain and the two dev tools — no nix, no container, no setup script:

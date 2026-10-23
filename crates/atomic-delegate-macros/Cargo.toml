@@ -15,6 +15,9 @@ syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
 
+[dev-dependencies]
+rstest.workspace = true
+
 [lints.clippy]
 pedantic = { level = "deny", priority = -1 }
 nursery = { level = "deny", priority = -1 }

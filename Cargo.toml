@@ -28,6 +28,7 @@ tempfile = "=3.27.0"
 thiserror = "=2.0.19"
 toml = "=0.8.23"
 walkdir = "=2.5.0"
+rstest = "=0.28.0"
 
 # Early-phase profile: optimise for compile time and peak RAM, not runtime speed.
 # Debug info is a big RAM/disk cost; keep only line tables for our crates

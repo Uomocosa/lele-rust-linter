@@ -61,3 +61,4 @@ use_self = "allow"
 
 [dev-dependencies]
 tempfile.workspace = true
+rstest.workspace = true

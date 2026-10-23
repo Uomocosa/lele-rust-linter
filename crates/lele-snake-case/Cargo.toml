@@ -6,6 +6,9 @@ rust-version.workspace = true
 description = "Shared PascalCase -> snake_case conversion with an acronym list (lele-rs)"
 license.workspace = true
 
+[dev-dependencies]
+rstest.workspace = true
+
 [lints.rust]
 non_snake_case = "allow"
 

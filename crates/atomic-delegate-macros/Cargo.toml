@@ -2,6 +2,7 @@
 name = "atomic-delegate-macros"
 version.workspace = true
 edition = "2024"
+rust-version.workspace = true
 description = "Attribute macro that turns empty-bodied inherent methods into delegates into methods/<type>/<method>.rs"
 license.workspace = true
 

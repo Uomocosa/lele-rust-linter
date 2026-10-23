@@ -1,7 +1,8 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 # Toolchain: rust-toolchain.toml (rustup provisions it).
-# Extra dev tool: cargo-nextest  (`cargo install cargo-nextest`).
+# Extra dev tools: cargo-nextest (`cargo install cargo-nextest`),
+# lele-function-taxonomy (`cargo install --path ../lele-rust-function-taxonomy`).
 
 # --- checks ---------------------------------------------------------------
 build:
@@ -22,6 +23,10 @@ lint:
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-bevy-lint
     cargo run --quiet -p lele-lint -- --config lele.toml crates/atomic-delegate-macros
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-snake-case
+
+# honesty half of every `require = "honest"` boundary (rustc MIR)
+taxonomy:
+    lele-function-taxonomy --manifest-path ./Cargo.toml
 
 sync-methods:
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-lint

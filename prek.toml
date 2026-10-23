@@ -42,6 +42,16 @@ priority = "checks"
 stages = ["pre-commit"]
 
 [[repos.hooks]]
+id = "taxonomy"
+name = "just taxonomy"
+language = "system"
+entry = "just taxonomy"
+pass_filenames = false
+always_run = true
+priority = "checks"
+stages = ["pre-commit"]
+
+[[repos.hooks]]
 id = "test"
 name = "just test"
 language = "system"

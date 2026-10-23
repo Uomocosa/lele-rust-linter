@@ -23,6 +23,7 @@ rustup toolchain install nightly    # rust-toolchain.toml pins channel + compone
 cargo install cargo-nextest         # test runner used by `just test`
 cargo install just                  # task runner
 cargo binstall prek                 # hook runner (`prek install` via `just setup`)
+cargo install --path ../lele-rust-function-taxonomy   # honesty check (`just taxonomy`)
 ```
 
 `rust-toolchain.toml` provisions the nightly channel, `rustc`/`cargo`/`clippy`/`rustfmt`.
@@ -37,6 +38,7 @@ just clippy     # cargo clippy ... -- -D warnings
 just fmt        # cargo fmt -- --check
 just test       # cargo nextest run --all-targets --all-features
 just lint       # run lele-lint over each crate (one root lele.toml)
+just taxonomy   # prove every `require = "honest"` boundary is honest (rustc MIR)
 just sync-methods
 just setup      # one-time per clone: install the prek git hooks
 just check      # run the full gate (same as CI)
@@ -50,4 +52,4 @@ just setup      # one-time per clone: install the prek git hooks
 just check      # run the full gate (same as CI)
 ```
 
-`prek.toml` runs `fmt`, `clippy` and `lint` on pre-commit and `test` on pre-push, via `just`.
+`prek.toml` runs `fmt`, `clippy`, `lint` and `taxonomy` on pre-commit and `test` on pre-push, via `just`.

@@ -2,6 +2,7 @@
 name = "lele-snake-case"
 version.workspace = true
 edition = "2024"
+rust-version.workspace = true
 description = "Shared PascalCase -> snake_case conversion with an acronym list (lele-rs)"
 license.workspace = true
 

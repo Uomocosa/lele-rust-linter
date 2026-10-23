@@ -42,6 +42,7 @@ pub fn default() -> Linter {
     checkers::methods_are_delegates::MethodsAreDelegates::register(&mut checkers);
     checkers::conversion_is_from::ConversionIsFrom::register(&mut checkers);
     checkers::constructor_naming::ConstructorNaming::register(&mut checkers);
+    checkers::dunder_module_name::DunderModuleName::register(&mut checkers);
     Linter {
         checkers,
         error_format: ErrorFormat::Clippy,

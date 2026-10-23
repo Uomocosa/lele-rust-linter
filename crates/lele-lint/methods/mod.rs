@@ -12,6 +12,7 @@ pub mod conversion_is_from;
 pub mod declared_type;
 pub mod delegate_macro;
 pub mod domain_import;
+pub mod dunder_module_name;
 pub mod dunder_path;
 pub mod entry;
 pub mod fn_body;

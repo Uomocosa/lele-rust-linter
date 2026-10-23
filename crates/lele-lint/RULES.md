@@ -19,6 +19,7 @@ every **Good** example reports nothing at all.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE021 `helper_count`](#lele021-helper_count): A file has one public function; at most 2 private helpers unless each is marked `// needed helper: <why>`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
+- [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
 
 ### LELE001 `atomic_file`
 
@@ -673,6 +674,76 @@ mod tests {
     fn test_usage() {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
+}
+```
+
+### LELE038 `dunder_module_name`
+
+A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
+
+**Why:** The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name.
+
+**Bad** (reports LELE038):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod __basic__;
+
+pub use __basic__::structs::Item;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::structs::Item;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
 }
 ```
 

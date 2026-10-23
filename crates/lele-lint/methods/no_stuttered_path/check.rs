@@ -81,7 +81,10 @@ fn collect_stutter(path: &syn::Path, root_stems: &HashSet<String>, hits: &mut Ve
         return;
     }
     let segments: Vec<String> = path.segments.iter().map(|s| s.ident.to_string()).collect();
-    if segments.first().is_some_and(|s| s == "crate") {
+    if segments
+        .first()
+        .is_some_and(|s| matches!(s.as_str(), "crate" | "std" | "core" | "alloc"))
+    {
         return;
     }
     for pair in segments.windows(2) {
@@ -166,6 +169,13 @@ mod tests {
         let stems = stems(&["entry_kind"]);
         let src = "fn f() { let _ = entry_kind::EntryKind::File; }\n";
         assert_eq!(hit_paths(src, &stems), vec!["entry_kind::EntryKind::File"]);
+    }
+
+    #[test]
+    fn test_usage_allows_std_paths() {
+        let stems = stems(&["error"]);
+        let src = "fn f(e: &dyn std::error::Error) {}\n";
+        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
     }
 
     #[test]

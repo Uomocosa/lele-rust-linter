@@ -14,13 +14,13 @@ pub enum Error {
     #[error("methods layout requested but no `methods/` directory was found")]
     NoMethodsDir,
 
-    #[error("filesystem error: {0}")]
+    #[error("filesystem error")]
     WalkDir(#[from] walkdir::Error),
 
-    #[error("config error: {0}")]
+    #[error("config error")]
     Config(#[from] toml::de::Error),
 
-    #[error("I/O error: {0}")]
+    #[error("I/O error")]
     Io(#[from] std::io::Error),
 
     #[error("dunder path `{}` must end in `__<name>__`", .0.display())]

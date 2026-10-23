@@ -43,6 +43,8 @@ pub fn default() -> Linter {
     checkers::conversion_is_from::ConversionIsFrom::register(&mut checkers);
     checkers::constructor_naming::ConstructorNaming::register(&mut checkers);
     checkers::dunder_module_name::DunderModuleName::register(&mut checkers);
+    checkers::no_stringified_errors::NoStringifiedErrors::register(&mut checkers);
+    checkers::error_message_omits_source::ErrorMessageOmitsSource::register(&mut checkers);
     Linter {
         checkers,
         error_format: ErrorFormat::Clippy,

@@ -30,9 +30,10 @@ mod tests {
             "[lele.lint.checkers]\ncontainer_placement = false\n",
         )
         .unwrap();
-        let err = Config::try_from(dir.path().join("lele.toml").as_path())
-            .unwrap_err()
-            .to_string();
+        let error = Config::try_from(dir.path().join("lele.toml").as_path()).unwrap_err();
+        let err = std::error::Error::source(&error)
+            .map(ToString::to_string)
+            .unwrap_or_default();
         assert!(err.contains("checkers"), "{err}");
     }
 
@@ -65,9 +66,10 @@ mod tests {
             "[[lele.boundary]]\nname = \"session\"\nwhy = \"pure\"\nfolders = [\"src/session\"]\nunknown = 1\n",
         )
         .unwrap();
-        let err = Config::try_from(dir.path().join("lele.toml").as_path())
-            .unwrap_err()
-            .to_string();
+        let error = Config::try_from(dir.path().join("lele.toml").as_path()).unwrap_err();
+        let err = std::error::Error::source(&error)
+            .map(ToString::to_string)
+            .unwrap_or_default();
         assert!(err.contains("unknown"), "{err}");
     }
 

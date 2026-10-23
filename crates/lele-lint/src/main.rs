@@ -58,7 +58,7 @@ fn main() {
     ) {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("lele_lint: {e}", e = e);
+            eprintln!("lele_lint: {}", with_causes(&e));
             process::exit(1);
         }
     };
@@ -66,7 +66,7 @@ fn main() {
     let config = match resolve_config(args.common.config.as_deref(), &project) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("lele_lint: lele.toml: {e}");
+            eprintln!("lele_lint: lele.toml: {}", with_causes(&e));
             process::exit(1);
         }
     };
@@ -74,7 +74,7 @@ fn main() {
     project.config_dir = config_dir;
 
     if let Err(e) = project.apply_layout(&config) {
-        eprintln!("lele_lint: {e}", e = e);
+        eprintln!("lele_lint: {}", with_causes(&e));
         process::exit(1);
     }
 
@@ -91,7 +91,7 @@ fn main() {
 
     if args.sync_methods {
         if let Err(e) = project.sync_methods() {
-            eprintln!("lele_lint: {e}", e = e);
+            eprintln!("lele_lint: {}", with_causes(&e));
             process::exit(1);
         }
         return;
@@ -127,4 +127,16 @@ fn load_at(path: &Path, fallback: &Path) -> Result<(Config, PathBuf), lele_lint:
         .map(Path::to_path_buf)
         .unwrap_or_else(|| fallback.to_path_buf());
     Ok((Config::try_from(path.as_path())?, dir))
+}
+
+// needed helper: the error and every `source()` cause, joined with ": "
+fn with_causes(error: &dyn std::error::Error) -> String {
+    let mut message = error.to_string();
+    let mut cause = error.source();
+    while let Some(inner) = cause {
+        message.push_str(": ");
+        message.push_str(&inner.to_string());
+        cause = inner.source();
+    }
+    message
 }

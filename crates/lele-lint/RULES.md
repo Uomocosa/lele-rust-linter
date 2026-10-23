@@ -2641,6 +2641,8 @@ mod tests {
 - [LELE027 `single_caller_type`](#lele027-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
 - [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
 - [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
+- [LELE039 `no_stringified_errors`](#lele039-no_stringified_errors): A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
+- [LELE040 `error_message_omits_source`](#lele040-error_message_omits_source): An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
 
 ### LELE010 `no_positional`
 
@@ -3372,6 +3374,180 @@ mod tests {
         let reading = reading::Reading::from_sensor_and_celsius("kitchen", 21);
         assert_eq!(reading.celsius, 21);
     }
+}
+```
+
+### LELE039 `no_stringified_errors`
+
+A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
+
+**Why:** Text throws away the error's type, its `source()` chain and `?` conversions; callers can only print it, never match or inspect it.
+
+**Bad** (reports LELE039):
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+
+mod config_text;
+pub use config_text::ConfigText;
+```
+
+`src/error.rs`
+
+```rust
+use std::path::PathBuf;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("cannot read {path}: {message}")]
+    Read { path: PathBuf, message: String },
+}
+```
+
+`src/config_text.rs`
+
+```rust
+use std::path::Path;
+
+use derive_more::Deref;
+
+use crate::Error;
+
+#[derive(Deref)]
+pub struct ConfigText(pub String);
+
+impl TryFrom<&Path> for ConfigText {
+    type Error = Error;
+    fn try_from(path: &Path) -> Result<Self, Error> {
+        let text = std::fs::read_to_string(path).map_err(|error| Error::Read {
+            path: path.to_path_buf(),
+            message: error.to_string(),
+        })?;
+        Ok(Self(text))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::ConfigText;
+
+    #[test]
+    fn test_usage() {
+        assert!(ConfigText::try_from(Path::new("/nonexistent")).is_err());
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+
+mod config_text;
+pub use config_text::ConfigText;
+```
+
+`src/error.rs`
+
+```rust
+use std::path::PathBuf;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("cannot read {path}")]
+    Read {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+}
+```
+
+`src/config_text.rs`
+
+```rust
+use std::path::Path;
+
+use derive_more::Deref;
+
+use crate::Error;
+
+#[derive(Deref)]
+pub struct ConfigText(pub String);
+
+impl TryFrom<&Path> for ConfigText {
+    type Error = Error;
+    fn try_from(path: &Path) -> Result<Self, Error> {
+        let text = std::fs::read_to_string(path).map_err(|source| Error::Read {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        Ok(Self(text))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::ConfigText;
+
+    #[test]
+    fn test_usage() {
+        assert!(ConfigText::try_from(Path::new("/nonexistent")).is_err());
+    }
+}
+```
+
+### LELE040 `error_message_omits_source`
+
+An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
+
+**Why:** Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.
+
+**Bad** (reports LELE040):
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+```
+
+`src/error.rs`
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("i/o error: {0}")]
+    Io(#[from] std::io::Error),
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+```
+
+`src/error.rs`
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("i/o error")]
+    Io(#[from] std::io::Error),
 }
 ```
 

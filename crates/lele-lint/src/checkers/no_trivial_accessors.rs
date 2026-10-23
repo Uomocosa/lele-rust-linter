@@ -13,7 +13,7 @@ impl NoTrivialAccessors {
     pub const CODE: &'static str = "LELE014";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
-        summary: "No getters or setters that only read or write a public field.",
+        summary: "No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).",
         why: "The field is already public; an accessor adds a second name for the same thing.",
         bad: &[
             ExampleFile {

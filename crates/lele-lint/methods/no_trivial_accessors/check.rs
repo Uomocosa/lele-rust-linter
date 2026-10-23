@@ -260,12 +260,34 @@ fn extract_self_field(expr: &syn::Expr, pub_fields: &HashSet<String>) -> Option<
         syn::Expr::Reference(ref_expr) => {
             return extract_self_field(&ref_expr.expr, pub_fields);
         }
-        syn::Expr::MethodCall(call) if call.method == "clone" && call.args.is_empty() => {
+        syn::Expr::MethodCall(call) if is_plain_conversion(call) => {
             return extract_self_field(&call.receiver, pub_fields);
+        }
+        syn::Expr::Call(call) if is_ok_or_some(call) => {
+            if let [inner] = call.args.iter().collect::<Vec<_>>().as_slice() {
+                return extract_self_field(inner, pub_fields);
+            }
+        }
+        syn::Expr::Paren(paren) => {
+            return extract_self_field(&paren.expr, pub_fields);
         }
         _ => {}
     }
     None
+}
+
+// needed helper: zero-argument conversion that still only reads the field
+fn is_plain_conversion(call: &syn::ExprMethodCall) -> bool {
+    const CONVERSIONS: [&str; 7] = [
+        "clone", "to_owned", "to_vec", "as_str", "as_slice", "as_ref", "as_deref",
+    ];
+    call.args.is_empty() && CONVERSIONS.iter().any(|name| call.method == name)
+}
+
+// needed helper: `Ok(..)` / `Some(..)` wrapper around a field read
+fn is_ok_or_some(call: &syn::ExprCall) -> bool {
+    matches!(&*call.func, syn::Expr::Path(path)
+        if path.path.segments.last().is_some_and(|segment| segment.ident == "Ok" || segment.ident == "Some"))
 }
 
 // needed helper: self-reference expression check
@@ -297,6 +319,23 @@ mod tests {
         let mut fields = HashSet::new();
         fields.insert("value".into());
         assert!(is_trivial_accessor(&method, &fields).is_some());
+    }
+
+    #[test]
+    fn test_usage_flags_wrapped_getter() {
+        let mut fields = HashSet::new();
+        fields.insert("items".into());
+        for source in [
+            "fn items(&self) -> Result<Vec<u32>, E> { Ok(self.items.clone()) }",
+            "fn items(&self) -> Option<&[u32]> { Some(self.items.as_slice()) }",
+            "fn items(&self) -> Vec<u32> { self.items.to_vec() }",
+        ] {
+            let method: syn::ImplItemFn = syn::parse_str(source).unwrap();
+            assert!(is_trivial_accessor(&method, &fields).is_some(), "{source}");
+        }
+        let computed: syn::ImplItemFn =
+            syn::parse_str("fn count(&self) -> Result<usize, E> { Ok(self.items.len()) }").unwrap();
+        assert!(is_trivial_accessor(&computed, &fields).is_none());
     }
 
     #[test]

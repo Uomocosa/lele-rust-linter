@@ -2635,7 +2635,7 @@ mod tests {
 
 - [LELE010 `no_positional`](#lele010-no_positional): No positional field access (`.0`, `.1`).
 - [LELE012 `no_stuttered_type`](#lele012-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
-- [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field.
+- [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
 - [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
 - [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
 - [LELE027 `single_caller_type`](#lele027-single_caller_type): A type with no methods that is used from exactly one file is defined privately in that file.
@@ -2810,7 +2810,7 @@ mod tests {
 
 ### LELE014 `no_trivial_accessors`
 
-No getters or setters that only read or write a public field.
+No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
 
 **Why:** The field is already public; an accessor adds a second name for the same thing.
 

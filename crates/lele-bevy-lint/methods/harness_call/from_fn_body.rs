@@ -36,6 +36,9 @@ impl<'ast> Visit<'ast> for HarnessScanner {
     }
 
     fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
+        if node.method == HARNESS_RUN {
+            self.is_called = true;
+        }
         let is_checking = CHECKING_METHODS.iter().any(|method| node.method == method);
         if is_checking && is_harness_run(&node.receiver, self.is_run_imported) {
             self.is_checked = true;
@@ -63,6 +66,7 @@ fn is_harness_run(expr: &syn::Expr, is_run_imported: bool) -> bool {
         syn::Expr::Paren(inner) => is_harness_run(&inner.expr, is_run_imported),
         syn::Expr::Group(inner) => is_harness_run(&inner.expr, is_run_imported),
         syn::Expr::Call(call) => is_harness_path(&call.func, is_run_imported),
+        syn::Expr::MethodCall(call) => call.method == HARNESS_RUN,
         _ => false,
     }
 }
@@ -94,6 +98,22 @@ mod tests {
 
     fn call(body: &str, is_run_imported: bool) -> HarnessCall {
         from_fn_body(&syn::parse_str(body).unwrap(), is_run_imported)
+    }
+
+    #[test]
+    fn test_usage_method_form_is_the_harness() {
+        assert_eq!(
+            call("{ scene.run(&c, \"x\").expect(\"preview\"); }", false),
+            HarnessCall::Checked
+        );
+        assert_eq!(
+            call("{ let _ = scene.run(&c, \"x\"); }", false),
+            HarnessCall::Unchecked
+        );
+        assert_eq!(
+            call("{ scene.run(&c, \"x\"); }", false),
+            HarnessCall::Unchecked
+        );
     }
 
     #[test]

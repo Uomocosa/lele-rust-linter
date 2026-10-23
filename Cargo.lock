@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "atomic-delegate-macros"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "lele-snake-case",
  "proc-macro2",
@@ -204,7 +204,7 @@ checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
 
 [[package]]
 name = "lele-bevy-lint"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "atomic-delegate-macros",
  "clap",
@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "lele-lint"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "atomic-delegate-macros",
  "clap",
@@ -237,7 +237,7 @@ dependencies = [
 
 [[package]]
 name = "lele-snake-case"
-version = "0.0.3"
+version = "0.0.4"
 
 [[package]]
 name = "libc"

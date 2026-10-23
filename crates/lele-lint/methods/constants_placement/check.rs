@@ -120,15 +120,22 @@ fn check_lift_to_ancestor(
 ) -> Vec<RuleViolation> {
     let ancestor = common_ancestor_dir(users);
     let def_dir = parent_dir(rel_path);
-    if ancestor.is_empty() && !def_dir.is_empty() {
-        let target = constants_target(project, &PathBuf::new());
-        return vec![RuleViolation::from_file(project.src_dir.join(rel_path), checkers::constants_placement::ConstantsPlacement::CODE, format!(
-                "const `{name}` is used across top-level dirs but lives in `{}` — lift it to `src/{}`",
-                rel_path.display(),
-                target.display(),
-            ))];
+    if !ancestor.is_empty() || def_dir.is_empty() {
+        return Vec::new();
     }
-    Vec::new()
+    let target = constants_target(project, &PathBuf::new());
+    if target == *rel_path {
+        return Vec::new();
+    }
+    vec![RuleViolation::from_file(
+        project.src_dir.join(rel_path),
+        checkers::constants_placement::ConstantsPlacement::CODE,
+        format!(
+            "const `{name}` is used across top-level dirs but lives in `{}` — lift it to `src/{}`",
+            rel_path.display(),
+            target.display(),
+        ),
+    )]
 }
 
 // needed helper: lower detection when root const is used in one subdir only
@@ -208,7 +215,9 @@ fn common_prefix(a: &Path, b: &Path) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use super::{check, common_ancestor_dir, common_prefix, sibling_constants};
+    use super::{
+        check, check_lift_to_ancestor, common_ancestor_dir, common_prefix, sibling_constants,
+    };
     use crate::checkers;
     use crate::DunderPath;
     use crate::Project;
@@ -273,5 +282,40 @@ mod tests {
     fn test_usage_common_ancestor_lifts_nested() {
         let users = set(&["checkers/sub/a.rs", "checkers/other/b.rs"]);
         assert_eq!(common_ancestor_dir(&users), PathBuf::from("checkers"));
+    }
+
+    #[test]
+    fn test_usage_root_const_is_not_lifted_to_itself() {
+        let project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        let users = set(&["toolchain.rs"]);
+        assert!(check_lift_to_ancestor(
+            "CACHE_TARGET_DIR",
+            &PathBuf::from("__basic__/constants.rs"),
+            &users,
+            &project,
+        )
+        .is_empty());
+    }
+
+    #[test]
+    fn test_usage_domain_const_is_lifted_to_root() {
+        let project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        let users = set(&["toolchain.rs", "driver/mod.rs"]);
+        assert_eq!(
+            check_lift_to_ancestor(
+                "CACHE_TARGET_DIR",
+                &PathBuf::from("toolchain/__basic__/constants.rs"),
+                &users,
+                &project,
+            )
+            .len(),
+            1
+        );
     }
 }

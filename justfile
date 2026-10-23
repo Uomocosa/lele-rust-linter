@@ -40,10 +40,11 @@ install:
     cargo install --locked --force --path crates/lele-lint
     cargo install --locked --force --path crates/lele-bevy-lint
 
-# Fail fast when the installed binaries are not the versions this repo expects.
+# Show which binary each tool resolves to and its version. A `<fleet>/bin` shim
+# (written by `lele-release setup`) builds the sibling checkout; set
+# LELE_USE_INSTALLED=1 to use the installed binary instead.
 tools:
-    test "$(lele-lint --version)" = "lele_lint 0.0.3"
-    test "$(lele-bevy-lint --version)" = "lele_bevy_lint 0.0.3"
+    @for tool in lele-lint lele-bevy-lint; do printf '%-24s %s  %s\n' "$tool" "$(command -v "$tool")" "$("$tool" --version)"; done
 
 # --- prek hooks (commit/push gate; tasks above) -------------------------------
 setup:

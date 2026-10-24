@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["lele-lint-test-crates"]
 members = [
   "crates/atomic-delegate-macros",
   "crates/lele-snake-case",

@@ -1,6 +1,6 @@
 use crate::ItemMarker;
 
-pub fn is_rustfmt_skip(marker: &ItemMarker) -> bool {
+pub fn is_rustfmt_skip(marker: ItemMarker) -> bool {
     let segments: Vec<_> = marker.path().segments.iter().collect();
     segments.len() == 2
         && segments.first().is_some_and(|s| s.ident == "rustfmt")

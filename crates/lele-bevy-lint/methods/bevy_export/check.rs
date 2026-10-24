@@ -1,9 +1,9 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 
-pub fn check(_self: &checkers::bevy_export::BevyExport, project: &Project) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::bevy_export::BevyExport, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
     for (mod_rs_path, info) in &project.module_info {
@@ -21,7 +21,7 @@ pub fn check(_self: &checkers::bevy_export::BevyExport, project: &Project) -> Ve
                     .map(|e| e.absolute_path.clone());
 
                 violations.push(RuleViolation::from_file(module_file
-                        .unwrap_or_else(|| project.root.join("src").join(mod_rs_path)), checkers::bevy_export::BevyExport::CODE, format!(
+                        .unwrap_or_else(|| project.root.join("src").join(mod_rs_path)), rules::bevy_export::BevyExport::CODE, format!(
                         "pub use {} re-exports bevy_systems items at the domain root; remove it — access via `{{domain}}::bevy_systems::{{name}}`",
                         reexported_path
                     )));

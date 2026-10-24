@@ -1,11 +1,11 @@
 mod default;
-mod print_checker_list;
+mod print_rule_list;
 mod print_violations;
 mod render_rule;
 mod rules_markdown;
 mod run;
 pub use default::default;
-pub use print_checker_list::print_checker_list;
+pub use print_rule_list::print_rule_list;
 pub use print_violations::print_violations;
 pub use render_rule::render_rule;
 pub use rules_markdown::rules_markdown;

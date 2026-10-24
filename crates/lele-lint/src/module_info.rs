@@ -1,4 +1,3 @@
-// needed helper: syn parsing utilities for mod.rs declarations
 use std::path::PathBuf;
 
 use atomic_delegate_macros::atomic_delegates;
@@ -18,6 +17,49 @@ pub struct ModuleInfo {
 #[atomic_delegates]
 impl ModuleInfo {
     pub fn build(entries: &[Entry]) -> ModuleInfoMap {}
+    pub(crate) fn parse_mod_rs(content: &str) -> (Vec<ModDecl>, Vec<Reexport>) {}
+}
+
+#[rustfmt::skip]
+impl ModuleInfo {
+    pub(crate) fn cfg_attribute(attrs: &[syn::Attribute]) -> Option<String> {
+        attrs.iter().find_map(|attr| {
+            if !attr.path().is_ident("cfg") {
+                return None;
+            }
+            let meta = attr.parse_args::<syn::Meta>().ok()?;
+            Some(quote::quote!(#meta).to_string())
+        })
+    }
+    pub(crate) fn extract_reexport(tree: &syn::UseTree) -> Option<Reexport> {
+        match tree {
+            syn::UseTree::Path(p) => {
+                let mut segments = vec![p.ident.to_string()];
+                if let Some(child) = Self::extract_reexport(&p.tree) {
+                    segments.extend(child.segments);
+                    Some(Reexport {
+                        segments,
+                        is_glob: child.is_glob,
+                    })
+                } else {
+                    None
+                }
+            }
+            syn::UseTree::Name(n) => Some(Reexport {
+                segments: vec![n.ident.to_string()],
+                is_glob: false,
+            }),
+            syn::UseTree::Glob(_) => Some(Reexport {
+                segments: Vec::new(),
+                is_glob: true,
+            }),
+            syn::UseTree::Rename(r) => Some(Reexport {
+                segments: vec![r.ident.to_string()],
+                is_glob: false,
+            }),
+            syn::UseTree::Group(_) => None,
+        }
+    }
 }
 
 #[cfg(test)]

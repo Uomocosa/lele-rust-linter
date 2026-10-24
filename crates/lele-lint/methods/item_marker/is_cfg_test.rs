@@ -1,8 +1,6 @@
-use syn::meta::ParseNestedMeta;
-
 use crate::ItemMarker;
 
-pub fn is_cfg_test(marker: &ItemMarker) -> bool {
+pub fn is_cfg_test(marker: ItemMarker) -> bool {
     if !marker.path().is_ident("cfg") {
         return false;
     }
@@ -14,27 +12,11 @@ pub fn is_cfg_test(marker: &ItemMarker) -> bool {
             return Ok(());
         }
         if meta.path.is_ident("all") {
-            return all_contains_test(&meta);
+            return ItemMarker::all_contains_test(&meta);
         }
         Err(meta.error("expected test"))
     })
     .is_ok()
-}
-
-// needed helper: `all(test, ...)` gates the item on test as well
-fn all_contains_test(meta: &ParseNestedMeta) -> syn::Result<()> {
-    let mut found = false;
-    let _ = meta.parse_nested_meta(|inner| {
-        if inner.path.is_ident("test") {
-            found = true;
-        }
-        Ok(())
-    });
-    if found {
-        Ok(())
-    } else {
-        Err(meta.error("expected test"))
-    }
 }
 
 #[cfg(test)]

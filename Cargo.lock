@@ -258,8 +258,10 @@ dependencies = [
  "lele-snake-case",
  "proc-macro2",
  "rstest",
+ "serde",
  "syn 2.0.119",
  "tempfile",
+ "toml",
 ]
 
 [[package]]

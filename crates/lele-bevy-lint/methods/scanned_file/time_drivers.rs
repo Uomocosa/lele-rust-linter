@@ -1,14 +1,12 @@
-use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
-use crate::TIME_DRIVERS;
 use crate::scan;
 
 #[must_use]
 pub fn time_drivers(file: &scan::ScannedFile) -> Vec<String> {
     let mut found = Vec::new();
     {
-        let mut scanner = DriverScanner(&mut found);
+        let mut scanner = scan::DriverScanner(&mut found);
         for item in &file.items {
             if scan::ScannedItem(item).is_test_module() {
                 continue;
@@ -19,30 +17,6 @@ pub fn time_drivers(file: &scan::ScannedFile) -> Vec<String> {
     found.sort();
     found.dedup();
     found
-}
-
-// needed helper: matches time driver tokens in paths and method calls
-#[derive(Deref, DerefMut)]
-struct DriverScanner<'a>(&'a mut Vec<String>);
-
-impl<'ast> Visit<'ast> for DriverScanner<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        for segment in &node.segments {
-            let name = segment.ident.to_string();
-            if TIME_DRIVERS.contains(&name.as_str()) {
-                self.push(name);
-            }
-        }
-        syn::visit::visit_path(self, node);
-    }
-
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        let name = node.method.to_string();
-        if TIME_DRIVERS.contains(&name.as_str()) {
-            self.push(name);
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
 }
 
 #[cfg(test)]

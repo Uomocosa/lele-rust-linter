@@ -1,14 +1,11 @@
-use std::path::Path;
-
-use crate::checkers;
+use crate::rules;
 use crate::ItemMarker;
+use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
 
-const CODE: &str = checkers::methods_are_delegates::MethodsAreDelegates::CODE;
-
 pub fn check(
-    _self: &checkers::methods_are_delegates::MethodsAreDelegates,
+    _self: &rules::methods_are_delegates::MethodsAreDelegates,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -20,53 +17,46 @@ pub fn check(
             continue;
         };
         for item in &file.items {
-            let Some((ident, visibility)) = named_visibility(item) else {
-                continue;
+            let message = match item {
+                syn::Item::Use(_) => None,
+                syn::Item::Const(item) if matches!(item.vis, syn::Visibility::Inherited) => None,
+                syn::Item::Mod(item)
+                    if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) =>
+                {
+                    None
+                }
+                syn::Item::Fn(item)
+                    if item.sig.ident == stem && matches!(item.vis, syn::Visibility::Public(_)) =>
+                {
+                    None
+                }
+                syn::Item::Fn(item) => Some(format!(
+                    "`{}` is a helper in a method file; only `pub fn {stem}` lives here — declare it as a `pub(crate)` method or associated fn of the type in `src/` and call it through the type",
+                    item.sig.ident
+                )),
+                syn::Item::Impl(_) => Some(
+                    "`impl` block in a method file; impls live next to their type in `src/`, bodies in `methods/<type>/<method>.rs`".to_string(),
+                ),
+                syn::Item::Struct(syn::ItemStruct { ident, .. })
+                | syn::Item::Enum(syn::ItemEnum { ident, .. })
+                | syn::Item::Trait(syn::ItemTrait { ident, .. })
+                | syn::Item::Type(syn::ItemType { ident, .. }) => Some(format!(
+                    "type `{ident}` in a method file; types live in `src/` (`pub(crate)` for internal machinery)"
+                )),
+                _ => Some(format!(
+                    "only `use`, private `const`, `pub fn {stem}` and `#[cfg(test)] mod tests` may appear in a method file"
+                )),
             };
-            let is_delegate = matches!(item, syn::Item::Fn(_))
-                && ident == stem
-                && matches!(visibility, syn::Visibility::Public(_));
-            if is_delegate || matches!(visibility, syn::Visibility::Inherited) {
-                continue;
+            if let Some(message) = message {
+                violations.push(RuleViolation::from_file(
+                    project.absolute_path(Origin::Methods, rel_path),
+                    rules::methods_are_delegates::MethodsAreDelegates::CODE,
+                    message,
+                ));
             }
-            violations.push(violation(project, rel_path, stem, &ident));
         }
     }
     violations
-}
-
-// needed helper: the name and visibility of every item that can be exported
-fn named_visibility(item: &syn::Item) -> Option<(String, &syn::Visibility)> {
-    let (ident, visibility, attrs) = match item {
-        syn::Item::Fn(item) => (&item.sig.ident, &item.vis, &item.attrs),
-        syn::Item::Struct(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Enum(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Trait(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Const(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Static(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Type(item) => (&item.ident, &item.vis, &item.attrs),
-        syn::Item::Mod(item) => (&item.ident, &item.vis, &item.attrs),
-        _ => return None,
-    };
-    if attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
-        return None;
-    }
-    Some((ident.to_string(), visibility))
-}
-
-// needed helper: diagnostic anchored to the methods-relative path
-fn violation(project: &Project, rel_path: &Path, stem: &str, ident: &str) -> RuleViolation {
-    let file = project
-        .methods_dir
-        .as_ref()
-        .map_or_else(|| rel_path.to_path_buf(), |dir| dir.join(rel_path));
-    RuleViolation::from_file(
-        file,
-        CODE,
-        format!(
-            "`{ident}` is exported from a method file; only `pub fn {stem}` may be public here — make `{ident}` private with `// needed helper: <why>`, or give it its own `#[atomic_delegates]` shell and file"
-        ),
-    )
 }
 
 #[cfg(test)]
@@ -74,7 +64,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers::methods_are_delegates::MethodsAreDelegates;
+    use crate::rules::methods_are_delegates::MethodsAreDelegates;
     use crate::Project;
 
     #[test]
@@ -83,7 +73,7 @@ mod tests {
         project.methods_parsed_files.insert(
             PathBuf::from("player/heal.rs"),
             syn::parse_str(
-                "pub fn heal() {} fn capped() {} pub(crate) fn shared() {} pub struct Leak; #[cfg(test)] pub mod tests {}",
+                "use crate::player; const CAP: u32 = 100; pub fn heal() {} fn capped() {} pub(crate) fn shared() {} struct Hit; impl Hit {} #[cfg(test)] mod tests {}",
             )
             .unwrap(),
         );
@@ -95,8 +85,10 @@ mod tests {
             .into_iter()
             .map(|v| v.message)
             .collect();
-        assert_eq!(messages.len(), 2);
+        assert_eq!(messages.len(), 4);
+        assert!(messages.iter().any(|m| m.starts_with("`capped`")));
         assert!(messages.iter().any(|m| m.starts_with("`shared`")));
-        assert!(messages.iter().any(|m| m.starts_with("`Leak`")));
+        assert!(messages.iter().any(|m| m.starts_with("type `Hit`")));
+        assert!(messages.iter().any(|m| m.starts_with("`impl` block")));
     }
 }

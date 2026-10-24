@@ -1,14 +1,15 @@
 use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
+use syn::meta::ParseNestedMeta;
 
 #[derive(Clone, Copy, Deref)]
 pub struct ItemMarker<'a>(pub &'a syn::Attribute);
 
 #[atomic_delegates]
 impl ItemMarker<'_> {
-    pub fn is_cfg_test(&self) -> bool {}
-    pub fn is_rustfmt_skip(&self) -> bool {}
-    pub fn derives_any_of(&self, names: &[&str]) -> bool {}
+    pub fn is_cfg_test(self) -> bool {}
+    pub fn is_rustfmt_skip(self) -> bool {}
+    pub fn derives_any_of(self, names: &[&str]) -> bool {}
 }
 
 #[rustfmt::skip]
@@ -18,6 +19,20 @@ impl ItemMarker<'_> {
     pub fn is_atomic_delegate(&self) -> bool { self.is_named("atomic_delegate") }
     pub fn is_test(&self) -> bool { self.is_named("test") }
     pub fn derives_data_shape(&self) -> bool { self.derives_any_of(&["Serialize", "Deserialize", "Parser", "Args", "Subcommand", "ValueEnum"]) }
+    pub(crate) fn all_contains_test(meta: &ParseNestedMeta) -> syn::Result<()> {
+        let mut found = false;
+        let _ = meta.parse_nested_meta(|inner| {
+            if inner.path.is_ident("test") {
+                found = true;
+            }
+            Ok(())
+        });
+        if found {
+            Ok(())
+        } else {
+            Err(meta.error("expected test"))
+        }
+    }
 }
 
 #[cfg(test)]

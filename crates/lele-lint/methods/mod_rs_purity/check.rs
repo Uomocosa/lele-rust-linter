@@ -1,13 +1,9 @@
-use crate::checkers;
-use crate::ItemMarker;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 use syn::spanned::Spanned;
 
-pub fn check(
-    _self: &checkers::mod_rs_purity::ModRsPurity,
-    project: &Project,
-) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::mod_rs_purity::ModRsPurity, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
     for source in project.content_sources() {
@@ -21,14 +17,14 @@ pub fn check(
         }
 
         for item in &file.items {
-            let Some(message) = violation_message(item) else {
+            let Some(message) = rules::mod_rs_purity::ModRsPurity::violation_message(item) else {
                 continue;
             };
             violations.push(RuleViolation::from_site(
                 project.absolute_path(source.origin, rel_path),
                 item.span().start().line,
                 0,
-                checkers::mod_rs_purity::ModRsPurity::CODE,
+                rules::mod_rs_purity::ModRsPurity::CODE,
                 message,
             ));
         }
@@ -37,73 +33,21 @@ pub fn check(
     violations
 }
 
-// needed helper: mod.rs item violation classification
-fn violation_message(item: &syn::Item) -> Option<String> {
-    match item {
-        syn::Item::Mod(module) if module.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) => Some(
-            "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — `#[cfg(test)] mod` test modules are not allowed"
-                .to_string(),
-        ),
-        syn::Item::Mod(_) => None,
-        syn::Item::Use(item_use) => {
-            if matches!(item_use.vis, syn::Visibility::Inherited) {
-                Some(
-                    "mod.rs may contain only `pub use` re-exports — private `use` imports are not allowed; re-export with `pub use` or move the import into a function file"
-                        .to_string(),
-                )
-            } else {
-                None
-            }
-        }
-        syn::Item::Struct(s) => Some(named_message("struct", &s.ident.to_string(), &s.vis)),
-        syn::Item::Enum(e) => Some(named_message("enum", &e.ident.to_string(), &e.vis)),
-        syn::Item::Fn(f) => Some(named_message("fn", &f.sig.ident.to_string(), &f.vis)),
-        syn::Item::Const(c) => Some(named_message("const", &c.ident.to_string(), &c.vis)),
-        syn::Item::Static(s) => Some(named_message("static", &s.ident.to_string(), &s.vis)),
-        syn::Item::Trait(t) => Some(named_message("trait", &t.ident.to_string(), &t.vis)),
-        syn::Item::Type(t) => Some(named_message("type alias", &t.ident.to_string(), &t.vis)),
-        syn::Item::Impl(_) => Some(
-            "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — `impl` blocks are not allowed"
-                .to_string(),
-        ),
-        syn::Item::Macro(_) => Some(
-            "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — macro definitions are not allowed"
-                .to_string(),
-        ),
-        _ => Some(
-            "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — move this item to its own file"
-                .to_string(),
-        ),
-    }
-}
-
-// needed helper: named item violation message
-fn named_message(kind: &str, name: &str, vis: &syn::Visibility) -> String {
-    let vis_str = match vis {
-        syn::Visibility::Public(_) => "pub ",
-        syn::Visibility::Restricted(_) => "pub(crate) ",
-        syn::Visibility::Inherited => "",
-    };
-    format!(
-        "mod.rs may contain only `mod`/`pub mod` declarations and `pub use` re-exports — found `{vis_str}{kind} {name}`; move it to its own file"
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use super::violation_message;
+    use crate::rules;
     use syn::Item;
 
     fn message(code: &str) -> Option<String> {
         let item: Item = syn::parse_str(code).unwrap();
-        violation_message(&item)
+        rules::mod_rs_purity::ModRsPurity::violation_message(&item)
     }
 
     #[test]
     fn test_usage() {
         assert!(message("mod player;").is_none());
         assert!(message("pub use player::Player;").is_none());
-        assert!(message("use crate::checker;").is_some());
+        assert!(message("use crate::rule;").is_some());
     }
 
     #[test]
@@ -122,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_usage_flags_private_use() {
-        let m = message("use crate::checker;").unwrap();
+        let m = message("use crate::rule;").unwrap();
         assert!(m.contains("private `use` import"));
     }
 
@@ -137,9 +81,9 @@ mod tests {
         assert!(message("pub struct Score { pub value: u32 }")
             .unwrap()
             .contains("struct"));
-        assert!(message("pub fn build_checkers() {}")
+        assert!(message("pub fn build_rules() {}")
             .unwrap()
-            .contains("fn build_checkers"));
+            .contains("fn build_rules"));
         assert!(message("impl Player { fn tick(&self) {} }")
             .unwrap()
             .contains("impl"));

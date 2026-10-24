@@ -10,7 +10,7 @@ pub struct CommonArgs {
     pub error_format: ErrorFormat,
 
     #[arg(long)]
-    pub checker_list: bool,
+    pub rule_list: bool,
 
     #[arg(long, value_name = "CODE")]
     pub explain: Option<String>,

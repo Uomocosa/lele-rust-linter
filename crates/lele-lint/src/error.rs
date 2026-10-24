@@ -1,3 +1,4 @@
+use atomic_delegate_macros::atomic_delegates;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -26,3 +27,10 @@ pub enum Error {
     #[error("dunder path `{}` must end in `__<name>__`", .0.display())]
     NotDunder(std::path::PathBuf),
 }
+
+#[atomic_delegates]
+impl Error {
+    pub fn with_causes(error: &dyn std::error::Error) -> String {}
+}
+
+// no test_usage necessary

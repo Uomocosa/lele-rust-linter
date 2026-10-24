@@ -2,7 +2,7 @@
 # config file's directory is the base, so boundary `folders` are workspace-relative.
 
 [lele.config]
-exclude = ["target", ".devenv", ".git"]
+exclude = ["target", ".devenv", ".git", "lele-lint-test-crates"]
 
 [lele.lint]
 

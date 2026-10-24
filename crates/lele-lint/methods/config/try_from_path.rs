@@ -27,14 +27,14 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("lele.toml"),
-            "[lele.lint.checkers]\ncontainer_placement = false\n",
+            "[lele.lint.rules]\ncontainer_placement = false\n",
         )
         .unwrap();
         let error = Config::try_from(dir.path().join("lele.toml").as_path()).unwrap_err();
         let err = std::error::Error::source(&error)
             .map(ToString::to_string)
             .unwrap_or_default();
-        assert!(err.contains("checkers"), "{err}");
+        assert!(err.contains("rules"), "{err}");
     }
 
     #[test]

@@ -1,22 +1,22 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
 pub fn check(
-    _self: &checkers::preview_routing::PreviewRouting,
+    _self: &rules::preview_routing::PreviewRouting,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.sources() {
         for preview in scan::ScannedFile(source.file).collect_previews() {
-            for message in problems(&preview) {
+            for message in rules::preview_routing::PreviewRouting::problems(&preview) {
                 violations.push(scan::BevyProject(project).violation(
                     source.origin,
                     source.relative_path,
                     preview.line,
-                    checkers::preview_routing::PreviewRouting::CODE,
+                    rules::preview_routing::PreviewRouting::CODE,
                     message,
                 ));
             }
@@ -25,33 +25,10 @@ pub fn check(
     violations
 }
 
-// needed helper: every way one preview fn fails to run, render or check its result
-fn problems(preview: &scan::Preview) -> Vec<String> {
-    let mut found = Vec::new();
-    if !preview.is_test {
-        found.push(format!(
-            "`fn {}` is named like a preview but has no `#[test]`, so it never runs",
-            preview.name
-        ));
-    }
-    match preview.harness {
-        scan::HarnessCall::Missing => found.push(format!(
-            "`fn {}` is a preview test but does not call the preview harness (`scene.run(...)` or `lele_bevy_preview::run(...)`); route it through the harness so an empty frame fails",
-            preview.name
-        )),
-        scan::HarnessCall::Unchecked => found.push(format!(
-            "`fn {}` discards the harness `run(...)` result; end it with `.expect(\"preview\")` (or `?`) so `NoVisual`/`StaticClip` fail the test",
-            preview.name
-        )),
-        scan::HarnessCall::Checked => {}
-    }
-    found
-}
-
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -60,7 +37,7 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("ui/root.rs"), syn::parse_str(source).unwrap());
-        check(&checkers::preview_routing::PreviewRouting, &project)
+        check(&rules::preview_routing::PreviewRouting, &project)
             .into_iter()
             .map(|violation| violation.message)
             .collect()

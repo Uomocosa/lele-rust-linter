@@ -1,10 +1,10 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
-pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::from(project);
     let extra = scan::BevyProject(project).require_visuals();
     let test_only = scan::BevyProject(project).test_only_files();
@@ -26,7 +26,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
 
         let missing = scan::ScannedFile(file).require_preview(scan::PreviewKind::Mp4, || {
             scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
-                checkers::bevy_ui_mp4::BevyUiMp4::CODE,
+                rules::bevy_ui_mp4::BevyUiMp4::CODE,
                 format!(
                     "file spawns UI `{}` and drives it over time ({}) but defines no `*_ui_mp4_preview` test",
                     visual.visual,
@@ -45,7 +45,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
             scan::Preview::missing_subject(&previews, scan::PreviewKind::Mp4, &subjects)
         {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
-                checkers::bevy_ui_mp4::BevyUiMp4::CODE,
+                rules::bevy_ui_mp4::BevyUiMp4::CODE,
                 format!(
                     "`fn {}` does not record this file's UI: its `Scene::build` must register, call or add one of `{}`, not a copy of it",
                     preview.name,
@@ -61,7 +61,7 @@ pub fn check(_self: &checkers::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -76,8 +76,8 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::bevy_ui_mp4::BevyUiMp4, &project);
+        let violations = check(&rules::bevy_ui_mp4::BevyUiMp4, &project);
         assert_eq!(violations.len(), 1);
-        assert_eq!(violations[0].code, checkers::bevy_ui_mp4::BevyUiMp4::CODE);
+        assert_eq!(violations[0].code, rules::bevy_ui_mp4::BevyUiMp4::CODE);
     }
 }

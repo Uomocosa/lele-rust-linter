@@ -1,11 +1,11 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
 pub fn check(
-    _self: &checkers::bevy_plugin_scene::BevyPluginScene,
+    _self: &rules::bevy_plugin_scene::BevyPluginScene,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -25,7 +25,7 @@ pub fn check(
 
         let missing = scan::ScannedFile(file).require_preview(scan::PreviewKind::Scene, || {
             scan::BevyProject(project).violation(source.origin, rel_path, 1,
-                checkers::bevy_plugin_scene::BevyPluginScene::CODE,
+                rules::bevy_plugin_scene::BevyPluginScene::CODE,
                 String::from(
                     "file defines a `Plugin` whose domain spawns UI but has no `*_ui_scene_preview` test routing through `lele_bevy_preview::run`",
                 ),
@@ -42,7 +42,7 @@ pub fn check(
             scan::Preview::missing_subject(&previews, scan::PreviewKind::Scene, &plugins)
         {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
-                checkers::bevy_plugin_scene::BevyPluginScene::CODE,
+                rules::bevy_plugin_scene::BevyPluginScene::CODE,
                 format!(
                     "`fn {}` does not assemble the plugin: its `Scene::build` must `add_plugins({})`",
                     preview.name,
@@ -58,7 +58,7 @@ pub fn check(
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -77,11 +77,11 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::bevy_plugin_scene::BevyPluginScene, &project);
+        let violations = check(&rules::bevy_plugin_scene::BevyPluginScene, &project);
         assert_eq!(violations.len(), 1);
         assert_eq!(
             violations[0].code,
-            checkers::bevy_plugin_scene::BevyPluginScene::CODE
+            rules::bevy_plugin_scene::BevyPluginScene::CODE
         );
     }
 }

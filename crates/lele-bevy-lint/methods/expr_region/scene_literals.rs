@@ -1,35 +1,14 @@
-use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
 use crate::scan;
 
 pub fn scene_literals(region: &scan::ExprRegion) -> Vec<syn::ExprStruct> {
     let mut found = Vec::new();
-    let mut finder = SceneFinder(&mut found);
+    let mut finder = scan::SceneFinder(&mut found);
     for expr in &region.exprs {
         finder.visit_expr(expr);
     }
     found
-}
-
-// needed helper: collects `Scene { build, .. }` literals, macro bodies included
-#[derive(Deref, DerefMut)]
-struct SceneFinder<'a>(&'a mut Vec<syn::ExprStruct>);
-
-impl<'ast> Visit<'ast> for SceneFinder<'_> {
-    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        let literal = scan::StructLiteral(node);
-        if literal.is_type("Scene") && literal.has_field("build") {
-            self.push(node.clone());
-        }
-        syn::visit::visit_expr_struct(self, node);
-    }
-
-    fn visit_macro(&mut self, node: &'ast syn::Macro) {
-        for expr in scan::MacroCall(node).exprs() {
-            self.visit_expr(&expr);
-        }
-    }
 }
 
 #[cfg(test)]

@@ -15,6 +15,17 @@ impl DeclaredType {
     pub fn root_index_content(types: &BTreeMap<String, Self>) -> String {}
 }
 
+#[rustfmt::skip]
+impl DeclaredType {
+    pub(crate) fn combined_cfg(cfgs: &[String]) -> Option<String> {
+        match cfgs {
+            [] => None,
+            [single] => Some(single.clone()),
+            many => Some(format!("all({})", many.join(", "))),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

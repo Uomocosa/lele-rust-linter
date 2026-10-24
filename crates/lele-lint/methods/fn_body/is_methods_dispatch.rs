@@ -1,6 +1,6 @@
 use crate::FnBody;
 
-pub fn is_methods_dispatch(block: &FnBody) -> bool {
+pub fn is_methods_dispatch(block: FnBody) -> bool {
     let Some(segments) = block.single_path_call_segments() else {
         return false;
     };
@@ -30,22 +30,22 @@ mod tests {
     fn test_usage() {
         let crate_rooted: Block =
             syn::parse_str("{ crate::methods::foo::check(self, project) }").unwrap();
-        assert!(is_methods_dispatch(&FnBody(&crate_rooted)));
+        assert!(is_methods_dispatch(FnBody(&crate_rooted)));
 
         let bare: Block = syn::parse_str("{ methods::foo::check(self) }").unwrap();
-        assert!(is_methods_dispatch(&FnBody(&bare)));
+        assert!(is_methods_dispatch(FnBody(&bare)));
 
         let old_style: Block =
-            syn::parse_str("{ checkers::foo_check::check(self, project) }").unwrap();
-        assert!(!is_methods_dispatch(&FnBody(&old_style)));
+            syn::parse_str("{ rules::foo_check::check(self, project) }").unwrap();
+        assert!(!is_methods_dispatch(FnBody(&old_style)));
 
         let short: Block = syn::parse_str("{ foo(x) }").unwrap();
-        assert!(!is_methods_dispatch(&FnBody(&short)));
+        assert!(!is_methods_dispatch(FnBody(&short)));
 
         let const_path: Block = syn::parse_str("{ Self::NAME }").unwrap();
-        assert!(!is_methods_dispatch(&FnBody(&const_path)));
+        assert!(!is_methods_dispatch(FnBody(&const_path)));
 
         let with_let: Block = syn::parse_str("{ let a = 1; foo(a) }").unwrap();
-        assert!(!is_methods_dispatch(&FnBody(&with_let)));
+        assert!(!is_methods_dispatch(FnBody(&with_let)));
     }
 }

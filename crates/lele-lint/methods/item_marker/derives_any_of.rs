@@ -1,6 +1,6 @@
 use crate::ItemMarker;
 
-pub fn derives_any_of(marker: &ItemMarker, names: &[&str]) -> bool {
+pub fn derives_any_of(marker: ItemMarker, names: &[&str]) -> bool {
     if !marker.path().is_ident("derive") {
         return false;
     }

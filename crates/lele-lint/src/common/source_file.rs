@@ -6,7 +6,7 @@ pub struct SourceFile<'a>(pub &'a syn::File);
 
 #[atomic_delegates]
 impl SourceFile<'_> {
-    pub fn primary_type_name(&self, file_stem: &str) -> Option<String> {}
+    pub fn primary_type_name(self, file_stem: &str) -> Option<String> {}
 }
 
 #[cfg(test)]

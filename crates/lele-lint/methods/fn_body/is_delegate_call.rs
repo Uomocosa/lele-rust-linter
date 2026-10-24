@@ -1,6 +1,6 @@
 use crate::FnBody;
 
-pub fn is_delegate_call(block: &FnBody) -> bool {
+pub fn is_delegate_call(block: FnBody) -> bool {
     let Some(segments) = block.single_path_call_segments() else {
         return false;
     };
@@ -22,18 +22,18 @@ mod tests {
     #[test]
     fn test_usage() {
         let delegate: Block = syn::parse_str("{ config_new::new() }").unwrap();
-        assert!(is_delegate_call(&FnBody(&delegate)));
+        assert!(is_delegate_call(FnBody(&delegate)));
 
         let with_args: Block = syn::parse_str("{ foo_bar::run(self, x) }").unwrap();
-        assert!(is_delegate_call(&FnBody(&with_args)));
+        assert!(is_delegate_call(FnBody(&with_args)));
 
         let struct_lit: Block = syn::parse_str("{ Self { x: 1 } }").unwrap();
-        assert!(!is_delegate_call(&FnBody(&struct_lit)));
+        assert!(!is_delegate_call(FnBody(&struct_lit)));
 
         let self_call: Block = syn::parse_str("{ Self::new() }").unwrap();
-        assert!(!is_delegate_call(&FnBody(&self_call)));
+        assert!(!is_delegate_call(FnBody(&self_call)));
 
         let with_let: Block = syn::parse_str("{ let a = 1; Foo { x: a } }").unwrap();
-        assert!(!is_delegate_call(&FnBody(&with_let)));
+        assert!(!is_delegate_call(FnBody(&with_let)));
     }
 }

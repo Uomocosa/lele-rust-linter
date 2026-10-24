@@ -20,13 +20,13 @@ pub fn find_comments(code: &RawCode) -> Vec<common::CommentHit> {
                     .trim_end()
                     .to_string();
                 hits.push(common::CommentHit {
-                    line: line_of(source, start),
+                    line: RawCode::line_of(source, start),
                     kind: common::CommentKind::Line(text),
                 });
             }
             TokenKind::BlockComment { .. } => {
                 hits.push(common::CommentHit {
-                    line: line_of(source, start),
+                    line: RawCode::line_of(source, start),
                     kind: common::CommentKind::Block,
                 });
             }
@@ -34,13 +34,6 @@ pub fn find_comments(code: &RawCode) -> Vec<common::CommentHit> {
         }
     }
     hits
-}
-
-// needed helper: 1-based line number for a byte offset
-fn line_of(source: &str, offset: usize) -> usize {
-    source
-        .get(..offset)
-        .map_or(1, |prefix| prefix.matches('\n').count().saturating_add(1))
 }
 
 #[cfg(test)]

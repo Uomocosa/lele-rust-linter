@@ -60,5 +60,7 @@ used_underscore_binding = "allow"
 use_self = "allow"
 
 [dev-dependencies]
+serde.workspace = true
 tempfile.workspace = true
+toml.workspace = true
 rstest.workspace = true

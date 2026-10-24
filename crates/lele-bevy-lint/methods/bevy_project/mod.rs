@@ -1,12 +1,18 @@
 mod dir_spawns_ui;
+mod file_spawns_ui;
+mod module_files;
 mod registers_ui;
 mod require_visuals;
+mod rows;
 mod test_only_files;
 mod ui_inventory;
 mod violation;
 pub use dir_spawns_ui::dir_spawns_ui;
+pub use file_spawns_ui::file_spawns_ui;
+pub use module_files::module_files;
 pub use registers_ui::registers_ui;
 pub use require_visuals::require_visuals;
+pub use rows::rows;
 pub use test_only_files::test_only_files;
 pub use ui_inventory::ui_inventory;
 pub use violation::violation;

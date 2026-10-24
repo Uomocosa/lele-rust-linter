@@ -1,11 +1,11 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
 pub fn check(
-    _self: &checkers::bevy_ui_restyle::BevyUiRestyle,
+    _self: &rules::bevy_ui_restyle::BevyUiRestyle,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::from(project);
@@ -46,12 +46,12 @@ pub fn check(
 
         let Some(preview) = rendering else {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, first.line,
-                checkers::bevy_ui_restyle::BevyUiRestyle::CODE,
+                rules::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
                     "`fn {}` restyles UI on `{}` but defines no `*_ui_{}_preview` test whose `Scene::build` renders it (register, call or add one of `{}`)",
                     first.system,
                     subject_list,
-                    suffix(kind),
+                    rules::bevy_ui_restyle::BevyUiRestyle::suffix(kind),
                     subject_list,
                 ),
             ));
@@ -60,7 +60,7 @@ pub fn check(
 
         if kind == scan::PreviewKind::Png && preview.scene.state_count < 2 {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
-                checkers::bevy_ui_restyle::BevyUiRestyle::CODE,
+                rules::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
                     "`fn {}` shows one state; a restyle needs at least two `State`s (before, after)",
                     preview.name
@@ -72,18 +72,10 @@ pub fn check(
     violations
 }
 
-// needed helper: the preview suffix for a restyle kind
-fn suffix(kind: scan::PreviewKind) -> &'static str {
-    match kind {
-        scan::PreviewKind::Png => "png",
-        scan::PreviewKind::Mp4 | scan::PreviewKind::Scene => "mp4",
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -92,7 +84,7 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("ui/gate.rs"), syn::parse_str(source).unwrap());
-        check(&checkers::bevy_ui_restyle::BevyUiRestyle, &project)
+        check(&rules::bevy_ui_restyle::BevyUiRestyle, &project)
     }
 
     #[test]
@@ -102,10 +94,7 @@ mod tests {
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }",
         );
         assert_eq!(found.len(), 1);
-        assert_eq!(
-            found[0].code,
-            checkers::bevy_ui_restyle::BevyUiRestyle::CODE
-        );
+        assert_eq!(found[0].code, rules::bevy_ui_restyle::BevyUiRestyle::CODE);
     }
 
     #[test]

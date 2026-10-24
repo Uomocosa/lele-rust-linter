@@ -1,110 +1,70 @@
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use lele_lint::Linter;
 use lele_lint::Project;
-use lele_lint::RuleViolation;
+use rstest::rstest;
+use serde::Deserialize;
 
-fn fixture_path(name: &str) -> PathBuf {
+#[derive(Deserialize)]
+struct Expected {
+    violations: Vec<ExpectedViolation>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedViolation {
+    file: String,
+    code: String,
+}
+
+fn test_crate_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("test_fixtures")
+        .join("../../lele-lint-test-crates/lele-lint")
         .join(name)
 }
 
-fn run_checkers(path: &str) -> Result<Vec<RuleViolation>, Box<dyn std::error::Error>> {
-    let mut p = Project::try_from_start_dir_and_scan_folders(Some(&fixture_path(path)), None)?;
-    let config = p.load_config().unwrap_or_default();
-    p.apply_layout(&config)?;
-    let checkers = Linter::default().checkers;
-    Ok(checkers.iter().flat_map(|c| c.check(&p)).collect())
+fn findings(name: &str) -> Result<BTreeSet<(String, String)>, Box<dyn std::error::Error>> {
+    let root = test_crate_path(name);
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(&root), None)?;
+    let config = project.load_config().unwrap_or_default();
+    project.apply_layout(&config)?;
+    Ok(Linter::default()
+        .rules
+        .iter()
+        .flat_map(|rule| rule.check(&project))
+        .map(|violation| {
+            let file = violation
+                .file
+                .strip_prefix(&root)
+                .unwrap_or(&violation.file);
+            (file.display().to_string(), violation.code.to_string())
+        })
+        .collect())
 }
 
-#[test]
-fn compliant_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>> {
-    let violations = run_checkers("compliant_crate")?;
-    if !violations.is_empty() {
-        return Err(
-            format!("expected no violations in compliant crate, got {violations:?}").into(),
-        );
-    }
-    Ok(())
+fn expected(name: &str) -> Result<BTreeSet<(String, String)>, Box<dyn std::error::Error>> {
+    let text = std::fs::read_to_string(test_crate_path(name).join("expected.toml"))?;
+    let parsed: Expected = toml::from_str(&text)?;
+    Ok(parsed
+        .violations
+        .into_iter()
+        .map(|violation| (violation.file, violation.code))
+        .collect())
 }
 
-#[test]
-fn violation_crate_catches_all_errors() -> Result<(), Box<dyn std::error::Error>> {
-    let violations = run_checkers("violation_crate")?;
-    let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
-    let code_of = |name: &str| {
-        Linter::default()
-            .checkers
-            .iter()
-            .find(|checker| checker.name() == name)
-            .map(|checker| checker.code())
-            .expect("unknown checker")
-    };
-
-    let expected = [
-        code_of("atomic_file"),
-        code_of("snake_case_files"),
-        code_of("method_visibility"),
-        code_of("no_cross_domain_reexport"),
-        code_of("test_usage"),
-        code_of("test_inline"),
-        code_of("no_positional"),
-        code_of("no_trivial_accessors"),
-        code_of("domain_import"),
-        code_of("atomic_delegates"),
-        code_of("constructor_no_skip"),
-        code_of("single_caller_type"),
-        code_of("method_file_co_location"),
-        code_of("single_field_newtype"),
-        code_of("mod_rs_purity"),
-        code_of("no_crate_paths"),
-        code_of("root_reexport"),
-        code_of("no_stuttered_path"),
-        code_of("no_stuttered_type"),
-    ];
-
-    for code in expected {
-        if !codes.contains(&code) {
-            return Err(format!("expected {code} in violation crate, got codes: {codes:?}").into());
-        }
+/// Every test crate reports exactly the `(file, code)` pairs in its `expected.toml`.
+#[rstest]
+#[case("compliant_crate")]
+#[case("violation_crate")]
+#[case("methods_crate")]
+#[case("methods_violation_crate")]
+fn test_crate_matches_expected(#[case] name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let found = findings(name)?;
+    let wanted = expected(name)?;
+    let missing: Vec<_> = wanted.difference(&found).collect();
+    let unexpected: Vec<_> = found.difference(&wanted).collect();
+    if missing.is_empty() && unexpected.is_empty() {
+        return Ok(());
     }
-    Ok(())
-}
-
-#[test]
-fn methods_crate_has_no_violations() -> Result<(), Box<dyn std::error::Error>> {
-    let violations = run_checkers("methods_crate")?;
-    if !violations.is_empty() {
-        return Err(format!("expected no violations in methods crate, got {violations:?}").into());
-    }
-    Ok(())
-}
-
-#[test]
-fn methods_violation_crate_catches_layout_errors() -> Result<(), Box<dyn std::error::Error>> {
-    let violations = run_checkers("methods_violation_crate")?;
-    let codes: Vec<&str> = violations.iter().map(|d| d.code).collect();
-    let code_of = |name: &str| {
-        Linter::default()
-            .checkers
-            .iter()
-            .find(|checker| checker.name() == name)
-            .map(|checker| checker.code())
-            .expect("unknown checker")
-    };
-
-    for code in [
-        code_of("methods_layout"),
-        code_of("no_comments"),
-        code_of("delegate_macro"),
-    ] {
-        if !codes.contains(&code) {
-            return Err(format!(
-                "expected {code} in methods violation crate, got codes: {codes:?}"
-            )
-            .into());
-        }
-    }
-    Ok(())
+    Err(format!("{name}:\nmissing: {missing:#?}\nunexpected: {unexpected:#?}").into())
 }

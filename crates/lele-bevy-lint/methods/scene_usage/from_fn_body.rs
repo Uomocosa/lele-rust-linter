@@ -10,8 +10,8 @@ pub fn from_fn_body(body: &syn::Block, module_fns: &scan::ModuleFns) -> scan::Sc
     let region = scan::ExprRegion::over(start, module_fns);
     let mut usage = scan::SceneUsage::default();
     for scene in region.scene_literals() {
-        let kind = field(&scene, "kind").and_then(kind_name);
-        let centered = field(&scene, "build").is_some_and(|build| {
+        let kind = scan::SceneUsage::field(&scene, "kind").and_then(scan::SceneUsage::kind_name);
+        let centered = scan::SceneUsage::field(&scene, "build").is_some_and(|build| {
             let reached = scan::ExprRegion::over(build.clone(), module_fns);
             usage.build_uses.extend(reached.build_uses());
             reached.centers_preview()
@@ -19,7 +19,7 @@ pub fn from_fn_body(body: &syn::Block, module_fns: &scan::ModuleFns) -> scan::Sc
         if let Some(kind) = kind.filter(|_| !centered) {
             usage.uncentered_kinds.push(kind);
         }
-        if let Some(states) = field(&scene, "states") {
+        if let Some(states) = scan::SceneUsage::field(&scene, "states") {
             let reached = scan::ExprRegion::over(states.clone(), module_fns);
             usage.state_count = usage.state_count.max(reached.count_states());
         }
@@ -27,26 +27,6 @@ pub fn from_fn_body(body: &syn::Block, module_fns: &scan::ModuleFns) -> scan::Sc
     usage.build_uses.sort();
     usage.build_uses.dedup();
     usage
-}
-
-// needed helper: the `Kind` variant a scene declares, e.g. `System` from `scene::Kind::System`
-fn kind_name(expr: &syn::Expr) -> Option<String> {
-    let syn::Expr::Path(path) = expr else {
-        return None;
-    };
-    path.path
-        .segments
-        .last()
-        .map(|segment| segment.ident.to_string())
-}
-
-// needed helper: one named field of a struct literal (shorthand `build,` included)
-fn field<'a>(literal: &'a syn::ExprStruct, name: &str) -> Option<&'a syn::Expr> {
-    literal
-        .fields
-        .iter()
-        .find(|value| matches!(&value.member, syn::Member::Named(ident) if ident == name))
-        .map(|value| &value.expr)
 }
 
 #[cfg(test)]

@@ -14,6 +14,11 @@ checkers over the same `Project`, not a fork. Per-rule rationale lives in each r
 | `atomic-delegate-macros` | `#[atomic_delegates]` proc-macro |
 | `lele-snake-case` | Shared `PascalCase -> snake_case` conversion |
 
+`lele-lint-test-crates/` (outside `crates/`, never built) holds the end-to-end inputs:
+`lele-lint-test-crates/<linter>/<crate>/` plus an `expected.toml` listing every `(file, code)`
+pair that linter must report. To test a rule end-to-end, add or edit a crate there and its
+`expected.toml` by hand.
+
 ## Dependencies and releases
 
 This repo is the root of the lele fleet: it depends on no sibling repository,
@@ -59,6 +64,7 @@ just test       # cargo nextest run --all-targets --all-features
 just lint       # run lele-lint over each crate (one root lele.toml)
 just taxonomy   # prove every `require = "honest"` boundary is honest (rustc MIR)
 just sync-methods
+just docs       # regenerate RULES.md / SKILL.md
 just setup      # one-time per clone: install the prek git hooks
 just check      # run the full gate (same as CI)
 just ci         # build + check

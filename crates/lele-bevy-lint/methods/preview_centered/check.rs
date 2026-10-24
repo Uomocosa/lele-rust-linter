@@ -1,13 +1,13 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
 const CENTERED_KINDS: [&str; 2] = ["System", "Component"];
 
 pub fn check(
-    _self: &checkers::preview_centered::PreviewCentered,
+    _self: &rules::preview_centered::PreviewCentered,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -18,7 +18,7 @@ pub fn check(
                     continue;
                 }
                 violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, preview.line,
-                    checkers::preview_centered::PreviewCentered::CODE,
+                    rules::preview_centered::PreviewCentered::CODE,
                     format!(
                         "`fn {}` previews a `Kind::{kind}` scene without centring it; parent its nodes under `lele_bevy_preview::scene::centered_root()` or chain `lele_bevy_preview::scene::bevy_systems::center_roots` after the spawning system",
                         preview.name
@@ -33,7 +33,7 @@ pub fn check(
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -42,7 +42,7 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("ui/root.rs"), syn::parse_str(source).unwrap());
-        check(&checkers::preview_centered::PreviewCentered, &project)
+        check(&rules::preview_centered::PreviewCentered, &project)
             .into_iter()
             .map(|violation| violation.message)
             .collect()

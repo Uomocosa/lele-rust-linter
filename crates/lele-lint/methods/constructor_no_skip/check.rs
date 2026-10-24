@@ -1,13 +1,11 @@
-use crate::checkers;
-use crate::FnBody;
+use crate::rules;
 use crate::ImplBlock;
-use crate::ImplMethod;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::constructor_no_skip::ConstructorNoSkip,
+    _self: &rules::constructor_no_skip::ConstructorNoSkip,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -27,14 +25,18 @@ pub fn check(
                     continue;
                 }
 
-                if is_atomic_delegates(impl_block) {
+                if rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(impl_block) {
                     continue;
                 }
 
-                let type_name = type_name_string(&impl_block.self_ty);
+                let type_name = rules::constructor_no_skip::ConstructorNoSkip::type_name_string(
+                    &impl_block.self_ty,
+                );
                 let blurb = if ImplBlock(impl_block).is_default_impl() {
                     format!("impl Default for {type_name}")
-                } else if has_any_real_constructor(impl_block) {
+                } else if rules::constructor_no_skip::ConstructorNoSkip::has_any_real_constructor(
+                    impl_block,
+                ) {
                     format!("constructor impl for {type_name}")
                 } else {
                     continue;
@@ -42,7 +44,7 @@ pub fn check(
 
                 violations.push(RuleViolation::from_file(
                     project.src_dir.join(rel_path),
-                    checkers::constructor_no_skip::ConstructorNoSkip::CODE,
+                    rules::constructor_no_skip::ConstructorNoSkip::CODE,
                     format!("{blurb} must not have #[rustfmt::skip]",),
                 ));
             }
@@ -52,57 +54,18 @@ pub fn check(
     violations
 }
 
-// needed helper: type name string extraction
-fn type_name_string(ty: &syn::Type) -> String {
-    if let syn::Type::Path(tp) = ty {
-        return tp
-            .path
-            .segments
-            .iter()
-            .map(|s| s.ident.to_string())
-            .collect::<Vec<_>>()
-            .join("::");
-    }
-    quote::quote!(#ty).to_string()
-}
-
-// needed helper: atomic delegate body detection
-fn is_atomic_delegates(impl_block: &syn::ItemImpl) -> bool {
-    if impl_block.items.is_empty() {
-        return false;
-    }
-    if ImplBlock(impl_block).is_default_impl() {
-        return false;
-    }
-    for item in &impl_block.items {
-        if let syn::ImplItem::Fn(method) = item {
-            if !FnBody(&method.block).is_delegate_call() {
-                return false;
-            }
-        }
-    }
-    true
-}
-
-// needed helper: real constructor detection (non-delegate static method)
-fn has_any_real_constructor(impl_block: &syn::ItemImpl) -> bool {
-    impl_block.items.iter().any(
-        |item| matches!(item, syn::ImplItem::Fn(method) if ImplMethod(method).is_real_constructor()),
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check, has_any_real_constructor, is_atomic_delegates};
-    use crate::checkers;
+    use super::check;
+    use crate::rules;
     use crate::Project;
     use syn::ItemImpl;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::constructor_no_skip::ConstructorNoSkip;
+        let rule = rules::constructor_no_skip::ConstructorNoSkip;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     #[test]
@@ -110,7 +73,7 @@ mod tests {
         let code =
             "#[rustfmt::skip] impl Default for Bar { fn default() -> Self { Bar { x: 1 } } }";
         let parsed: ItemImpl = syn::parse_str(code).unwrap();
-        assert!(!is_atomic_delegates(&parsed));
+        assert!(!rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(&parsed));
     }
 
     #[test]
@@ -119,31 +82,31 @@ mod tests {
             "impl Foo { fn production() -> Self { let a = 1; let b = 2; let c = 3; Foo { x: a + b + c } } }",
         )
         .unwrap();
-        assert!(has_any_real_constructor(&parsed));
-        assert!(!is_atomic_delegates(&parsed));
+        assert!(rules::constructor_no_skip::ConstructorNoSkip::has_any_real_constructor(&parsed));
+        assert!(!rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(&parsed));
     }
 
     #[test]
     fn test_usage_atomic_delegate_has_no_real_constructor() {
         let parsed: ItemImpl =
             syn::parse_str("impl Foo { pub fn new() -> Self { config_new::new() } }").unwrap();
-        assert!(!has_any_real_constructor(&parsed));
-        assert!(is_atomic_delegates(&parsed));
+        assert!(!rules::constructor_no_skip::ConstructorNoSkip::has_any_real_constructor(&parsed));
+        assert!(rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(&parsed));
     }
 
     #[test]
     fn test_usage_struct_literal_is_real_constructor() {
         let parsed: ItemImpl =
             syn::parse_str("impl Foo { pub fn new(x: i32) -> Self { Self { x } } }").unwrap();
-        assert!(has_any_real_constructor(&parsed));
-        assert!(!is_atomic_delegates(&parsed));
+        assert!(rules::constructor_no_skip::ConstructorNoSkip::has_any_real_constructor(&parsed));
+        assert!(!rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(&parsed));
     }
 
     #[test]
     fn test_usage_self_constructor_call_is_real_constructor() {
         let parsed: ItemImpl =
             syn::parse_str("impl Foo { pub fn coop() -> Self { Self::new() } }").unwrap();
-        assert!(has_any_real_constructor(&parsed));
-        assert!(!is_atomic_delegates(&parsed));
+        assert!(rules::constructor_no_skip::ConstructorNoSkip::has_any_real_constructor(&parsed));
+        assert!(!rules::constructor_no_skip::ConstructorNoSkip::is_atomic_delegates(&parsed));
     }
 }

@@ -1,19 +1,15 @@
 use lele_snake_case::ToLeleSnakeCase;
 use std::collections::HashSet;
-use std::path::Path;
 
-use crate::checkers;
 use crate::common;
-use crate::FnBody;
+use crate::rules;
 use crate::ImplBlock;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
-const RESERVED_DELEGATE_METHODS: &[&str] = &["new"];
-
 pub fn check(
-    _self: &checkers::delegate_macro::DelegateMacro,
+    _self: &rules::delegate_macro::DelegateMacro,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -24,15 +20,15 @@ pub fn check(
         let Some(primary) = common::SourceFile(file).primary_type_name(stem) else {
             continue;
         };
-        let annotated_inherent = annotated_inherent_blocks(file, &primary);
-        if annotated_inherent > 1 {
-            violations.push(file_violation(
-                project,
-                rel_path,
-                format!(
-                    "type `{primary}` has {annotated_inherent} `#[atomic_delegates]` impl blocks — merge into one block"
-                ),
-            ));
+        let main_blocks =
+            rules::delegate_macro::DelegateMacro::annotated_inherent_blocks(file, &primary, false);
+        let crate_blocks =
+            rules::delegate_macro::DelegateMacro::annotated_inherent_blocks(file, &primary, true);
+        if main_blocks > 1 || crate_blocks > 1 {
+            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
+                    "type `{primary}` has {} `#[atomic_delegates]` impl blocks — merge into one block, plus at most one block holding only `pub(crate)` shells",
+                    main_blocks.saturating_add(crate_blocks)
+                )));
         }
         let mut seen: HashSet<String> = HashSet::new();
         for item in &file.items {
@@ -55,15 +51,18 @@ pub fn check(
                     .iter()
                     .any(|attr| ItemMarker(attr).is_atomic_delegates())
                 {
-                    violations.extend(check_delegated_methods(
-                        project, rel_path, &primary, impl_block, &mut seen,
-                    ));
+                    violations.extend(
+                        rules::delegate_macro::DelegateMacro::check_delegated_methods(
+                            project, rel_path, &primary, impl_block, &mut seen,
+                        ),
+                    );
                     continue;
                 }
-                violations.extend(check_fn_shells(
+                violations.extend(rules::delegate_macro::DelegateMacro::check_fn_shells(
                     project, rel_path, &primary, impl_block, &mut seen,
                 ));
-                let migratable = migratable_idents(impl_block);
+                let migratable =
+                    rules::delegate_macro::DelegateMacro::migratable_idents(impl_block);
                 if migratable.is_empty() {
                     continue;
                 }
@@ -73,19 +72,15 @@ pub fn check(
                     .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
                     .collect::<Vec<_>>()
                     .join(", ");
-                violations.push(file_violation(
-                    project,
-                    rel_path,
-                    format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                         "trait impl for `{primary}` has unannotated shells; annotate each with `#[atomic_delegate({primary})]` or the whole block with `#[atomic_delegates]`; empty each shell body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
-                    ),
-                ));
+                    )));
                 continue;
             }
             if ImplBlock(impl_block).self_type_last().as_deref() != Some(primary.as_str()) {
                 continue;
             }
-            if !has_fn(impl_block) {
+            if !rules::delegate_macro::DelegateMacro::has_fn(impl_block) {
                 continue;
             }
 
@@ -94,20 +89,22 @@ pub fn check(
                 .iter()
                 .any(|attr| ItemMarker(attr).is_atomic_delegates())
             {
-                violations.extend(check_delegated_methods(
-                    project, rel_path, &primary, impl_block, &mut seen,
-                ));
+                violations.extend(
+                    rules::delegate_macro::DelegateMacro::check_delegated_methods(
+                        project, rel_path, &primary, impl_block, &mut seen,
+                    ),
+                );
                 continue;
             }
 
-            violations.extend(check_fn_shells(
+            violations.extend(rules::delegate_macro::DelegateMacro::check_fn_shells(
                 project, rel_path, &primary, impl_block, &mut seen,
             ));
 
-            if all_methods_are_real_reserved(impl_block) {
+            if rules::delegate_macro::DelegateMacro::all_methods_are_real_reserved(impl_block) {
                 continue;
             }
-            let migratable = migratable_idents(impl_block);
+            let migratable = rules::delegate_macro::DelegateMacro::migratable_idents(impl_block);
             if migratable.is_empty() {
                 continue;
             }
@@ -117,281 +114,58 @@ pub fn check(
                 .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
                 .collect::<Vec<_>>()
                 .join(", ");
-            let real = real_idents(impl_block);
+            let real = rules::delegate_macro::DelegateMacro::real_idents(impl_block);
             if real.is_empty() {
-                violations.push(file_violation(
-                    project,
-                    rel_path,
-                    format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                         "inherent impl for `{primary}` must be annotated with `#[atomic_delegates]`; empty each body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
-                    ),
-                ));
+                    )));
             } else {
                 let kept = real
                     .iter()
                     .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(", ");
-                violations.push(file_violation(
-                    project,
-                    rel_path,
-                    format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                         "inherent impl for `{primary}` mixes shells with hand-written methods; split it into a plain block keeping {kept} and an `#[atomic_delegates]` block with empty bodies moved to {mirrors} (one `pub fn` + `test_usage` per file)"
-                    ),
-                ));
+                    )));
             }
         }
     }
     violations
-}
-
-// needed helper: build an LELE032 violation anchored to a src file
-fn file_violation(project: &Project, rel_path: &Path, message: String) -> RuleViolation {
-    RuleViolation::from_file(
-        project.src_dir.join(rel_path),
-        checkers::delegate_macro::DelegateMacro::CODE,
-        message,
-    )
-}
-
-// needed helper: per-function atomic shell violation for a twice-declared (type, method)
-fn duplicate_violation(
-    project: &Project,
-    rel_path: &Path,
-    primary: &str,
-    ident: &syn::Ident,
-) -> RuleViolation {
-    file_violation(
-        project,
-        rel_path,
-        format!("`{ident}` is declared twice for `{primary}` (duplicate `#[atomic_delegates]` shell) — merge into one block"),
-    )
-}
-
-// needed helper: count `#[atomic_delegates]` inherent impl blocks for a type
-fn annotated_inherent_blocks(file: &syn::File, primary: &str) -> usize {
-    file.items
-        .iter()
-        .filter(|item| match item {
-            syn::Item::Impl(block) => {
-                block.trait_.is_none()
-                    && !block
-                        .attrs
-                        .iter()
-                        .any(|attr| ItemMarker(attr).is_cfg_test())
-                    && block
-                        .attrs
-                        .iter()
-                        .any(|attr| ItemMarker(attr).is_atomic_delegates())
-                    && ImplBlock(block).self_type_last().as_deref() == Some(primary)
-            }
-            _ => false,
-        })
-        .count()
-}
-
-// needed helper: impl block contains at least one function
-fn has_fn(impl_block: &syn::ItemImpl) -> bool {
-    impl_block
-        .items
-        .iter()
-        .any(|item| matches!(item, syn::ImplItem::Fn(_)))
-}
-
-// needed helper: migratable (empty-or-delegate-shaped, unannotated) method idents
-fn migratable_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
-    impl_block
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            syn::ImplItem::Fn(method)
-                if !method
-                    .attrs
-                    .iter()
-                    .any(|attr| ItemMarker(attr).is_atomic_delegate())
-                    && (method.block.stmts.is_empty()
-                        || FnBody(&method.block).is_delegate_call()
-                        || FnBody(&method.block).is_methods_dispatch()) =>
-            {
-                Some(&method.sig.ident)
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-// needed helper: hand-written (non-empty, non-delegate, unannotated) method idents
-fn real_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
-    impl_block
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            syn::ImplItem::Fn(method)
-                if !method
-                    .attrs
-                    .iter()
-                    .any(|attr| ItemMarker(attr).is_atomic_delegate())
-                    && !method.block.stmts.is_empty()
-                    && !FnBody(&method.block).is_delegate_call()
-                    && !FnBody(&method.block).is_methods_dispatch() =>
-            {
-                Some(&method.sig.ident)
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-// needed helper: method items of an impl block
-fn fn_methods(impl_block: &syn::ItemImpl) -> Vec<&syn::ImplItemFn> {
-    impl_block
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            syn::ImplItem::Fn(method) => Some(method),
-            _ => None,
-        })
-        .collect()
-}
-
-// needed helper: reserved / redundant-attr / duplicate checks for delegated methods
-fn check_delegated_methods(
-    project: &Project,
-    rel_path: &Path,
-    primary: &str,
-    impl_block: &syn::ItemImpl,
-    seen: &mut HashSet<String>,
-) -> Vec<RuleViolation> {
-    let mut violations = Vec::new();
-    for method in fn_methods(impl_block) {
-        let ident = &method.sig.ident;
-        if is_reserved(ident) {
-            violations.push(file_violation(
-                project,
-                rel_path,
-                format!(
-                    "`{ident}` is a constructor and must be defined in the struct file, not delegated"
-                ),
-            ));
-        }
-        if method
-            .attrs
-            .iter()
-            .any(|attr| ItemMarker(attr).is_atomic_delegate())
-        {
-            violations.push(file_violation(
-                project,
-                rel_path,
-                format!(
-                    "`{ident}` carries a redundant `#[atomic_delegate]` — the whole block is already `#[atomic_delegates]`"
-                ),
-            ));
-        }
-        let body_name = ImplBlock(impl_block).delegate_body_name(ident);
-        if !seen.insert(format!("{primary}::{body_name}")) {
-            violations.push(duplicate_violation(project, rel_path, primary, ident));
-        }
-    }
-    violations
-}
-
-// needed helper: reserved + duplicate checks for per-function atomic shells
-fn check_fn_shells(
-    project: &Project,
-    rel_path: &Path,
-    primary: &str,
-    impl_block: &syn::ItemImpl,
-    seen: &mut HashSet<String>,
-) -> Vec<RuleViolation> {
-    let mut violations = Vec::new();
-    for method in fn_methods(impl_block) {
-        if !method
-            .attrs
-            .iter()
-            .any(|attr| ItemMarker(attr).is_atomic_delegate())
-        {
-            continue;
-        }
-        let ident = &method.sig.ident;
-        if is_reserved(ident) {
-            violations.push(file_violation(
-                project,
-                rel_path,
-                format!(
-                    "`{ident}` is a constructor and must be defined in the struct file, not delegated"
-                ),
-            ));
-        }
-        let body_name = ImplBlock(impl_block).delegate_body_name(ident);
-        if *ident != body_name {
-            violations.push(file_violation(
-                project,
-                rel_path,
-                format!(
-                    "`{ident}` in a generic trait impl dispatches to `methods/{}/{body_name}.rs`; annotate the whole block with `#[atomic_delegates]` instead of `#[atomic_delegate]`",
-                    primary.to_snake_case()
-                ),
-            ));
-        }
-        if !seen.insert(format!("{primary}::{body_name}")) {
-            violations.push(duplicate_violation(project, rel_path, primary, ident));
-        }
-    }
-    violations
-}
-
-// needed helper: reserved delegate method name check
-fn is_reserved(ident: &syn::Ident) -> bool {
-    RESERVED_DELEGATE_METHODS.contains(&ident.to_string().as_str())
-}
-
-// needed helper: every method is a real (non-delegate) reserved constructor
-fn all_methods_are_real_reserved(impl_block: &syn::ItemImpl) -> bool {
-    let mut has_fn = false;
-    for item in &impl_block.items {
-        let syn::ImplItem::Fn(method) = item else {
-            continue;
-        };
-        has_fn = true;
-        if !is_reserved(&method.sig.ident) {
-            return false;
-        }
-        if method.block.stmts.is_empty() || FnBody(&method.block).is_delegate_call() {
-            return false;
-        }
-    }
-    has_fn
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::rules;
     use std::path::PathBuf;
 
-    use super::{all_methods_are_real_reserved, check, is_reserved};
-    use crate::checkers::delegate_macro::DelegateMacro;
+    use super::check;
+    use crate::rules::delegate_macro::DelegateMacro;
     use crate::Project;
 
     #[test]
     fn test_usage() {
         let new_ident: syn::Ident = syn::parse_str("new").unwrap();
         let other: syn::Ident = syn::parse_str("increment").unwrap();
-        assert!(is_reserved(&new_ident));
-        assert!(!is_reserved(&other));
+        assert!(rules::delegate_macro::DelegateMacro::is_reserved(
+            &new_ident
+        ));
+        assert!(!rules::delegate_macro::DelegateMacro::is_reserved(&other));
 
         let real: syn::ItemImpl = syn::parse_quote! {
             impl Foo { pub const fn new() -> Self { Self } }
         };
-        assert!(all_methods_are_real_reserved(&real));
+        assert!(rules::delegate_macro::DelegateMacro::all_methods_are_real_reserved(&real));
 
         let delegated: syn::ItemImpl = syn::parse_quote! {
             impl Foo { pub fn new() -> Self { foo_new::new() } }
         };
-        assert!(!all_methods_are_real_reserved(&delegated));
+        assert!(!rules::delegate_macro::DelegateMacro::all_methods_are_real_reserved(&delegated));
 
         let mixed: syn::ItemImpl = syn::parse_quote! {
             impl Foo { pub fn new() -> Self { Self } pub fn other(&self) {} }
         };
-        assert!(!all_methods_are_real_reserved(&mixed));
+        assert!(!rules::delegate_macro::DelegateMacro::all_methods_are_real_reserved(&mixed));
     }
 
     #[test]
@@ -400,7 +174,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\nimpl Checker for Foo { fn check(&self, p: &Project) { checkers::foo_check::check(self, p) } }\n",
+                "pub struct Foo;\nimpl Rule for Foo { fn check(&self, p: &Project) { rules::foo_check::check(self, p) } }\n",
             )
             .unwrap(),
         );
@@ -425,7 +199,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\n#[atomic_delegates]\nimpl Checker for Foo { fn check(&self) {} }\n#[atomic_delegates]\nimpl Checker for Foo { fn check(&self) {} }\n",
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Rule for Foo { fn check(&self) {} }\n#[atomic_delegates]\nimpl Rule for Foo { fn check(&self) {} }\n",
             )
             .unwrap(),
         );
@@ -451,6 +225,33 @@ mod tests {
         assert!(messages
             .iter()
             .any(|m| m.contains("methods/temperature/from_rankine.rs")));
+    }
+
+    #[test]
+    fn test_usage_allows_one_extra_crate_only_block() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("foo.rs"),
+            syn::parse_str(
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn run(&self) {} }\n#[atomic_delegates]\nimpl Foo { pub(crate) fn step(&self) {} }\n",
+            )
+            .unwrap(),
+        );
+        let violations = check(&DelegateMacro, &project);
+        assert!(!violations
+            .iter()
+            .any(|d| d.message.contains("merge into one block")));
+        project.parsed_files.insert(
+            PathBuf::from("foo.rs"),
+            syn::parse_str(
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub(crate) fn a(&self) {} }\n#[atomic_delegates]\nimpl Foo { pub(crate) fn b(&self) {} }\n",
+            )
+            .unwrap(),
+        );
+        let violations = check(&DelegateMacro, &project);
+        assert!(violations
+            .iter()
+            .any(|d| d.message.contains("merge into one block")));
     }
 
     #[test]
@@ -493,7 +294,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\nimpl Checker for Foo { fn name(&self) -> &'static str { Self::NAME } #[atomic_delegate(Foo)] fn check(&self) {} }\n",
+                "pub struct Foo;\nimpl Rule for Foo { fn name(&self) -> &'static str { Self::NAME } #[atomic_delegate(Foo)] fn check(&self) {} }\n",
             )
             .unwrap(),
         );
@@ -576,7 +377,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\nimpl Checker for Foo { fn check(&self) { crate::methods::foo::check(self) } }\n",
+                "pub struct Foo;\nimpl Rule for Foo { fn check(&self) { crate::methods::foo::check(self) } }\n",
             )
             .unwrap(),
         );
@@ -591,7 +392,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\nimpl Checker for Foo { fn check(&self, p: &Project) { checkers::foo_check::check(self, p) } }\n",
+                "pub struct Foo;\nimpl Rule for Foo { fn check(&self, p: &Project) { rules::foo_check::check(self, p) } }\n",
             )
             .unwrap(),
         );

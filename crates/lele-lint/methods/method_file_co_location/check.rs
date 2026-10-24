@@ -1,20 +1,19 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use crate::checkers;
 use crate::common;
+use crate::rules;
 use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::method_file_co_location::MethodFileCoLocation,
+    _self: &rules::method_file_co_location::MethodFileCoLocation,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
-    let type_dirs = build_type_map(project);
+    let type_dirs = rules::method_file_co_location::MethodFileCoLocation::build_type_map(project);
     let known_stems: HashSet<String> = type_dirs.keys().cloned().collect();
 
     for (rel_path, file) in &project.parsed_files {
@@ -31,7 +30,13 @@ pub fn check(
 
         let file_dir = rel_path.parent().unwrap_or(Path::new(""));
 
-        if let Some(candidate_dirs) = find_parent_type(file_stem, &known_stems, &type_dirs) {
+        if let Some(candidate_dirs) =
+            rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
+                file_stem,
+                &known_stems,
+                &type_dirs,
+            )
+        {
             if !candidate_dirs.iter().any(|dir| dir == file_dir) {
                 let Some(type_snake) = Identifier(file_stem).longest_type_prefix(&known_stems)
                 else {
@@ -42,14 +47,18 @@ pub fn check(
                     .map(|dir| dir.display().to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "method file `{}` must be co-located with `{type_snake}.rs`; found in: {candidates}",
                         rel_path.display()
                     )));
             }
         } else if let Some(suffix) = file_stem.rsplit('_').next() {
-            if file_stem.contains('_') && pub_fn_names(file).iter().any(|n| n == suffix) {
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::method_file_co_location::MethodFileCoLocation::CODE, format!(
+            if file_stem.contains('_')
+                && rules::method_file_co_location::MethodFileCoLocation::pub_fn_names(file)
+                    .iter()
+                    .any(|n| n == suffix)
+            {
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "orphan method file `{file_stem}.rs` — no parent type found; rename to `{suffix}.rs` or `<type>_{suffix}.rs` with a `<type>.rs` defining the type",
                     )));
             }
@@ -59,54 +68,16 @@ pub fn check(
     violations
 }
 
-// needed helper: public free-function names in a file
-fn pub_fn_names(file: &syn::File) -> Vec<String> {
-    file.items
-        .iter()
-        .filter_map(|item| match item {
-            syn::Item::Fn(f) if matches!(f.vis, syn::Visibility::Public(_)) => {
-                Some(f.sig.ident.to_string())
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-// needed helper: type snake_case → all directories containing it
-fn build_type_map(project: &Project) -> HashMap<String, Vec<PathBuf>> {
-    let mut map = HashMap::<String, Vec<PathBuf>>::new();
-    for (rel_path, file) in &project.parsed_files {
-        let Some(stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
-            continue;
-        };
-        if common::SourceFile(file).primary_type_name(stem).is_some() {
-            let dir = rel_path.parent().unwrap_or(Path::new("")).to_path_buf();
-            map.entry(stem.to_string()).or_default().push(dir);
-        }
-    }
-    map
-}
-
-// needed helper: find all directories holding a known type matching this stem
-fn find_parent_type(
-    stem: &str,
-    known_stems: &HashSet<String>,
-    type_dirs: &HashMap<String, Vec<PathBuf>>,
-) -> Option<Vec<PathBuf>> {
-    Identifier(stem)
-        .longest_type_prefix(known_stems)
-        .and_then(|prefix| type_dirs.get(prefix).cloned())
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::rules;
     use crate::Identifier;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use std::path::PathBuf;
 
-    use super::{check, find_parent_type, pub_fn_names};
-    use crate::checkers::method_file_co_location::MethodFileCoLocation;
+    use super::check;
+    use crate::rules::method_file_co_location::MethodFileCoLocation;
     use crate::Project;
 
     fn known_stems(dirs: &HashMap<String, Vec<PathBuf>>) -> HashSet<String> {
@@ -120,15 +91,27 @@ mod tests {
         dirs.insert("config".to_string(), vec![PathBuf::from("clicker")]);
 
         assert_eq!(
-            find_parent_type("freenet_client_connect", &known_stems(&dirs), &dirs),
+            rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
+                "freenet_client_connect",
+                &known_stems(&dirs),
+                &dirs
+            ),
             Some(vec![PathBuf::from("freenet")])
         );
         assert_eq!(
-            find_parent_type("config_new", &known_stems(&dirs), &dirs),
+            rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
+                "config_new",
+                &known_stems(&dirs),
+                &dirs
+            ),
             Some(vec![PathBuf::from("clicker")])
         );
         assert_eq!(
-            find_parent_type("bevy_systems", &known_stems(&dirs), &dirs),
+            rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
+                "bevy_systems",
+                &known_stems(&dirs),
+                &dirs
+            ),
             None
         );
     }
@@ -154,7 +137,11 @@ mod tests {
         );
 
         assert_eq!(
-            find_parent_type("plugin_build", &known_stems(&dirs), &dirs),
+            rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
+                "plugin_build",
+                &known_stems(&dirs),
+                &dirs
+            ),
             Some(vec![PathBuf::from("boxes"), PathBuf::from("roster")])
         );
     }
@@ -163,7 +150,10 @@ mod tests {
     fn test_usage_pub_fn_names() {
         let file: syn::File =
             syn::parse_str("pub fn load() {}\nfn private() {}\npub struct Helper;").unwrap();
-        assert_eq!(pub_fn_names(&file), vec!["load".to_string()]);
+        assert_eq!(
+            rules::method_file_co_location::MethodFileCoLocation::pub_fn_names(&file),
+            vec!["load".to_string()]
+        );
     }
 
     fn orphan_project(files: &[(&str, &str)]) -> Project {

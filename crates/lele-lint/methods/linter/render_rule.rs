@@ -1,32 +1,17 @@
-use crate::Checker;
-use crate::ExampleFile;
+use crate::Linter;
+use crate::Rule;
 use std::fmt::Write;
 
-pub fn render_rule(checker: &dyn Checker) -> String {
-    let doc = checker.doc();
+pub fn render_rule(rule: &dyn Rule) -> String {
+    let doc = rule.doc();
     let mut out = String::new();
-    let _ = writeln!(out, "### {} `{}`\n", checker.code(), checker.name());
+    let _ = writeln!(out, "### {} `{}`\n", rule.code(), rule.name());
     let _ = writeln!(out, "{}\n", doc.summary);
     let _ = writeln!(out, "**Why:** {}\n", doc.why);
-    let _ = writeln!(out, "**Bad** (reports {}):\n", checker.code());
-    out.push_str(&render_files(doc.bad));
+    let _ = writeln!(out, "**Bad** (reports {}):\n", rule.code());
+    out.push_str(&Linter::render_files(doc.bad));
     let _ = writeln!(out, "**Good:**\n");
-    out.push_str(&render_files(doc.good));
-    out
-}
-
-// needed helper: one fenced block per example file, labelled with its path
-fn render_files(files: &[ExampleFile]) -> String {
-    let mut out = String::new();
-    for file in files {
-        let lang = if file.path.ends_with(".toml") {
-            "toml"
-        } else {
-            "rust"
-        };
-        let _ = writeln!(out, "`{}`\n", file.path);
-        let _ = writeln!(out, "```{lang}\n{}```\n", file.source);
-    }
+    out.push_str(&Linter::render_files(doc.good));
     out
 }
 
@@ -37,9 +22,9 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let checkers = Linter::default().checkers;
-        let text = render_rule(checkers[0].as_ref());
-        assert!(text.starts_with(&format!("### {}", checkers[0].code())));
+        let rules = Linter::default().rules;
+        let text = render_rule(rules[0].as_ref());
+        assert!(text.starts_with(&format!("### {}", rules[0].code())));
         assert!(text.contains("**Bad**"));
         assert!(text.contains("```rust"));
     }

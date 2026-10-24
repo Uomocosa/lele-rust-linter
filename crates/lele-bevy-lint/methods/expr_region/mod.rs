@@ -1,12 +1,14 @@
 mod build_uses;
 mod centers_preview;
 mod count_states;
+mod local_names;
 mod over;
 mod registered_paths;
 mod scene_literals;
 pub use build_uses::build_uses;
 pub use centers_preview::centers_preview;
 pub use count_states::count_states;
+pub use local_names::local_names;
 pub use over::over;
 pub use registered_paths::registered_paths;
 pub use scene_literals::scene_literals;

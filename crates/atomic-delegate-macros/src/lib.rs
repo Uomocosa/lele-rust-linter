@@ -207,12 +207,12 @@ mod tests {
     #[test]
     fn test_usage_expands_trait_impl() {
         let input = quote! {
-            impl Checker for Foo {
+            impl Rule for Foo {
                 fn check(&self, project: &Project) {}
             }
         };
         let expanded = expand(input).unwrap().to_string();
-        assert!(expanded.contains("impl Checker for Foo"));
+        assert!(expanded.contains("impl Rule for Foo"));
         assert!(expanded.contains("crate :: methods :: foo :: check (self , project)"));
         assert!(expanded.contains("# [rustfmt :: skip]"));
     }
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn test_usage_rejects_nonempty_trait_body() {
         let input =
-            quote! { impl Checker for Foo { fn check(&self, project: &Project) { let x = 1; } } };
+            quote! { impl Rule for Foo { fn check(&self, project: &Project) { let x = 1; } } };
         assert!(expand(input).is_err());
     }
 

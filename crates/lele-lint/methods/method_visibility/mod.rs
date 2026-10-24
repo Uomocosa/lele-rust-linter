@@ -1,2 +1,12 @@
 mod check;
+mod collect_struct_names;
+mod declared_as_pub_mod;
+mod group_entries_by_parent_dir;
+mod is_actually_method_file;
+mod reexported_in_pub_use;
 pub use check::check;
+pub use collect_struct_names::collect_struct_names;
+pub use declared_as_pub_mod::declared_as_pub_mod;
+pub use group_entries_by_parent_dir::group_entries_by_parent_dir;
+pub use is_actually_method_file::is_actually_method_file;
+pub use reexported_in_pub_use::reexported_in_pub_use;

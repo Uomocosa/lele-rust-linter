@@ -1,16 +1,11 @@
-use std::path::Path;
-use syn::spanned::Spanned;
-
-use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
-use crate::checkers;
-use crate::ItemMarker;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::no_super_imports::NoSuperImports,
+    _self: &rules::no_super_imports::NoSuperImports,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -20,12 +15,13 @@ pub fn check(
         let file = source.file;
         let mut hits = Vec::new();
         {
-            let mut visitor = SuperPathVisitor(&mut hits);
+            let mut visitor = rules::no_super_imports::SuperPathVisitor(&mut hits);
             visitor.visit_file(file);
         }
         for hit in hits {
-            let (import, replacement) = suggestion(rel_path, &hit.path);
-            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_super_imports::NoSuperImports::CODE, format!(
+            let (import, replacement) =
+                rules::no_super_imports::NoSuperImports::suggestion(rel_path, &hit.path);
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, rules::no_super_imports::NoSuperImports::CODE, format!(
                     "`{}` used outside `#[cfg(test)]` — write `{replacement}` instead and add `{import}` at the top of the file",
                     hit.path
                 )));
@@ -35,113 +31,13 @@ pub fn check(
     violations
 }
 
-// needed helper: collected super path hit data
-struct SuperPathHit {
-    line: usize,
-    path: String,
-}
-
-#[derive(Deref, DerefMut)]
-struct SuperPathVisitor<'a>(&'a mut Vec<SuperPathHit>);
-
-impl<'ast> Visit<'ast> for SuperPathVisitor<'_> {
-    fn visit_item_use(&mut self, item: &'ast syn::ItemUse) {
-        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
-            return;
-        }
-        if starts_with_super(&item.tree) {
-            self.push(SuperPathHit {
-                line: item.span().start().line,
-                path: use_tree_string(&item.tree),
-            });
-        }
-    }
-
-    fn visit_path(&mut self, path: &'ast syn::Path) {
-        if path
-            .segments
-            .first()
-            .is_some_and(|seg| seg.ident == "super")
-        {
-            let path_str = path
-                .segments
-                .iter()
-                .map(|seg| seg.ident.to_string())
-                .collect::<Vec<_>>()
-                .join("::");
-            self.push(SuperPathHit {
-                line: path.span().start().line,
-                path: path_str,
-            });
-        }
-        syn::visit::visit_path(self, path);
-    }
-
-    fn visit_item_mod(&mut self, item: &'ast syn::ItemMod) {
-        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
-            return;
-        }
-        syn::visit::visit_item_mod(self, item);
-    }
-
-    fn visit_item_fn(&mut self, item: &'ast syn::ItemFn) {
-        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
-            return;
-        }
-        syn::visit::visit_item_fn(self, item);
-    }
-}
-
-// needed helper: concrete import + replacement for a super-path hit
-fn suggestion(rel_path: &Path, hit: &str) -> (String, String) {
-    let Some(rest) = hit.strip_prefix("super::") else {
-        return generic_suggestion();
-    };
-    if rest.starts_with("super::") {
-        return generic_suggestion();
-    }
-    let mut parts = rel_path.components();
-    let first = parts.next().and_then(|c| c.as_os_str().to_str());
-    match first {
-        Some(domain) if parts.next().is_some() => {
-            (format!("use crate::{domain};"), format!("{domain}::{rest}"))
-        }
-        _ => {
-            let head = rest.split("::").next().unwrap_or(rest);
-            (format!("use crate::{head};"), rest.to_string())
-        }
-    }
-}
-
-// needed helper: fallback suggestion when no concrete fix applies
-fn generic_suggestion() -> (String, String) {
-    (
-        "use crate::<domain>;".to_string(),
-        "<domain>::…".to_string(),
-    )
-}
-// needed helper: leading `super` use-tree detection
-fn starts_with_super(tree: &syn::UseTree) -> bool {
-    matches!(tree, syn::UseTree::Path(path) if path.ident == "super")
-}
-
-// needed helper: use-tree rendering for diagnostics
-fn use_tree_string(tree: &syn::UseTree) -> String {
-    match tree {
-        syn::UseTree::Path(path) => format!("{}::{}", path.ident, use_tree_string(&path.tree)),
-        syn::UseTree::Name(name) => name.ident.to_string(),
-        syn::UseTree::Rename(rename) => format!("{} as {}", rename.ident, rename.rename),
-        syn::UseTree::Glob(_) => "*".to_string(),
-        syn::UseTree::Group(_) => "{...}".to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::rules;
     use std::path::PathBuf;
 
-    use super::{check, SuperPathVisitor};
-    use crate::checkers::no_super_imports::NoSuperImports;
+    use super::check;
+    use crate::rules::no_super_imports::NoSuperImports;
     use crate::Project;
     use syn::visit::Visit;
 
@@ -149,7 +45,7 @@ mod tests {
         let file = syn::parse_file(src).unwrap();
         let mut hits = Vec::new();
         {
-            let mut visitor = SuperPathVisitor(&mut hits);
+            let mut visitor = rules::no_super_imports::SuperPathVisitor(&mut hits);
             visitor.visit_file(&file);
         }
         hits.into_iter().map(|hit| hit.line).collect()
@@ -182,13 +78,13 @@ mod tests {
     fn test_usage_message_names_domain_fix() {
         let mut project = Project::default();
         project.parsed_files.insert(
-            PathBuf::from("checkers/probe.rs"),
+            PathBuf::from("rules/probe.rs"),
             syn::parse_str("use super::probe_check;\n").unwrap(),
         );
         let violations = check(&NoSuperImports, &project);
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("use crate::checkers;"));
-        assert!(violations[0].message.contains("checkers::probe_check"));
+        assert!(violations[0].message.contains("use crate::rules;"));
+        assert!(violations[0].message.contains("rules::probe_check"));
     }
 
     #[test]

@@ -1,10 +1,10 @@
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
-pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViolation> {
     let graph = scan::CallGraph::from(project);
     let extra = scan::BevyProject(project).require_visuals();
     let test_only = scan::BevyProject(project).test_only_files();
@@ -23,7 +23,7 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleVi
         let previews = scan::ScannedFile(file).collect_previews();
         if !previews.iter().any(|p| p.kind == scan::PreviewKind::Png) {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
-                checkers::bevy_ui::BevyUi::CODE,
+                rules::bevy_ui::BevyUi::CODE,
                 format!(
                     "file spawns UI `{}` reachable from production but defines no `*_ui_png_preview` test that renders it through `lele_bevy_preview::run`",
                     visual.visual
@@ -37,7 +37,7 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleVi
             scan::Preview::missing_subject(&previews, scan::PreviewKind::Png, &subjects)
         {
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
-                checkers::bevy_ui::BevyUi::CODE,
+                rules::bevy_ui::BevyUi::CODE,
                 format!(
                     "`fn {}` does not render this file's UI: its `Scene::build` must register, call or add one of `{}`, not a copy of it",
                     preview.name,
@@ -53,7 +53,7 @@ pub fn check(_self: &checkers::bevy_ui::BevyUi, project: &Project) -> Vec<RuleVi
 #[cfg(test)]
 mod tests {
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use lele_lint::Project;
     use std::path::PathBuf;
 
@@ -62,14 +62,14 @@ mod tests {
         project
             .parsed_files
             .insert(PathBuf::from("ui/root.rs"), syn::parse_str(source).unwrap());
-        check(&checkers::bevy_ui::BevyUi, &project)
+        check(&rules::bevy_ui::BevyUi, &project)
     }
 
     #[test]
     fn test_usage() {
         let found = violations("pub fn setup(s: &mut S) { s.spawn((Node,)); }");
         assert_eq!(found.len(), 1);
-        assert_eq!(found[0].code, checkers::bevy_ui::BevyUi::CODE);
+        assert_eq!(found[0].code, rules::bevy_ui::BevyUi::CODE);
     }
 
     #[test]

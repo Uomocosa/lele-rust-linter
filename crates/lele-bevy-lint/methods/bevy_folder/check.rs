@@ -1,30 +1,18 @@
 use std::collections::HashSet;
 
-use derive_more::{Deref, DerefMut};
 use syn::spanned::Spanned;
-use syn::visit::Visit;
 
-use lele_lint::ItemMarker;
 use lele_lint::Origin;
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 
-use crate::checkers;
+use crate::rules;
 use crate::scan;
 
-const SYSTEM_PARAM_NAMES: [&str; 6] = [
-    "Res",
-    "ResMut",
-    "Query",
-    "Commands",
-    "MessageWriter",
-    "MessageReader",
-];
-
-pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> Vec<RuleViolation> {
     let registered: HashSet<String> = project
         .sources()
-        .flat_map(|source| registered_systems(source.file))
+        .flat_map(|source| rules::bevy_folder::BevyFolder::registered_systems(source.file))
         .collect();
     let mut violations = Vec::new();
 
@@ -49,7 +37,12 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
                 continue;
             }
 
-            if !func.sig.inputs.iter().any(is_bevy_system_param) {
+            if !func
+                .sig
+                .inputs
+                .iter()
+                .any(rules::bevy_folder::BevyFolder::is_bevy_system_param)
+            {
                 continue;
             }
 
@@ -59,7 +52,7 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
             }
 
             violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, func.sig.fn_token.span().start().line,
-                checkers::bevy_folder::BevyFolder::CODE,
+                rules::bevy_folder::BevyFolder::CODE,
                 format!(
                     "pub fn `{}` is registered with `app.add_systems()` but lives outside bevy_systems/; move it into the domain's bevy_systems/ folder",
                     func.sig.ident
@@ -71,56 +64,9 @@ pub fn check(_self: &checkers::bevy_folder::BevyFolder, project: &Project) -> Ve
     violations
 }
 
-fn is_bevy_system_param(arg: &syn::FnArg) -> bool {
-    let syn::FnArg::Typed(pat_type) = arg else {
-        return false;
-    };
-
-    last_path_ident(&pat_type.ty).is_some_and(|ident| SYSTEM_PARAM_NAMES.contains(&ident.as_str()))
-}
-
-fn last_path_ident(ty: &syn::Type) -> Option<String> {
-    match ty {
-        syn::Type::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()),
-        syn::Type::Reference(r) => last_path_ident(&r.elem),
-        _ => None,
-    }
-}
-
-// needed helper: collects idents passed to `add_systems` after the schedule
-fn registered_systems(file: &syn::File) -> Vec<String> {
-    let mut found = Vec::new();
-    {
-        let mut collector = RegisteredCollector(&mut found);
-        collector.visit_file(file);
-    }
-    found
-}
-
-#[derive(Deref, DerefMut)]
-struct RegisteredCollector<'a>(&'a mut Vec<String>);
-
-impl<'ast> Visit<'ast> for RegisteredCollector<'_> {
-    fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
-        if node.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
-            return;
-        }
-        syn::visit::visit_item_mod(self, node);
-    }
-
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let Some(idents) = scan::AppMethodCall(node).system_args() {
-            self.extend(idents);
-            self.visit_expr(&node.receiver);
-        } else {
-            syn::visit::visit_expr_method_call(self, node);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{is_bevy_system_param, last_path_ident, registered_systems};
+    use crate::rules;
 
     #[test]
     fn test_usage() {
@@ -137,11 +83,26 @@ mod tests {
             panic!("expected fn");
         };
 
-        assert!(system_fn.sig.inputs.iter().any(is_bevy_system_param));
-        assert!(!plain_fn.sig.inputs.iter().any(is_bevy_system_param));
+        assert!(
+            system_fn
+                .sig
+                .inputs
+                .iter()
+                .any(rules::bevy_folder::BevyFolder::is_bevy_system_param)
+        );
+        assert!(
+            !plain_fn
+                .sig
+                .inputs
+                .iter()
+                .any(rules::bevy_folder::BevyFolder::is_bevy_system_param)
+        );
 
         let ty: syn::Type = syn::parse_str("&mut Query<&Foo>").unwrap();
-        assert_eq!(last_path_ident(&ty), Some("Query".to_string()));
+        assert_eq!(
+            rules::bevy_folder::BevyFolder::last_path_ident(&ty),
+            Some("Query".to_string())
+        );
 
         let scheduled: syn::File = syn::parse_str(
             "pub fn build(app: &mut App) {
@@ -151,7 +112,7 @@ mod tests {
              }",
         )
         .unwrap();
-        let registered = registered_systems(&scheduled);
+        let registered = rules::bevy_folder::BevyFolder::registered_systems(&scheduled);
         assert!(registered.contains(&"chained".to_string()));
         assert!(registered.contains(&"outer".to_string()));
         assert!(registered.contains(&"tick".to_string()));
@@ -161,7 +122,10 @@ mod tests {
         assert!(!registered.contains(&"Startup".to_string()));
 
         let empty: syn::File = syn::parse_str("pub fn helper(x: u32) {}").unwrap();
-        assert_eq!(registered_systems(&empty).len(), 0);
+        assert_eq!(
+            rules::bevy_folder::BevyFolder::registered_systems(&empty).len(),
+            0
+        );
     }
 
     #[test]
@@ -174,6 +138,9 @@ mod tests {
              }",
         )
         .unwrap();
-        assert_eq!(registered_systems(&file).len(), 0);
+        assert_eq!(
+            rules::bevy_folder::BevyFolder::registered_systems(&file).len(),
+            0
+        );
     }
 }

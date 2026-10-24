@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 
-use crate::VISUAL_IDENTS;
 use crate::scan;
 
 pub fn require_visuals(project: &scan::BevyProject) -> BTreeSet<String> {
@@ -10,31 +9,12 @@ pub fn require_visuals(project: &scan::BevyProject) -> BTreeSet<String> {
             let syn::Item::Struct(item_struct) = item else {
                 continue;
             };
-            if requires_visual(&item_struct.attrs) {
+            if scan::BevyProject::requires_visual(&item_struct.attrs) {
                 names.insert(item_struct.ident.to_string());
             }
         }
     }
     names
-}
-
-// needed helper: does a struct carry `#[require(<visual>)]`?
-fn requires_visual(attrs: &[syn::Attribute]) -> bool {
-    attrs
-        .iter()
-        .filter(|attr| attr.path().is_ident("require"))
-        .any(|attr| {
-            attr.parse_args_with(
-                syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
-            )
-            .is_ok_and(|paths| {
-                paths.iter().any(|path| {
-                    path.segments.last().is_some_and(|segment| {
-                        VISUAL_IDENTS.contains(&segment.ident.to_string().as_str())
-                    })
-                })
-            })
-        })
 }
 
 #[cfg(test)]

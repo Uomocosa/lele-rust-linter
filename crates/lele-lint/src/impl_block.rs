@@ -6,7 +6,7 @@ pub struct ImplBlock<'a>(pub &'a syn::ItemImpl);
 
 #[atomic_delegates]
 impl ImplBlock<'_> {
-    pub fn delegate_body_name(&self, method: &syn::Ident) -> String {}
+    pub fn delegate_body_name(self, method: &syn::Ident) -> String {}
 }
 
 #[rustfmt::skip]

@@ -35,8 +35,8 @@ fn main() {
 
     let linter = BevyLinter::from(args.common.error_format);
 
-    if args.common.checker_list {
-        linter.print_checker_list();
+    if args.common.rule_list {
+        linter.print_rule_list();
         return;
     }
 
@@ -67,7 +67,7 @@ fn main() {
     ) {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("lele_bevy_lint: {}", with_causes(&e));
+            eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
             process::exit(1);
         }
     };
@@ -75,13 +75,16 @@ fn main() {
     let config = match project.load_config() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("lele_bevy_lint: lele.toml: {}", with_causes(&e));
+            eprintln!(
+                "lele_bevy_lint: lele.toml: {}",
+                lele_lint::Error::with_causes(&e)
+            );
             process::exit(1);
         }
     };
 
     if let Err(e) = project.apply_layout(&config) {
-        eprintln!("lele_bevy_lint: {}", with_causes(&e));
+        eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
         process::exit(1);
     }
 
@@ -91,16 +94,4 @@ fn main() {
     }
 
     process::exit(linter.run(&project));
-}
-
-// needed helper: the error and every `source()` cause, joined with ": "
-fn with_causes(error: &dyn std::error::Error) -> String {
-    let mut message = error.to_string();
-    let mut cause = error.source();
-    while let Some(inner) = cause {
-        message.push_str(": ");
-        message.push_str(&inner.to_string());
-        cause = inner.source();
-    }
-    message
 }

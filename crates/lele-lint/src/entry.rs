@@ -18,6 +18,14 @@ pub struct Entry {
 impl Entry {
     pub fn walk(walk_root: &Path, strip_base: &Path) -> Result<Vec<Self>, Error> {}
     pub fn parse_all(entries: &[Self]) -> (HashMap<PathBuf, syn::File>, Vec<ParseFailure>) {}
+    pub(crate) fn keep_entry(entry: &walkdir::DirEntry) -> bool {}
+}
+
+#[rustfmt::skip]
+impl Entry {
+    pub(crate) fn is_skipped_name(name: Option<&str>) -> bool {
+        matches!(name, Some("target" | ".git" | "node_modules"))
+    }
 }
 
 #[cfg(test)]

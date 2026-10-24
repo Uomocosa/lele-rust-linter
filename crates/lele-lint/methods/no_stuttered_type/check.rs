@@ -1,14 +1,12 @@
 use lele_snake_case::ToLeleSnakeCase;
-use std::path::Path;
 
-use crate::checkers;
+use crate::rules;
 use crate::Identifier;
 use crate::Project;
 use crate::RuleViolation;
-use crate::Visibility;
 
 pub fn check(
-    _self: &checkers::no_stuttered_type::NoStutteredType,
+    _self: &rules::no_stuttered_type::NoStutteredType,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -19,18 +17,23 @@ pub fn check(
         if project.is_exempt_source_path(rel_path) {
             continue;
         }
-        let Some(dir) = parent_dir_name(rel_path) else {
+        let Some(dir) = rules::no_stuttered_type::NoStutteredType::parent_dir_name(rel_path) else {
             continue;
         };
         let stem = rel_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-        let Some(name) = primary_exposed_type(file, stem) else {
+        let Some(name) =
+            rules::no_stuttered_type::NoStutteredType::primary_exposed_type(file, stem)
+        else {
             continue;
         };
-        let Some(suffix) = strip_dir_prefix(&name.to_snake_case(), &dir) else {
+        let Some(suffix) = rules::no_stuttered_type::NoStutteredType::strip_dir_prefix(
+            &name.to_snake_case(),
+            &dir,
+        ) else {
             continue;
         };
         let suggested = Identifier(&suffix).to_pascal_case();
-        violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_stuttered_type::NoStutteredType::CODE, format!(
+        violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), rules::no_stuttered_type::NoStutteredType::CODE, format!(
                 "type `{name}` repeats parent module `{dir}` — rename to `{suggested}` (`{dir}::{suggested}`)"
             )));
     }
@@ -38,53 +41,13 @@ pub fn check(
     violations
 }
 
-// needed helper: parent directory name; crate-root files have no parent module
-fn parent_dir_name(rel_path: &Path) -> Option<String> {
-    rel_path
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .and_then(|p| p.file_name())
-        .and_then(|n| n.to_str())
-        .map(str::to_string)
-}
-
-// needed helper: first file-level exposed struct/enum whose snake name matches the stem
-fn primary_exposed_type(file: &syn::File, stem: &str) -> Option<String> {
-    file.items.iter().find_map(|item| {
-        let (ident, vis) = match item {
-            syn::Item::Struct(s) => (&s.ident, &s.vis),
-            syn::Item::Enum(e) => (&e.ident, &e.vis),
-            _ => return None,
-        };
-        if !Visibility(vis).is_exposed() {
-            return None;
-        }
-        let name = ident.to_string();
-        if name.to_snake_case() == stem {
-            Some(name)
-        } else {
-            None
-        }
-    })
-}
-
-// needed helper: strict dir-prefix strip; exact matches and short suffixes are exempt
-fn strip_dir_prefix(snake: &str, dir: &str) -> Option<String> {
-    let rest = snake.strip_prefix(dir)?;
-    let suffix = rest.strip_prefix('_')?;
-    if suffix.is_empty() || suffix.len() < 3 {
-        return None;
-    }
-    Some(suffix.to_string())
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::rules;
     use std::collections::HashMap;
     use std::path::PathBuf;
 
-    use super::strip_dir_prefix;
-    use crate::checkers::no_stuttered_type::NoStutteredType;
+    use crate::rules::no_stuttered_type::NoStutteredType;
     use crate::Project;
 
     fn project_with(files: Vec<(&str, &str)>) -> Project {
@@ -163,11 +126,23 @@ mod tests {
     #[test]
     fn test_usage_strip_dir_prefix() {
         assert_eq!(
-            strip_dir_prefix("freenet_client", "freenet"),
+            rules::no_stuttered_type::NoStutteredType::strip_dir_prefix(
+                "freenet_client",
+                "freenet"
+            ),
             Some("client".to_string())
         );
-        assert_eq!(strip_dir_prefix("p2p_plugin", "plugin"), None);
-        assert_eq!(strip_dir_prefix("cli", "cli"), None);
-        assert_eq!(strip_dir_prefix("network_id", "net_id"), None);
+        assert_eq!(
+            rules::no_stuttered_type::NoStutteredType::strip_dir_prefix("p2p_plugin", "plugin"),
+            None
+        );
+        assert_eq!(
+            rules::no_stuttered_type::NoStutteredType::strip_dir_prefix("cli", "cli"),
+            None
+        );
+        assert_eq!(
+            rules::no_stuttered_type::NoStutteredType::strip_dir_prefix("network_id", "net_id"),
+            None
+        );
     }
 }

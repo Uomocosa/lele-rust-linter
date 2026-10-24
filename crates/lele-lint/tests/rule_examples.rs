@@ -2,11 +2,11 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use lele_lint::Checker;
 use lele_lint::ExampleFile;
 use lele_lint::Linter;
 use lele_lint::Location;
 use lele_lint::Project;
+use lele_lint::Rule;
 
 const DEFAULT_CARGO_TOML: &str = r#"[package]
 name = "example"
@@ -73,7 +73,7 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
     project.apply_layout(&config)?;
     let root: PathBuf = dir.path().to_path_buf();
     let mut lines: Vec<String> = Linter::default()
-        .checkers
+        .rules
         .iter()
         .flat_map(|c| c.check(&project))
         .map(|d| {
@@ -89,10 +89,10 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
     Ok(lines)
 }
 
-fn check_rule(checker: &dyn Checker) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+fn check_rule(rule: &dyn Rule) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut problems = Vec::new();
-    let code = checker.code();
-    let doc = checker.doc();
+    let code = rule.code();
+    let doc = rule.doc();
     if doc.summary.is_empty() || doc.why.is_empty() {
         problems.push(format!("{code}: summary and why must not be empty"));
     }
@@ -121,8 +121,8 @@ fn check_rule(checker: &dyn Checker) -> Result<Vec<String>, Box<dyn std::error::
 #[test]
 fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     let mut problems = Vec::new();
-    for checker in Linter::default().checkers {
-        problems.extend(check_rule(checker.as_ref())?);
+    for rule in Linter::default().rules {
+        problems.extend(check_rule(rule.as_ref())?);
     }
     if problems.is_empty() {
         return Ok(());
@@ -130,10 +130,10 @@ fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     Err(problems.join("\n").into())
 }
 
-/// Every file in `src/checkers/` is registered in `Linter::default`, and codes are unique.
+/// Every file in `src/rules/` is registered in `Linter::default`, and codes are unique.
 #[test]
-fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/checkers");
+fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/rules");
     let mut files = BTreeSet::new();
     for entry in std::fs::read_dir(dir)? {
         let path = entry?.path();
@@ -144,14 +144,14 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
             files.insert(stem.to_string());
         }
     }
-    let checkers = Linter::default().checkers;
-    let names: BTreeSet<String> = checkers.iter().map(|c| c.name().to_string()).collect();
-    let codes: BTreeSet<&str> = checkers.iter().map(|c| c.code()).collect();
+    let rules = Linter::default().rules;
+    let names: BTreeSet<String> = rules.iter().map(|c| c.name().to_string()).collect();
+    let codes: BTreeSet<&str> = rules.iter().map(|c| c.code()).collect();
     if files != names {
-        return Err(format!("checker files {files:?} != registered {names:?}").into());
+        return Err(format!("rule files {files:?} != registered {names:?}").into());
     }
-    if codes.len() != checkers.len() {
-        return Err("duplicate checker codes".into());
+    if codes.len() != rules.len() {
+        return Err("duplicate rule codes".into());
     }
     Ok(())
 }
@@ -159,12 +159,12 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
 /// Codes are exactly `LELE001..LELE<count>`, in registration order.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    for (index, checker) in Linter::default().checkers.iter().enumerate() {
+    for (index, rule) in Linter::default().rules.iter().enumerate() {
         assert_eq!(
-            checker.code(),
+            rule.code(),
             format!("LELE{:03}", index + 1),
             "{}",
-            checker.name()
+            rule.name()
         );
     }
 }

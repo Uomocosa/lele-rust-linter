@@ -1,2 +1,12 @@
 mod check;
+mod check_atomic_file;
+mod check_delegate_shape;
+mod check_filename_match;
+mod check_fn_file_purity;
+mod collect_pub_items;
 pub use check::check;
+pub use check_atomic_file::check_atomic_file;
+pub use check_delegate_shape::check_delegate_shape;
+pub use check_filename_match::check_filename_match;
+pub use check_fn_file_purity::check_fn_file_purity;
+pub use collect_pub_items::collect_pub_items;

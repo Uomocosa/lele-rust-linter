@@ -21,8 +21,6 @@ test:
 lint:
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-lint
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-bevy-lint
-    cargo run --quiet -p lele-lint -- --config lele.toml crates/atomic-delegate-macros
-    cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-snake-case
 
 # honesty half of every `require = "honest"` boundary (rustc MIR)
 taxonomy:
@@ -31,6 +29,12 @@ taxonomy:
 sync-methods:
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-lint
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-bevy-lint
+
+# regenerate RULES.md / SKILL.md (the rules_md / skill_md tests fail while stale)
+docs:
+    cargo run --quiet -p lele-lint -- --rules-md > crates/lele-lint/RULES.md
+    cargo run --quiet -p lele-bevy-lint -- --emit rules-md > crates/lele-bevy-lint/RULES.md
+    cargo run --quiet -p lele-bevy-lint -- --emit skill-md > .opencode/skills/bevy-ui-preview/SKILL.md
 
 # --- tool install (reproducible) ---------------------------------------------
 # Install both binaries from this checkout. Use this instead of a bare

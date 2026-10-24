@@ -7,6 +7,7 @@ pub mod bevy_project;
 pub mod bevy_ui;
 pub mod bevy_ui_mp4;
 pub mod bevy_ui_restyle;
+pub mod call_graph;
 pub mod expr_region;
 pub mod harness_call;
 pub mod macro_call;

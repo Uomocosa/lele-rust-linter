@@ -4,7 +4,7 @@ pub fn declared_components(file: &scan::ScannedFile) -> Vec<String> {
         .items
         .iter()
         .filter_map(|item| match item {
-            syn::Item::Struct(data) if derives_component(&data.attrs) => {
+            syn::Item::Struct(data) if scan::ScannedFile::derives_component(&data.attrs) => {
                 Some(data.ident.to_string())
             }
             _ => None,
@@ -13,25 +13,6 @@ pub fn declared_components(file: &scan::ScannedFile) -> Vec<String> {
     names.sort();
     names.dedup();
     names
-}
-
-// needed helper: `#[derive(Component)]` detection in any path form
-fn derives_component(attrs: &[syn::Attribute]) -> bool {
-    attrs
-        .iter()
-        .filter(|attr| attr.path().is_ident("derive"))
-        .any(|attr| {
-            attr.parse_args_with(
-                syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated,
-            )
-            .is_ok_and(|paths| {
-                paths.iter().any(|path| {
-                    path.segments
-                        .last()
-                        .is_some_and(|segment| segment.ident == "Component")
-                })
-            })
-        })
 }
 
 #[cfg(test)]

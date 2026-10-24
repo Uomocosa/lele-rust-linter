@@ -1,12 +1,11 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::checkers;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::no_trivial_accessors::NoTrivialAccessors,
+    _self: &rules::no_trivial_accessors::NoTrivialAccessors,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -22,7 +21,7 @@ pub fn check(
             continue;
         }
 
-        let vis_fields = collect_vis_fields(file);
+        let vis_fields = rules::no_trivial_accessors::NoTrivialAccessors::collect_vis_fields(file);
         let pub_fields: HashSet<String> = vis_fields.keys().cloned().collect();
 
         for item in &file.items {
@@ -32,18 +31,28 @@ pub fn check(
                 }
                 for impl_item in &impl_block.items {
                     if let syn::ImplItem::Fn(method) = impl_item {
-                        if is_builder(method) {
+                        if rules::no_trivial_accessors::NoTrivialAccessors::is_builder(method) {
                             continue;
                         }
-                        if let Some(field) = is_trivial_accessor(method, &pub_fields) {
+                        if let Some(field) =
+                            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(
+                                method,
+                                &pub_fields,
+                            )
+                        {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), rules::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial accessor `{}` reads {vis} field `{field}`, make field public/pub(crate) and access directly",
                                     method.sig.ident
                                 )));
-                        } else if let Some(field) = is_trivial_setter(method, &pub_fields) {
+                        } else if let Some(field) =
+                            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_setter(
+                                method,
+                                &pub_fields,
+                            )
+                        {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
-                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), checkers::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), rules::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
                                     "trivial setter `{}` assigns {vis} field `{field}`, make field public/pub(crate) and assign directly",
                                     method.sig.ident
                                 )));
@@ -57,259 +66,18 @@ pub fn check(
     violations
 }
 
-// needed helper: visible field collection — pub + all Visibility::Restricted
-fn vis_to_string(vis: &syn::Visibility) -> Option<String> {
-    match vis {
-        syn::Visibility::Public(_) => Some("pub".to_string()),
-        syn::Visibility::Restricted(res) => {
-            let s = quote::quote!(#res).to_string();
-            Some(s.replace(" )", ")").replace("( ", "("))
-        }
-        syn::Visibility::Inherited => None,
-    }
-}
-
-// needed helper: visible field map field -> vis string
-fn collect_vis_fields(file: &syn::File) -> HashMap<String, String> {
-    let mut fields = HashMap::new();
-    for item in &file.items {
-        if let syn::Item::Struct(s) = item {
-            for field in &s.fields {
-                if let Some(vis_str) = vis_to_string(&field.vis) {
-                    if let Some(ident) = &field.ident {
-                        fields.insert(ident.to_string(), vis_str);
-                    }
-                }
-            }
-        }
-    }
-    fields
-}
-
-// needed helper: builder with_* detection — don't flag
-fn is_builder(method: &syn::ImplItemFn) -> bool {
-    let name = method.sig.ident.to_string();
-    if !name.starts_with("with_") {
-        return false;
-    }
-    let Some(receiver) = method.sig.receiver() else {
-        return false;
-    };
-    if receiver.reference.is_some() {
-        return false;
-    }
-    if method.sig.inputs.len() != 2 {
-        return false;
-    }
-    match &method.sig.output {
-        syn::ReturnType::Type(_, ty) => {
-            let s = quote::quote!(#ty).to_string();
-            s.contains("Self")
-        }
-        syn::ReturnType::Default => false,
-    }
-}
-
-// needed helper: log macro stripping
-fn is_log_macro(stmt: &syn::Stmt) -> bool {
-    let mac = match stmt {
-        syn::Stmt::Macro(m) => &m.mac,
-        syn::Stmt::Expr(syn::Expr::Macro(em), _) => &em.mac,
-        _ => return false,
-    };
-    let segments: Vec<String> = mac
-        .path
-        .segments
-        .iter()
-        .map(|s| s.ident.to_string())
-        .collect();
-    let path = segments.join("::");
-    if path == "println" || path == "eprintln" {
-        return true;
-    }
-    if path.ends_with("::println") || path.ends_with("::eprintln") {
-        return true;
-    }
-    let last = segments.last().cloned().unwrap_or_default();
-    let is_log_ident = matches!(last.as_str(), "info" | "debug" | "warn" | "error" | "trace");
-    if !is_log_ident {
-        return false;
-    }
-    segments
-        .iter()
-        .any(|s| s == "tracing" || s == "log" || s == "tracing_subscriber")
-}
-
-fn filtered_stmts(block: &syn::Block) -> Vec<&syn::Stmt> {
-    block.stmts.iter().filter(|s| !is_log_macro(s)).collect()
-}
-
-// needed helper: trivial accessor pattern detection
-fn is_trivial_accessor(method: &syn::ImplItemFn, pub_fields: &HashSet<String>) -> Option<String> {
-    let sig = &method.sig;
-
-    let receiver = sig.receiver()?;
-    if receiver.reference.is_none() || receiver.mutability.is_some() {
-        return None;
-    }
-
-    if sig.inputs.len() != 1 {
-        return None;
-    }
-
-    let stmts = filtered_stmts(&method.block);
-    let [stmt] = stmts.as_slice() else {
-        return None;
-    };
-
-    let expr = match stmt {
-        syn::Stmt::Expr(expr, _) => expr,
-        _ => return None,
-    };
-
-    extract_self_field(expr, pub_fields)
-}
-
-// needed helper: trivial setter detection
-fn is_trivial_setter(method: &syn::ImplItemFn, pub_fields: &HashSet<String>) -> Option<String> {
-    let sig = &method.sig;
-
-    let receiver = sig.receiver()?;
-    if receiver.reference.is_none() || receiver.mutability.is_none() {
-        return None;
-    }
-
-    if sig.inputs.len() != 2 {
-        return None;
-    }
-
-    let stmts = filtered_stmts(&method.block);
-    let [stmt] = stmts.as_slice() else {
-        return None;
-    };
-    let expr = match stmt {
-        syn::Stmt::Expr(expr, _) => expr,
-        _ => return None,
-    };
-
-    if let syn::Expr::Assign(assign) = expr {
-        return extract_assign_field(assign, sig, pub_fields);
-    }
-
-    None
-}
-
-// needed helper: extract field from self.field = param assign
-fn extract_assign_field(
-    assign: &syn::ExprAssign,
-    sig: &syn::Signature,
-    pub_fields: &HashSet<String>,
-) -> Option<String> {
-    let field_name = match &*assign.left {
-        syn::Expr::Field(field) => {
-            if let syn::Member::Named(named) = &field.member {
-                let n = named.to_string();
-                if is_self_ref(&field.base) && pub_fields.contains(&n) {
-                    n
-                } else {
-                    return None;
-                }
-            } else {
-                return None;
-            }
-        }
-        _ => {
-            return None;
-        }
-    };
-
-    let param_ident = sig.inputs.iter().nth(1).and_then(|arg| match arg {
-        syn::FnArg::Typed(pat) => {
-            if let syn::Pat::Ident(id) = &*pat.pat {
-                Some(id.ident.to_string())
-            } else {
-                None
-            }
-        }
-        syn::FnArg::Receiver(_) => None,
-    })?;
-
-    let right = &*assign.right;
-    let right_str = quote::quote!(#right).to_string().replace(' ', "");
-    let param_str = param_ident.replace(' ', "");
-    if right_str == param_str
-        || right_str == format!("{param_str}.clone()")
-        || right_str == format!("{param_str}.to_owned()")
-    {
-        return Some(field_name);
-    }
-    None
-}
-
-// needed helper: self.field expression extraction
-fn extract_self_field(expr: &syn::Expr, pub_fields: &HashSet<String>) -> Option<String> {
-    match expr {
-        syn::Expr::Field(field) => {
-            if let syn::Member::Named(named) = &field.member {
-                let field_name = named.to_string();
-                if is_self_ref(&field.base) && pub_fields.contains(&field_name) {
-                    return Some(field_name);
-                }
-            }
-        }
-        syn::Expr::Reference(ref_expr) => {
-            return extract_self_field(&ref_expr.expr, pub_fields);
-        }
-        syn::Expr::MethodCall(call) if is_plain_conversion(call) => {
-            return extract_self_field(&call.receiver, pub_fields);
-        }
-        syn::Expr::Call(call) if is_ok_or_some(call) => {
-            if let [inner] = call.args.iter().collect::<Vec<_>>().as_slice() {
-                return extract_self_field(inner, pub_fields);
-            }
-        }
-        syn::Expr::Paren(paren) => {
-            return extract_self_field(&paren.expr, pub_fields);
-        }
-        _ => {}
-    }
-    None
-}
-
-// needed helper: zero-argument conversion that still only reads the field
-fn is_plain_conversion(call: &syn::ExprMethodCall) -> bool {
-    const CONVERSIONS: [&str; 7] = [
-        "clone", "to_owned", "to_vec", "as_str", "as_slice", "as_ref", "as_deref",
-    ];
-    call.args.is_empty() && CONVERSIONS.iter().any(|name| call.method == name)
-}
-
-// needed helper: `Ok(..)` / `Some(..)` wrapper around a field read
-fn is_ok_or_some(call: &syn::ExprCall) -> bool {
-    matches!(&*call.func, syn::Expr::Path(path)
-        if path.path.segments.last().is_some_and(|segment| segment.ident == "Ok" || segment.ident == "Some"))
-}
-
-// needed helper: self-reference expression check
-fn is_self_ref(expr: &syn::Expr) -> bool {
-    if let syn::Expr::Path(path) = expr {
-        return path.path.segments.last().is_some_and(|s| s.ident == "self");
-    }
-    false
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check, is_trivial_accessor, is_trivial_setter};
-    use crate::checkers;
+    use super::check;
+    use crate::rules;
     use crate::Project;
     use std::collections::HashSet;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::no_trivial_accessors::NoTrivialAccessors;
+        let rule = rules::no_trivial_accessors::NoTrivialAccessors;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     #[test]
@@ -318,7 +86,10 @@ mod tests {
             syn::parse_str("fn value(&self) -> u32 { self.value }").unwrap();
         let mut fields = HashSet::new();
         fields.insert("value".into());
-        assert!(is_trivial_accessor(&method, &fields).is_some());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(&method, &fields)
+                .is_some()
+        );
     }
 
     #[test]
@@ -331,11 +102,22 @@ mod tests {
             "fn items(&self) -> Vec<u32> { self.items.to_vec() }",
         ] {
             let method: syn::ImplItemFn = syn::parse_str(source).unwrap();
-            assert!(is_trivial_accessor(&method, &fields).is_some(), "{source}");
+            assert!(
+                rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(
+                    &method, &fields
+                )
+                .is_some(),
+                "{source}"
+            );
         }
         let computed: syn::ImplItemFn =
             syn::parse_str("fn count(&self) -> Result<usize, E> { Ok(self.items.len()) }").unwrap();
-        assert!(is_trivial_accessor(&computed, &fields).is_none());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(
+                &computed, &fields
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -344,7 +126,10 @@ mod tests {
             syn::parse_str("fn doubled(&self) -> u32 { self.value * 2 }").unwrap();
         let mut fields = HashSet::new();
         fields.insert("value".into());
-        assert!(is_trivial_accessor(&method, &fields).is_none());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(&method, &fields)
+                .is_none()
+        );
     }
 
     #[test]
@@ -352,7 +137,10 @@ mod tests {
         let method: syn::ImplItemFn =
             syn::parse_str("fn inner(&self) -> u32 { self.secret }").unwrap();
         let fields: HashSet<String> = HashSet::new();
-        assert!(is_trivial_accessor(&method, &fields).is_none());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(&method, &fields)
+                .is_none()
+        );
     }
 
     #[test]
@@ -362,7 +150,10 @@ mod tests {
                 .unwrap();
         let mut fields = HashSet::new();
         fields.insert("value".into());
-        assert!(is_trivial_accessor(&method, &fields).is_some());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_accessor(&method, &fields)
+                .is_some()
+        );
     }
 
     #[test]
@@ -371,7 +162,10 @@ mod tests {
             syn::parse_str("fn set_value(&mut self, v: u32) { self.value = v; }").unwrap();
         let mut fields = HashSet::new();
         fields.insert("value".into());
-        assert!(is_trivial_setter(&method, &fields).is_some());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_setter(&method, &fields)
+                .is_some()
+        );
     }
 
     #[test]
@@ -382,14 +176,19 @@ mod tests {
         .unwrap();
         let mut fields = HashSet::new();
         fields.insert("value".into());
-        assert!(is_trivial_setter(&method, &fields).is_some());
+        assert!(
+            rules::no_trivial_accessors::NoTrivialAccessors::is_trivial_setter(&method, &fields)
+                .is_some()
+        );
     }
 
     #[test]
     fn test_usage_allows_builder() {
         let method: syn::ImplItemFn =
             syn::parse_str("fn with_tag(self, tag: u64) -> Self { Self { tag, ..self } }").unwrap();
-        assert!(super::is_builder(&method));
+        assert!(rules::no_trivial_accessors::NoTrivialAccessors::is_builder(
+            &method
+        ));
     }
 }
 

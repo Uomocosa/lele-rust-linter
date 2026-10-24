@@ -1,34 +1,29 @@
-use std::collections::HashSet;
-use std::path::Path;
-use syn::spanned::Spanned;
-
 use syn::visit::Visit;
 
-use crate::checkers;
-use crate::Identifier;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::no_stuttered_path::NoStutteredPath,
+    _self: &rules::no_stuttered_path::NoStutteredPath,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
-    let root_stems = root_module_stems(project);
+    let root_stems = rules::no_stuttered_path::NoStutteredPath::root_module_stems(project);
 
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
         let mut hits = Vec::new();
         {
-            let mut visitor = StutterVisitor {
+            let mut visitor = rules::no_stuttered_path::StutterVisitor {
                 hits: &mut hits,
                 stems: &root_stems,
             };
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_stuttered_path::NoStutteredPath::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, rules::no_stuttered_path::NoStutteredPath::CODE, format!(
                     "stuttered path `{}` adds no information — import `{}` once and use `{}` directly",
                     hit.path, hit.ty, hit.ty
                 )));
@@ -38,94 +33,31 @@ pub fn check(
     violations
 }
 
-// needed helper: root `src/*.rs` file stems — only these modules flatten to `crate::Type`
-fn root_module_stems(project: &Project) -> HashSet<String> {
-    project
-        .parsed_files
-        .keys()
-        .filter(|rel| rel.components().count() == 1)
-        .filter_map(|rel| stem_name(rel))
-        .collect()
-}
-
-// needed helper: file stem of a relative path
-fn stem_name(rel_path: &Path) -> Option<String> {
-    rel_path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(str::to_string)
-}
-
-// needed helper: AST visitor collecting `module::Type` paths where the type repeats the module
-struct StutterHit {
-    line: usize,
-    path: String,
-    ty: String,
-}
-
-struct StutterVisitor<'a> {
-    hits: &'a mut Vec<StutterHit>,
-    stems: &'a HashSet<String>,
-}
-
-impl<'ast> Visit<'ast> for StutterVisitor<'_> {
-    fn visit_path(&mut self, path: &'ast syn::Path) {
-        collect_stutter(path, self.stems, self.hits);
-        syn::visit::visit_path(self, path);
-    }
-}
-
-// needed helper: adjacent-segment stutter scan for a single path
-fn collect_stutter(path: &syn::Path, root_stems: &HashSet<String>, hits: &mut Vec<StutterHit>) {
-    if path.leading_colon.is_some() {
-        return;
-    }
-    let segments: Vec<String> = path.segments.iter().map(|s| s.ident.to_string()).collect();
-    if segments
-        .first()
-        .is_some_and(|s| matches!(s.as_str(), "crate" | "std" | "core" | "alloc"))
-    {
-        return;
-    }
-    for pair in segments.windows(2) {
-        if let [module, ty] = pair {
-            if root_stems.contains(module) && Identifier(ty).is_stuttered_in(module) {
-                hits.push(StutterHit {
-                    line: path.span().start().line,
-                    path: segments.join("::"),
-                    ty: ty.clone(),
-                });
-                return;
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
     use std::path::PathBuf;
     use syn::visit::Visit;
 
-    use super::{check, collect_stutter};
-    use crate::checkers;
+    use super::check;
+    use crate::rules;
     use crate::Project;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::no_stuttered_path::NoStutteredPath;
+        let rule = rules::no_stuttered_path::NoStutteredPath;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     struct Collector<'a> {
-        hits: &'a mut Vec<super::StutterHit>,
+        hits: &'a mut Vec<rules::no_stuttered_path::StutterHit>,
         stems: &'a HashSet<String>,
     }
 
     impl<'ast> Visit<'ast> for Collector<'_> {
         fn visit_path(&mut self, path: &'ast syn::Path) {
-            collect_stutter(path, self.stems, self.hits);
+            rules::no_stuttered_path::NoStutteredPath::collect_stutter(path, self.stems, self.hits);
             syn::visit::visit_path(self, path);
         }
     }
@@ -224,13 +156,14 @@ mod tests {
 
     #[test]
     fn test_usage_stem_name_from_rel_path() {
-        use super::stem_name;
         assert_eq!(
-            stem_name(&PathBuf::from("diagnostic.rs")),
+            rules::no_stuttered_path::NoStutteredPath::stem_name(&PathBuf::from("diagnostic.rs")),
             Some("diagnostic".to_string())
         );
         assert_eq!(
-            stem_name(&PathBuf::from("checkers/no_crate_paths.rs")),
+            rules::no_stuttered_path::NoStutteredPath::stem_name(&PathBuf::from(
+                "rules/no_crate_paths.rs"
+            )),
             Some("no_crate_paths".to_string())
         );
     }

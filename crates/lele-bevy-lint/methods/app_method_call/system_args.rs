@@ -1,5 +1,4 @@
 use crate::scan;
-use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
 #[must_use]
@@ -9,25 +8,12 @@ pub fn system_args(node: &scan::AppMethodCall) -> Option<Vec<String>> {
     }
     let mut found = Vec::new();
     {
-        let mut collector = SystemCollector(&mut found);
+        let mut collector = scan::SystemCollector(&mut found);
         for arg in node.args.iter().skip(1) {
             collector.visit_expr(arg);
         }
     }
     Some(found)
-}
-
-// needed helper: collects the last path segment of every path in an expression
-#[derive(Deref, DerefMut)]
-struct SystemCollector<'a>(&'a mut Vec<String>);
-
-impl<'ast> Visit<'ast> for SystemCollector<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        if let Some(last) = node.segments.last() {
-            self.push(last.ident.to_string());
-        }
-        syn::visit::visit_path(self, node);
-    }
 }
 
 #[cfg(test)]

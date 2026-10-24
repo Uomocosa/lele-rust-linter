@@ -30,12 +30,7 @@ mod tests {
     #[test]
     fn test_usage() {
         let linter = BevyLinter::default();
-        assert!(
-            linter
-                .checkers
-                .iter()
-                .any(|checker| checker.name() == "bevy_ui")
-        );
+        assert!(linter.rules.iter().any(|rule| rule.name() == "bevy_ui"));
         let markdown = BevyLinter::from(ErrorFormat::Clippy).skill_markdown();
         assert_ne!(markdown, "");
     }

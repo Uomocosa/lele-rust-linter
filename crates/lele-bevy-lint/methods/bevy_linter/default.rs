@@ -13,6 +13,6 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        assert_eq!(default().checkers.len(), 8);
+        assert_eq!(default().rules.len(), 8);
     }
 }

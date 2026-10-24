@@ -1,11 +1,9 @@
-use crate::checkers;
-use crate::ItemMarker;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
-use syn::spanned::Spanned;
 
 pub fn check(
-    _self: &checkers::no_dunder_tests::NoDunderTests,
+    _self: &rules::no_dunder_tests::NoDunderTests,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -17,38 +15,15 @@ pub fn check(
             continue;
         }
         for item in &file.items {
-            let Some(line) = cfg_test_line(item) else {
+            let Some(line) = rules::no_dunder_tests::NoDunderTests::cfg_test_line(item) else {
                 continue;
             };
-            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), line, 0, checkers::no_dunder_tests::NoDunderTests::CODE, "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), line, 0, rules::no_dunder_tests::NoDunderTests::CODE, "`#[cfg(test)]` is not allowed in a `__basic__` container — cover the function or method that uses these types instead"
                     .to_string()));
         }
     }
 
     violations
-}
-
-// needed helper: cfg(test) item start line, if the item is a test
-fn cfg_test_line(item: &syn::Item) -> Option<usize> {
-    match item {
-        syn::Item::Mod(module)
-            if module
-                .attrs
-                .iter()
-                .any(|attr| ItemMarker(attr).is_cfg_test()) =>
-        {
-            Some(module.span().start().line)
-        }
-        syn::Item::Fn(function)
-            if function
-                .attrs
-                .iter()
-                .any(|attr| ItemMarker(attr).is_cfg_test()) =>
-        {
-            Some(function.span().start().line)
-        }
-        _ => None,
-    }
 }
 
 #[cfg(test)]
@@ -57,7 +32,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers::no_dunder_tests::NoDunderTests;
+    use crate::rules::no_dunder_tests::NoDunderTests;
     use crate::Project;
 
     fn project(files: &[(&str, &str)]) -> Project {

@@ -11,7 +11,7 @@ pub fn walk(walk_root: &Path, strip_base: &Path) -> Result<Vec<Entry>, Error> {
     let walker = WalkDir::new(walk_root)
         .min_depth(1)
         .into_iter()
-        .filter_entry(keep_entry);
+        .filter_entry(Entry::keep_entry);
     for result in walker {
         let entry = result?;
         let absolute_path = entry.path().to_path_buf();
@@ -34,17 +34,6 @@ pub fn walk(walk_root: &Path, strip_base: &Path) -> Result<Vec<Entry>, Error> {
         }
     }
     Ok(entries)
-}
-
-fn keep_entry(entry: &walkdir::DirEntry) -> bool {
-    if !entry.file_type().is_dir() {
-        return true;
-    }
-    !is_skipped_name(entry.file_name().to_str())
-}
-
-fn is_skipped_name(name: Option<&str>) -> bool {
-    matches!(name, Some("target" | ".git" | "node_modules"))
 }
 
 #[cfg(test)]

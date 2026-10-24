@@ -135,12 +135,12 @@ cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview -- --nocapture
 "#;
 
 pub fn skill_markdown(linter: &BevyLinter) -> String {
-    let checkers = &linter.checkers;
-    let codes: Vec<&str> = checkers.iter().map(|checker| checker.code()).collect();
+    let rules = &linter.rules;
+    let codes: Vec<&str> = rules.iter().map(|rule| rule.code()).collect();
     let mut out = FRONTMATTER.replace("@@CODES@@", &codes.join("/"));
     out.push_str(BODY);
-    for checker in checkers {
-        out.push_str(&Linter::render_rule(checker.as_ref()));
+    for rule in rules {
+        out.push_str(&Linter::render_rule(rule.as_ref()));
         let _ = writeln!(out);
     }
     out
@@ -160,11 +160,11 @@ mod tests {
         let text = skill_markdown(&BevyLinter::default());
         assert!(text.starts_with("---"));
         assert!(text.contains("name: bevy-ui-preview"));
-        for checker in BevyLinter::default().checkers.iter() {
+        for rule in BevyLinter::default().rules.iter() {
             assert!(
-                text.contains(&format!("### {} `{}`", checker.code(), checker.name())),
+                text.contains(&format!("### {} `{}`", rule.code(), rule.name())),
                 "skill is missing the section for {}",
-                checker.name()
+                rule.name()
             );
         }
         let tokens = VISUAL_IDENTS

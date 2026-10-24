@@ -1,9 +1,7 @@
 use std::path::PathBuf;
 
-use derive_more::{Deref, DerefMut};
 use lele_lint::Project;
 use lele_snake_case::ToLeleSnakeCase;
-use syn::visit::Visit;
 
 use crate::scan;
 
@@ -23,11 +21,11 @@ pub fn plugin_registrations(file: &scan::ScannedFile, project: &Project) -> Vec<
             _ => None,
         }) {
             let build_region = scan::ExprRegion {
-                exprs: vec![block_expr(&method.block)],
+                exprs: vec![scan::ScannedFile::block_expr(&method.block)],
                 module_fns: &module_fns,
             };
             paths.extend(build_region.registered_paths());
-            for delegate in self_calls(&method.block) {
+            for delegate in scan::ScannedFile::self_calls(&method.block) {
                 let rel_path = delegate_dir.join(format!("{delegate}.rs"));
                 let Some(delegate_file) = project.methods_parsed_files.get(&rel_path) else {
                     continue;
@@ -36,7 +34,7 @@ pub fn plugin_registrations(file: &scan::ScannedFile, project: &Project) -> Vec<
                     .items
                     .iter()
                     .filter_map(|item| match item {
-                        syn::Item::Fn(func) => Some(block_expr(&func.block)),
+                        syn::Item::Fn(func) => Some(scan::ScannedFile::block_expr(&func.block)),
                         _ => None,
                     })
                     .collect();
@@ -51,38 +49,6 @@ pub fn plugin_registrations(file: &scan::ScannedFile, project: &Project) -> Vec<
         }
     }
     paths
-}
-
-// needed helper: a block as an expression, so one visitor walks fn bodies and exprs alike
-fn block_expr(block: &syn::Block) -> syn::Expr {
-    syn::Expr::Block(syn::ExprBlock {
-        attrs: Vec::new(),
-        label: None,
-        block: block.clone(),
-    })
-}
-
-// needed helper: methods `build` calls on `self`, i.e. its atomic delegates
-fn self_calls(block: &syn::Block) -> Vec<String> {
-    let mut names = Vec::new();
-    let mut collector = SelfCalls(&mut names);
-    collector.visit_block(block);
-    names
-}
-
-// needed helper: records `self.<method>(..)` names
-#[derive(Deref, DerefMut)]
-struct SelfCalls<'a>(&'a mut Vec<String>);
-
-impl<'ast> Visit<'ast> for SelfCalls<'_> {
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let syn::Expr::Path(receiver) = &*node.receiver
-            && receiver.path.is_ident("self")
-        {
-            self.push(node.method.to_string());
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
 }
 
 #[cfg(test)]

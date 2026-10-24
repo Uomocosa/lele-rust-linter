@@ -1,5 +1,3 @@
-use std::path::Path;
-use std::path::PathBuf;
 use std::process;
 
 use clap::Parser;
@@ -33,8 +31,8 @@ fn main() {
         ..Linter::default()
     };
 
-    if args.common.checker_list {
-        linter.print_checker_list();
+    if args.common.rule_list {
+        linter.print_rule_list();
         return;
     }
 
@@ -58,15 +56,18 @@ fn main() {
     ) {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("lele_lint: {}", with_causes(&e));
+            eprintln!("lele_lint: {}", lele_lint::Error::with_causes(&e));
             process::exit(1);
         }
     };
 
-    let config = match resolve_config(args.common.config.as_deref(), &project) {
+    let config = match Config::resolve(args.common.config.as_deref(), &project) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("lele_lint: lele.toml: {}", with_causes(&e));
+            eprintln!(
+                "lele_lint: lele.toml: {}",
+                lele_lint::Error::with_causes(&e)
+            );
             process::exit(1);
         }
     };
@@ -74,7 +75,7 @@ fn main() {
     project.config_dir = config_dir;
 
     if let Err(e) = project.apply_layout(&config) {
-        eprintln!("lele_lint: {}", with_causes(&e));
+        eprintln!("lele_lint: {}", lele_lint::Error::with_causes(&e));
         process::exit(1);
     }
 
@@ -91,52 +92,11 @@ fn main() {
 
     if args.sync_methods {
         if let Err(e) = project.sync_methods() {
-            eprintln!("lele_lint: {}", with_causes(&e));
+            eprintln!("lele_lint: {}", lele_lint::Error::with_causes(&e));
             process::exit(1);
         }
         return;
     }
 
     process::exit(linter.run(&project));
-}
-
-// needed helper: a workspace keeps one lele.toml; prefer --config, else CWD, else the crate's own
-fn resolve_config(
-    explicit: Option<&Path>,
-    project: &Project,
-) -> Result<(Config, PathBuf), lele_lint::Error> {
-    let project_root = project.root.as_path();
-    if let Some(path) = explicit {
-        return load_at(path, project_root);
-    }
-    let cwd = std::env::current_dir()
-        .ok()
-        .map(|dir| dir.join("lele.toml"))
-        .filter(|path| path.exists());
-    match cwd {
-        Some(path) => load_at(&path, project_root),
-        None => Ok((project.load_config()?, project_root.to_path_buf())),
-    }
-}
-
-// needed helper: load one config file and use its directory as the workspace base
-fn load_at(path: &Path, fallback: &Path) -> Result<(Config, PathBuf), lele_lint::Error> {
-    let path = path.canonicalize().map_err(lele_lint::Error::Io)?;
-    let dir = path
-        .parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| fallback.to_path_buf());
-    Ok((Config::try_from(path.as_path())?, dir))
-}
-
-// needed helper: the error and every `source()` cause, joined with ": "
-fn with_causes(error: &dyn std::error::Error) -> String {
-    let mut message = error.to_string();
-    let mut cause = error.source();
-    while let Some(inner) = cause {
-        message.push_str(": ");
-        message.push_str(&inner.to_string());
-        cause = inner.source();
-    }
-    message
 }

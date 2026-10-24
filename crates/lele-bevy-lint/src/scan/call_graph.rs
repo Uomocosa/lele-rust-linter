@@ -1,15 +1,15 @@
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use syn::visit::Visit;
-
+use atomic_delegate_macros::atomic_delegates;
 use lele_lint::Project;
 
 use crate::scan;
 
 pub struct CallGraph {
-    callees: HashMap<String, Vec<String>>,
-    systems: HashSet<String>,
+    pub(crate) callees: HashMap<String, Vec<String>>,
+    pub(crate) systems: HashSet<String>,
 }
 
 impl From<&Project> for CallGraph {
@@ -18,148 +18,69 @@ impl From<&Project> for CallGraph {
             callees: HashMap::new(),
             systems: HashSet::new(),
         };
-        visit_production(&mut graph, project);
+        graph.visit_production(project);
         graph
     }
 }
 
+#[rustfmt::skip]
 impl CallGraph {
     #[must_use]
     pub fn reaches_production(&self, owner: &str) -> bool {
         if owner.is_empty() {
             return true;
         }
-        let targets = HashSet::from([owner.to_string()]);
-        reachable(&self.callees, &self.entry_roots(), &targets)
+        let targets = BTreeSet::from([owner.to_string()]);
+        self.reachable(&self.entry_roots(), &targets)
     }
 
-    // needed helper: production entry points (plus every registered system)
-    fn entry_roots(&self) -> Vec<String> {
+    pub(crate) fn entry_roots(&self) -> Vec<String> {
         let mut roots = vec!["main".to_string(), "build".to_string(), "setup".to_string()];
         roots.extend(self.systems.iter().cloned());
         roots
     }
-}
-
-// needed helper: walks every production item, skipping test modules and test-only files
-fn visit_production(graph: &mut CallGraph, project: &Project) {
-    let test_only = scan::BevyProject(project).test_only_files();
-    for source in project.sources() {
-        if test_only.contains(source.relative_path) {
-            continue;
-        }
-        for item in &source.file.items {
-            if !scan::ScannedItem(item).is_test_module() {
-                visit_item(graph, item);
+    pub(crate) fn visit_production(&mut self, project: &Project) {
+        let test_only = scan::BevyProject(project).test_only_files();
+        for source in project.sources() {
+            if test_only.contains(source.relative_path) {
+                continue;
             }
-        }
-    }
-}
-
-// needed helper: walks one item, recording fn and impl-method callees
-fn visit_item(graph: &mut CallGraph, item: &syn::Item) {
-    match item {
-        syn::Item::Fn(func) => {
-            record_call(
-                &mut graph.callees,
-                &mut graph.systems,
-                &func.sig.ident.to_string(),
-                &func.block,
-            );
-        }
-        syn::Item::Impl(impl_block) => {
-            for item in &impl_block.items {
-                if let syn::ImplItem::Fn(method) = item {
-                    record_call(
-                        &mut graph.callees,
-                        &mut graph.systems,
-                        &method.sig.ident.to_string(),
-                        &method.block,
-                    );
+            for item in &source.file.items {
+                if !scan::ScannedItem(item).is_test_module() {
+                    self.visit_item(item);
                 }
             }
         }
-        syn::Item::Mod(module) => {
-            if let Some((_, inner)) = &module.content {
-                for item in inner {
-                    visit_item(graph, item);
+    }
+
+    pub(crate) fn visit_item(&mut self, item: &syn::Item) {
+        match item {
+            syn::Item::Fn(func) => {
+                self.record_call(&func.sig.ident.to_string(), &func.block);
+            }
+            syn::Item::Impl(impl_block) => {
+                for item in &impl_block.items {
+                    if let syn::ImplItem::Fn(method) = item {
+                        self.record_call(&method.sig.ident.to_string(), &method.block);
+                    }
                 }
             }
+            syn::Item::Mod(module) => {
+                if let Some((_, inner)) = &module.content {
+                    for item in inner {
+                        self.visit_item(item);
+                    }
+                }
+            }
+            _ => {}
         }
-        _ => {}
     }
 }
 
-// needed helper: breadth-first reachability from roots to any target
-fn reachable(
-    callees: &HashMap<String, Vec<String>>,
-    roots: &[String],
-    targets: &HashSet<String>,
-) -> bool {
-    let mut stack: Vec<String> = roots.to_vec();
-    let mut seen = HashSet::new();
-    while let Some(current) = stack.pop() {
-        if !seen.insert(current.clone()) {
-            continue;
-        }
-        if targets.contains(&current) {
-            return true;
-        }
-        if let Some(next) = callees.get(&current) {
-            stack.extend(next.iter().cloned());
-        }
-    }
-    false
-}
-
-// needed helper: records one fn/method's callees and registered systems
-fn record_call(
-    callees: &mut HashMap<String, Vec<String>>,
-    systems: &mut HashSet<String>,
-    name: &str,
-    block: &syn::Block,
-) {
-    let mut calls = Vec::new();
-    let mut systems_found = Vec::new();
-    {
-        let mut collector = CallCollector {
-            calls: &mut calls,
-            systems: &mut systems_found,
-        };
-        collector.visit_block(block);
-    }
-    callees.entry(name.to_string()).or_default().extend(calls);
-    systems.extend(systems_found);
-}
-
-struct CallCollector<'a> {
-    calls: &'a mut Vec<String>,
-    systems: &'a mut Vec<String>,
-}
-
-impl<'ast> Visit<'ast> for CallCollector<'_> {
-    fn visit_expr_call(&mut self, node: &'ast syn::ExprCall) {
-        if let syn::Expr::Path(path) = &*node.func
-            && let Some(last) = path.path.segments.last()
-        {
-            self.calls.push(last.ident.to_string());
-        }
-        syn::visit::visit_expr_call(self, node);
-    }
-
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let Some(idents) = scan::AppMethodCall(node).system_args() {
-            self.calls.extend(idents.iter().cloned());
-            self.systems.extend(idents);
-            self.visit_expr(&node.receiver);
-        } else if let Some(idents) = scan::AppMethodCall(node).observer_args() {
-            self.calls.extend(idents.iter().cloned());
-            self.systems.extend(idents);
-            self.visit_expr(&node.receiver);
-        } else {
-            syn::visit::visit_expr_method_call(self, node);
-        }
-    }
+#[atomic_delegates]
+impl CallGraph {
+    pub(crate) fn reachable(&self, roots: &[String], targets: &BTreeSet<String>) -> bool {}
+    pub(crate) fn record_call(&mut self, name: &str, block: &syn::Block) {}
 }
 
 #[cfg(test)]

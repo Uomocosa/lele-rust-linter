@@ -17,6 +17,7 @@ use crate::ModuleInfoMap;
 use crate::Origin;
 use crate::ParseFailure;
 use crate::ParsedSource;
+use crate::ScannedDir;
 
 #[derive(Default)]
 pub struct Project {
@@ -40,13 +41,14 @@ pub struct Project {
 
 #[atomic_delegates]
 impl Project {
-    pub fn apply_layout(&mut self, config: &Config) -> Result<(), Error> {}
-    pub fn load_config(&self) -> Result<Config, Error> {}
     pub fn try_from_start_dir_and_scan_folders(
         start_dir: Option<&Path>,
         scan_folders: Option<&[PathBuf]>,
     ) -> Result<Self, Error> {
     }
+    pub(crate) fn try_from_folders(base_path: &Path, folders: &[PathBuf]) -> Result<Self, Error> {}
+    pub fn apply_layout(&mut self, config: &Config) -> Result<(), Error> {}
+    pub fn load_config(&self) -> Result<Config, Error> {}
     pub fn find_cargo_root(start: &Path) -> Result<PathBuf, Error> {}
     pub fn sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {}
     pub fn collect_declared(&self) -> BTreeMap<String, common::DeclaredType> {}
@@ -83,6 +85,34 @@ impl Project {
         self.sources()
             .filter(|source| !matches!(source.origin, Origin::Examples))
     }
+    pub(crate) fn module_cfgs(module_info: &ModuleInfoMap) -> common::ModuleCfgMap {
+        let mut map = common::ModuleCfgMap::new();
+        for info in module_info.values() {
+            let base = common::SourcePath(&info.rel_path).module_path();
+            for decl in &info.declarations {
+                let Some(cfg) = &decl.cfg else {
+                    continue;
+                };
+                let mut child = base.clone();
+                child.push(decl.name.clone());
+                map.insert(child, cfg.clone());
+            }
+        }
+        map
+    }
+    pub(crate) fn write_if_changed(path: &Path, content: &str) -> Result<(), Error> {
+        if std::fs::read_to_string(path).ok().as_deref() == Some(content) {
+            return Ok(());
+        }
+        std::fs::write(path, content)?;
+        Ok(())
+    }
+}
+
+#[atomic_delegates]
+impl Project {
+    pub(crate) fn file_cfgs(map: &common::ModuleCfgMap, rel_path: &Path) -> Vec<String> {}
+    pub(crate) fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {}
 }
 
 #[cfg(test)]

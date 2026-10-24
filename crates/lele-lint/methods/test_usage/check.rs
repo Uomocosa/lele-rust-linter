@@ -1,14 +1,11 @@
-use std::path::Path;
-
-use crate::checkers;
-use crate::FnBody;
+use crate::rules;
 use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
 
 const OPT_OUT: &str = "// no test_usage necessary";
 
-pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::test_usage::TestUsage, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
     for source in project.content_sources() {
@@ -16,17 +13,17 @@ pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<
             continue;
         }
         let rel_path = source.relative_path;
-        if is_exempt(rel_path, source.file, project) {
+        if rules::test_usage::TestUsage::is_exempt(rel_path, source.file, project) {
             continue;
         }
 
         let absolute = project.absolute_path(source.origin, rel_path);
-        if reads_opt_out(&absolute) {
+        if rules::test_usage::TestUsage::reads_opt_out(&absolute) {
             continue;
         }
 
         if !source.has_test_usage() {
-            violations.push(RuleViolation::from_file(absolute, checkers::test_usage::TestUsage::CODE, format!(
+            violations.push(RuleViolation::from_file(absolute, rules::test_usage::TestUsage::CODE, format!(
                     "file `{}` must contain a `#[cfg(test)] mod tests {{ fn test_usage() {{ ... }} }}` block, or add `{OPT_OUT}` as its last line to opt out",
                     rel_path.display()
                 )));
@@ -36,154 +33,20 @@ pub fn check(_self: &checkers::test_usage::TestUsage, project: &Project) -> Vec<
     violations
 }
 
-// needed helper: opt-out comment lookup on disk
-fn reads_opt_out(path: &Path) -> bool {
-    let Ok(content) = std::fs::read_to_string(path) else {
-        return false;
-    };
-    opt_out_at_end(&content)
-}
-
-// needed helper: end-of-file opt-out placement rule
-fn opt_out_at_end(content: &str) -> bool {
-    content
-        .lines()
-        .rev()
-        .find(|line| !line.trim().is_empty())
-        .is_some_and(|line| line.trim().starts_with(OPT_OUT))
-}
-
-// needed helper: file exemption rules
-fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {
-    let file_name = rel_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-
-    if file_name == "main.rs" {
-        return true;
-    }
-
-    if (file_name == "mod.rs" || file_name == "lib.rs") && is_pure_module_tree(file) {
-        return true;
-    }
-
-    if file_name == "constants.rs" {
-        return true;
-    }
-
-    if project.is_dunder_path(rel_path) {
-        return true;
-    }
-
-    if rel_path
-        .components()
-        .any(|c| c.as_os_str().to_str() == Some("tests"))
-    {
-        return true;
-    }
-
-    is_type_only(file) || is_atomic_delegate_only(file)
-}
-
-// needed helper: pure module tree detection
-fn is_pure_module_tree(file: &syn::File) -> bool {
-    if file.items.is_empty() {
-        return true;
-    }
-    file.items.iter().all(|item| {
-        matches!(
-            item,
-            syn::Item::Mod(_) | syn::Item::Use(_) | syn::Item::Macro(_)
-        )
-    })
-}
-
-// needed helper: type-only file detection (no non-default impls)
-fn is_type_only(file: &syn::File) -> bool {
-    let has_struct_or_enum = file
-        .items
-        .iter()
-        .any(|item| matches!(item, syn::Item::Struct(_) | syn::Item::Enum(_)));
-    if !has_struct_or_enum {
-        return false;
-    }
-
-    let has_non_default_impl = file.items.iter().any(|item| {
-        if let syn::Item::Impl(impl_block) = item {
-            if impl_block.trait_.is_some() {
-                return false;
-            }
-            if !is_default_only_impl(impl_block) {
-                return true;
-            }
-        }
-        false
-    });
-
-    !has_non_default_impl
-}
-
-// needed helper: default-only impl block check
-fn is_default_only_impl(impl_block: &syn::ItemImpl) -> bool {
-    for item in &impl_block.items {
-        if let syn::ImplItem::Fn(method) = item {
-            if method.sig.ident != "default" {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-    true
-}
-
-// needed helper: atomic-delegate-only file detection
-fn is_atomic_delegate_only(file: &syn::File) -> bool {
-    let mut has_default = false;
-    let mut delegate_impls = false;
-
-    for item in &file.items {
-        if let syn::Item::Impl(impl_block) = item {
-            if impl_block.trait_.is_some() {
-                continue;
-            }
-            if is_default_only_impl(impl_block) {
-                has_default = true;
-            } else if is_likely_delegate_impl(impl_block) {
-                delegate_impls = true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    has_default && delegate_impls
-}
-
-// needed helper: likely delegate impl detection
-fn is_likely_delegate_impl(impl_block: &syn::ItemImpl) -> bool {
-    for item in &impl_block.items {
-        if let syn::ImplItem::Fn(method) = item {
-            if !FnBody(&method.block).is_short() {
-                return false;
-            }
-        }
-    }
-    !impl_block.items.is_empty()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check, opt_out_at_end};
-    use crate::checkers;
-    use crate::methods::test_usage::check::Path;
+    use super::check;
+    use crate::rules;
     use crate::Origin;
     use crate::ParsedSource;
     use crate::Project;
+    use std::path::Path;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::test_usage::TestUsage;
+        let rule = rules::test_usage::TestUsage;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     #[test]
@@ -212,13 +75,15 @@ mod tests {
 
     #[test]
     fn test_usage_opt_out_only_at_end() {
-        assert!(!opt_out_at_end(
+        assert!(!rules::test_usage::TestUsage::opt_out_at_end(
             "// no test_usage necessary\n\npub fn compute() {}\n"
         ));
-        assert!(opt_out_at_end(
+        assert!(rules::test_usage::TestUsage::opt_out_at_end(
             "pub fn compute() {}\n\n// no test_usage necessary\n"
         ));
-        assert!(!opt_out_at_end("pub fn compute() {}\n"));
+        assert!(!rules::test_usage::TestUsage::opt_out_at_end(
+            "pub fn compute() {}\n"
+        ));
     }
 }
 

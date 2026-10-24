@@ -1,16 +1,11 @@
-use derive_more::{Deref, DerefMut};
-use syn::spanned::Spanned;
 use syn::visit::Visit;
 
-use crate::checkers;
 use crate::common;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
-pub fn check(
-    _self: &checkers::no_crate_paths::NoCratePaths,
-    project: &Project,
-) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::no_crate_paths::NoCratePaths, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
 
     for source in project.content_sources() {
@@ -21,11 +16,11 @@ pub fn check(
         }
         let mut hits = Vec::new();
         {
-            let mut visitor = CratePathVisitor(&mut hits);
+            let mut visitor = rules::no_crate_paths::CratePathVisitor(&mut hits);
             visitor.visit_file(file);
         }
         for hit in std::mem::take(&mut hits) {
-            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, checkers::no_crate_paths::NoCratePaths::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_path(source.origin, rel_path), hit.line, 0, rules::no_crate_paths::NoCratePaths::CODE, format!(
                     "`{}` path used outside a top-level `use` declaration — add `use crate::<module>;` at the top of the file and reference `<module>::…` instead",
                     hit.path
                 )));
@@ -35,63 +30,25 @@ pub fn check(
     violations
 }
 
-// needed helper: AST visitor collecting `crate::` paths outside `use` items
-struct CratePathHit {
-    line: usize,
-    path: String,
-}
-
-#[derive(Deref, DerefMut)]
-struct CratePathVisitor<'a>(&'a mut Vec<CratePathHit>);
-
-impl<'ast> Visit<'ast> for CratePathVisitor<'_> {
-    fn visit_path(&mut self, path: &'ast syn::Path) {
-        if path
-            .segments
-            .first()
-            .is_some_and(|seg| seg.ident == "crate")
-        {
-            let path_str = path
-                .segments
-                .iter()
-                .map(|seg| seg.ident.to_string())
-                .collect::<Vec<_>>()
-                .join("::");
-            self.push(CratePathHit {
-                line: path.span().start().line,
-                path: path_str,
-            });
-        }
-        syn::visit::visit_path(self, path);
-    }
-
-    fn visit_visibility(&mut self, visibility: &'ast syn::Visibility) {
-        match visibility {
-            syn::Visibility::Restricted(_) => {}
-            _ => syn::visit::visit_visibility(self, visibility),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check, CratePathVisitor};
-    use crate::checkers;
+    use super::check;
+    use crate::rules;
     use crate::Project;
     use syn::visit::Visit;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::no_crate_paths::NoCratePaths;
+        let rule = rules::no_crate_paths::NoCratePaths;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     fn hit_lines(src: &str) -> Vec<usize> {
         let file = syn::parse_file(src).unwrap();
         let mut hits = Vec::new();
         {
-            let mut visitor = CratePathVisitor(&mut hits);
+            let mut visitor = rules::no_crate_paths::CratePathVisitor(&mut hits);
             visitor.visit_file(&file);
         }
         std::mem::take(&mut hits)

@@ -1,8 +1,8 @@
-pub mod checker;
-pub use checker::Checker;
-pub mod checkers;
+pub mod rule;
+pub use rule::Rule;
 mod common;
 pub mod common_args;
+pub mod rules;
 pub use common_args::CommonArgs;
 pub mod config;
 pub use config::Config;
@@ -10,6 +10,7 @@ pub use config::Config;
 pub mod basic;
 pub use basic::enums::Category;
 pub use basic::enums::EntryKind;
+pub(crate) use basic::enums::ImplItemGroup;
 pub use basic::enums::Location;
 pub use basic::enums::Origin;
 pub use basic::enums::Requirement;
@@ -41,7 +42,7 @@ pub use linter::Linter;
 pub mod module_info;
 pub use module_info::ModuleInfo;
 #[path = "../methods/mod.rs"]
-pub mod methods;
+pub(crate) mod methods;
 pub mod parsed_source;
 pub use parsed_source::ParsedSource;
 pub mod project;

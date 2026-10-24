@@ -1,22 +1,16 @@
-use lele_snake_case::ToLeleSnakeCase;
-use std::collections::HashSet;
 use std::path::PathBuf;
 
-use crate::checkers;
-use crate::Identifier;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
-pub fn check(
-    _self: &checkers::root_reexport::RootReexport,
-    project: &Project,
-) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::root_reexport::RootReexport, project: &Project) -> Vec<RuleViolation> {
     let lib = match project.parsed_files.get(&PathBuf::from("lib.rs")) {
         Some(lib) => lib,
         None => return Vec::new(),
     };
-    let pub_mods = public_modules(lib);
-    let reexported = root_reexports(lib);
+    let pub_mods = rules::root_reexport::RootReexport::public_modules(lib);
+    let reexported = rules::root_reexport::RootReexport::root_reexports(lib);
     let mut violations = Vec::new();
 
     for (rel_path, file) in &project.parsed_files {
@@ -33,16 +27,18 @@ pub fn check(
         if !pub_mods.contains(stem) {
             continue;
         }
-        for missing in missing_reexports(stem, file, &reexported) {
-            violations.push(RuleViolation::from_site(project.src_dir.join(rel_path), missing.line, 0, checkers::root_reexport::RootReexport::CODE, format!(
+        for missing in
+            rules::root_reexport::RootReexport::missing_reexports(stem, file, &reexported)
+        {
+            violations.push(RuleViolation::from_site(project.src_dir.join(rel_path), missing.line, 0, rules::root_reexport::RootReexport::CODE, format!(
                     "public type `{}` in root module `{stem}` is not re-exported at the crate root — add `pub use {stem}::{};` to lib.rs",
                     missing.ty, missing.ty
                 )));
         }
-        for missing in missing_fn_flatten(stem, file, lib) {
+        for missing in rules::root_reexport::RootReexport::missing_fn_flatten(stem, file, lib) {
             violations.push(RuleViolation::from_file(
                 project.src_dir.join("lib.rs"),
-                checkers::root_reexport::RootReexport::CODE,
+                rules::root_reexport::RootReexport::CODE,
                 missing,
             ));
         }
@@ -51,125 +47,17 @@ pub fn check(
     violations
 }
 
-// needed helper: SHAPE-F fn flatten
-fn missing_fn_flatten(stem: &str, file: &syn::File, lib: &syn::File) -> Vec<String> {
-    let mut fns = Vec::new();
-    for item in &file.items {
-        if let syn::Item::Fn(f) = item {
-            if !matches!(f.vis, syn::Visibility::Public(_)) {
-                continue;
-            }
-            if f.sig.ident.to_string().to_snake_case() == stem {
-                fns.push(f.sig.ident.to_string());
-            }
-        }
-    }
-    if fns.is_empty() {
-        return Vec::new();
-    }
-    let has_private_mod = lib.items.iter().any(|item| {
-        matches!(item, syn::Item::Mod(m) if m.ident == stem && matches!(m.vis, syn::Visibility::Inherited))
-    });
-    let reexported: HashSet<(String, String)> = root_reexports(lib);
-    let mut missing = Vec::new();
-    for name in fns {
-        if !has_private_mod {
-            missing.push(format!(
-                "SHAPE-F fn-file `{stem}.rs` holds `pub fn {name}` — declare private `mod {stem};` in lib.rs (not `pub mod`)"
-            ));
-        }
-        if !reexported.contains(&(stem.to_string(), name.clone())) {
-            missing.push(format!(
-                "SHAPE-F fn-file `{stem}.rs` holds `pub fn {name}` — add `pub use {stem}::{name};` to lib.rs for `crate::{name}()`"
-            ));
-        }
-    }
-    missing
-}
-
-// needed helper: missing re-export detection for one root file
-struct MissingReexport {
-    line: usize,
-    ty: String,
-}
-
-fn missing_reexports(
-    stem: &str,
-    file: &syn::File,
-    reexported: &HashSet<(String, String)>,
-) -> Vec<MissingReexport> {
-    let mut missing = Vec::new();
-    for item in &file.items {
-        let (name, span) = match item {
-            syn::Item::Struct(s) if matches!(s.vis, syn::Visibility::Public(_)) => {
-                (s.ident.to_string(), s.ident.span())
-            }
-            syn::Item::Enum(e) if matches!(e.vis, syn::Visibility::Public(_)) => {
-                (e.ident.to_string(), e.ident.span())
-            }
-            syn::Item::Type(t) if matches!(t.vis, syn::Visibility::Public(_)) => {
-                (t.ident.to_string(), t.ident.span())
-            }
-            syn::Item::Trait(t) if matches!(t.vis, syn::Visibility::Public(_)) => {
-                (t.ident.to_string(), t.ident.span())
-            }
-            _ => continue,
-        };
-        if !Identifier(&name).is_stuttered_in(stem) {
-            continue;
-        }
-        if !reexported.contains(&(stem.to_string(), name.clone())) {
-            missing.push(MissingReexport {
-                line: span.start().line,
-                ty: name,
-            });
-        }
-    }
-    missing
-}
-
-// needed helper: public module declarations in lib.rs
-fn public_modules(lib: &syn::File) -> HashSet<String> {
-    lib.items
-        .iter()
-        .filter_map(|item| match item {
-            syn::Item::Mod(m) if matches!(m.vis, syn::Visibility::Public(_)) => {
-                Some(m.ident.to_string())
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-// needed helper: exact `pub use module::Type;` pairs in lib.rs
-fn root_reexports(lib: &syn::File) -> HashSet<(String, String)> {
-    let mut pairs = HashSet::new();
-    for item in &lib.items {
-        if let syn::Item::Use(u) = item {
-            if !matches!(u.vis, syn::Visibility::Public(_)) {
-                continue;
-            }
-            if let syn::UseTree::Path(path) = &u.tree {
-                if let syn::UseTree::Name(name) = path.tree.as_ref() {
-                    pairs.insert((path.ident.to_string(), name.ident.to_string()));
-                }
-            }
-        }
-    }
-    pairs
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check, missing_fn_flatten, missing_reexports, public_modules, root_reexports};
-    use crate::checkers;
+    use super::check;
+    use crate::rules;
     use crate::Project;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::root_reexport::RootReexport;
+        let rule = rules::root_reexport::RootReexport;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     fn parse(src: &str) -> syn::File {
@@ -180,17 +68,25 @@ mod tests {
     fn test_usage_flags_missing_reexport() {
         let lib = parse("pub mod diagnostic;\n");
         let file = parse("pub struct Diagnostic { pub x: u32 }\n");
-        let missing = missing_reexports("diagnostic", &file, &root_reexports(&lib));
+        let missing = rules::root_reexport::RootReexport::missing_reexports(
+            "diagnostic",
+            &file,
+            &rules::root_reexport::RootReexport::root_reexports(&lib),
+        );
         assert_eq!(missing.len(), 1);
         assert_eq!(missing[0].ty, "Diagnostic");
-        assert!(public_modules(&lib).contains("diagnostic"));
+        assert!(rules::root_reexport::RootReexport::public_modules(&lib).contains("diagnostic"));
     }
 
     #[test]
     fn test_usage_allows_reexported_type() {
         let lib = parse("pub mod diagnostic;\npub use diagnostic::Diagnostic;\n");
         let file = parse("pub struct Diagnostic { pub x: u32 }\n");
-        let missing = missing_reexports("diagnostic", &file, &root_reexports(&lib));
+        let missing = rules::root_reexport::RootReexport::missing_reexports(
+            "diagnostic",
+            &file,
+            &rules::root_reexport::RootReexport::root_reexports(&lib),
+        );
         assert!(missing.is_empty());
     }
 
@@ -198,7 +94,11 @@ mod tests {
     fn test_usage_allows_function_modules() {
         let lib = parse("pub mod discover;\n");
         let file = parse("pub fn discover() {}\n");
-        let missing = missing_reexports("discover", &file, &root_reexports(&lib));
+        let missing = rules::root_reexport::RootReexport::missing_reexports(
+            "discover",
+            &file,
+            &rules::root_reexport::RootReexport::root_reexports(&lib),
+        );
         assert!(missing.is_empty());
     }
 
@@ -206,21 +106,26 @@ mod tests {
     fn test_usage_allows_non_stutter_types() {
         let lib = parse("pub mod module_info;\n");
         let file = parse("pub type ModuleInfoMap = u32;\n");
-        let missing = missing_reexports("module_info", &file, &root_reexports(&lib));
+        let missing = rules::root_reexport::RootReexport::missing_reexports(
+            "module_info",
+            &file,
+            &rules::root_reexport::RootReexport::root_reexports(&lib),
+        );
         assert!(missing.is_empty());
     }
 
     #[test]
     fn test_usage_ignores_private_modules() {
         let lib = parse("mod config_load;\n");
-        assert!(!public_modules(&lib).contains("config_load"));
+        assert!(!rules::root_reexport::RootReexport::public_modules(&lib).contains("config_load"));
     }
 
     #[test]
     fn test_usage_flags_missing_fn_flatten() {
         let lib = parse("pub mod discover;\n");
         let file = parse("pub fn discover() {}\n");
-        let missing = missing_fn_flatten("discover", &file, &lib);
+        let missing =
+            rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib);
         assert_eq!(missing.len(), 2);
         assert!(missing[0].contains("private `mod discover;`"));
         assert!(missing[1].contains("pub use discover::discover;"));
@@ -230,13 +135,19 @@ mod tests {
     fn test_usage_allows_flat_fn() {
         let lib = parse("mod discover;\npub use discover::discover;\n");
         let file = parse("pub fn discover() {}\n");
-        assert_eq!(missing_fn_flatten("discover", &file, &lib).len(), 0);
+        assert_eq!(
+            rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib).len(),
+            0
+        );
     }
 
     #[test]
     fn test_usage_ignores_non_stutter_fn() {
         let lib = parse("pub mod discover;\n");
         let file = parse("pub fn run() {}\n");
-        assert_eq!(missing_fn_flatten("discover", &file, &lib).len(), 0);
+        assert_eq!(
+            rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib).len(),
+            0
+        );
     }
 }

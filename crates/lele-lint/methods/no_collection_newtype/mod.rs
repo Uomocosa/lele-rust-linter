@@ -1,2 +1,14 @@
+mod boxed_slice_element;
 mod check;
+mod check_struct;
+mod collection_name;
+mod element_type;
+mod first_generic_type;
+mod is_unsigned_int;
+pub use boxed_slice_element::boxed_slice_element;
 pub use check::check;
+pub use check_struct::check_struct;
+pub use collection_name::collection_name;
+pub use element_type::element_type;
+pub use first_generic_type::first_generic_type;
+pub use is_unsigned_int::is_unsigned_int;

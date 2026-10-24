@@ -1,23 +1,20 @@
 use std::path::Path;
-use std::path::PathBuf;
-use syn::spanned::Spanned;
 
 use syn::visit::Visit;
 
-use crate::checkers;
-use crate::AllowWhitelistEntry;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::no_allow_attributes::NoAllowAttributes,
+    _self: &rules::no_allow_attributes::NoAllowAttributes,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        let mut finder = AllowFinder {
+        let mut finder = rules::no_allow_attributes::AllowFinder {
             file: project.absolute_path(source.origin, rel_path),
             crate_rel: Path::new("src").join(rel_path),
             clippy_allow_whitelist: &project.clippy_allow_whitelist,
@@ -29,71 +26,14 @@ pub fn check(
     violations
 }
 
-fn lint_paths(attr: &syn::Attribute) -> Vec<String> {
-    attr.parse_args_with(syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated)
-        .map(|paths| {
-            paths
-                .iter()
-                .map(|path| {
-                    path.segments
-                        .iter()
-                        .map(|segment| segment.ident.to_string())
-                        .collect::<Vec<_>>()
-                        .join("::")
-                })
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-struct AllowFinder<'a> {
-    file: PathBuf,
-    crate_rel: PathBuf,
-    clippy_allow_whitelist: &'a [AllowWhitelistEntry],
-    violations: Vec<RuleViolation>,
-}
-
-impl AllowFinder<'_> {
-    fn is_whitelisted(&self, lint_paths: &[String]) -> bool {
-        if lint_paths.is_empty() {
-            return false;
-        }
-        self.clippy_allow_whitelist.iter().any(|entry| {
-            !entry.reason.trim().is_empty()
-                && self.crate_rel == entry.file
-                && lint_paths.iter().all(|path| path == &entry.allow)
-        })
-    }
-}
-
-impl<'ast> Visit<'ast> for AllowFinder<'_> {
-    fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
-        let kind = if attr.path().is_ident("allow") {
-            "allow"
-        } else if attr.path().is_ident("expect") {
-            "expect"
-        } else {
-            return;
-        };
-        let lint_paths = lint_paths(attr);
-        if self.is_whitelisted(&lint_paths) {
-            return;
-        }
-        let start = attr.span().start();
-        self.violations.push(RuleViolation::from_site(self.file.clone(), start.line, start.column, checkers::no_allow_attributes::NoAllowAttributes::CODE, format!(
-                "`{kind}` attribute is banned — add an [[lele.lint.clippy_allow_whitelist]] entry with the exact `allow` lint path, `file` and a non-empty `reason` in lele.toml to whitelist it"
-            )));
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers;
-    use crate::checkers::no_allow_attributes::NoAllowAttributes;
+    use crate::rules;
+    use crate::rules::no_allow_attributes::NoAllowAttributes;
     use crate::AllowWhitelistEntry;
     use crate::Project;
 
@@ -107,9 +47,9 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let checker = checkers::no_allow_attributes::NoAllowAttributes;
+        let rule = rules::no_allow_attributes::NoAllowAttributes;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     fn run_check_with(code: &str, clippy_allow_whitelist: Vec<AllowWhitelistEntry>) -> usize {

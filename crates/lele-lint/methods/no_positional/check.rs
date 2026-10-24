@@ -1,19 +1,14 @@
-use std::path::PathBuf;
-
 use syn::visit::Visit;
 
-use crate::checkers;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
-pub fn check(
-    _self: &checkers::no_positional::NoPositional,
-    project: &Project,
-) -> Vec<RuleViolation> {
+pub fn check(_self: &rules::no_positional::NoPositional, project: &Project) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.content_sources() {
         let file_path = project.absolute_path(source.origin, source.relative_path);
-        let mut visitor = PositionalVisitor {
+        let mut visitor = rules::no_positional::PositionalVisitor {
             file_path,
             violations: Vec::new(),
         };
@@ -23,37 +18,18 @@ pub fn check(
     violations
 }
 
-// needed helper: reports every positional field access in the file
-struct PositionalVisitor {
-    file_path: PathBuf,
-    violations: Vec<RuleViolation>,
-}
-
-impl<'ast> Visit<'ast> for PositionalVisitor {
-    fn visit_expr_field(&mut self, node: &'ast syn::ExprField) {
-        if matches!(node.member, syn::Member::Unnamed(_)) {
-            self.violations.push(RuleViolation::from_file(
-                self.file_path.clone(),
-                checkers::no_positional::NoPositional::CODE,
-                "positional field access is not allowed, use named fields".to_string(),
-            ));
-        }
-        syn::visit::visit_expr_field(self, node);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use syn::visit::Visit;
 
-    use super::PositionalVisitor;
+    use crate::rules;
     use crate::RuleViolation;
 
     fn violations_for(source: &str) -> Vec<RuleViolation> {
         let file: syn::File = syn::parse_str(source).unwrap();
-        let mut visitor = PositionalVisitor {
+        let mut visitor = rules::no_positional::PositionalVisitor {
             file_path: PathBuf::from("probe.rs"),
             violations: Vec::new(),
         };

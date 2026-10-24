@@ -42,3 +42,17 @@ pub enum Category {
     #[display("Crate config")]
     Config,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, derive_more::Display)]
+pub(crate) enum ImplItemGroup {
+    #[display("`impl Default`")]
+    DefaultImpl,
+    #[display("constructor")]
+    Constructor,
+    #[display("trait impl")]
+    TraitImpl,
+    #[display("`pub` fn")]
+    PubFn,
+    #[display("`pub(crate)` fn")]
+    CrateFn,
+}

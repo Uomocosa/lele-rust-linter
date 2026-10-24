@@ -3,10 +3,10 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use lele_bevy_lint::BevyLinter;
-use lele_lint::Checker;
 use lele_lint::ExampleFile;
 use lele_lint::Location;
 use lele_lint::Project;
+use lele_lint::Rule;
 
 const DEFAULT_CARGO_TOML: &str = r#"[package]
 name = "example"
@@ -45,9 +45,9 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
     project.apply_layout(&config)?;
     let root: PathBuf = dir.path().to_path_buf();
     let mut lines: Vec<String> = BevyLinter::default()
-        .checkers
+        .rules
         .iter()
-        .flat_map(|checker| checker.check(&project))
+        .flat_map(|rule| rule.check(&project))
         .map(|violation| {
             let file = violation
                 .file
@@ -70,10 +70,10 @@ fn lint(files: &[ExampleFile]) -> Result<Vec<String>, Box<dyn std::error::Error>
     Ok(lines)
 }
 
-fn check_rule(checker: &dyn Checker) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+fn check_rule(rule: &dyn Rule) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut problems = Vec::new();
-    let code = checker.code();
-    let doc = checker.doc();
+    let code = rule.code();
+    let doc = rule.doc();
     if doc.summary.is_empty() || doc.why.is_empty() {
         problems.push(format!("{code}: summary and why must not be empty"));
     }
@@ -103,8 +103,8 @@ fn check_rule(checker: &dyn Checker) -> Result<Vec<String>, Box<dyn std::error::
 fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     let mut problems = Vec::new();
     let linter = BevyLinter::default();
-    for checker in &linter.checkers {
-        problems.extend(check_rule(checker.as_ref())?);
+    for rule in &linter.rules {
+        problems.extend(check_rule(rule.as_ref())?);
     }
     if problems.is_empty() {
         return Ok(());
@@ -112,10 +112,10 @@ fn every_rule_example_is_correct() -> Result<(), Box<dyn std::error::Error>> {
     Err(problems.join("\n").into())
 }
 
-/// Every checker file is registered in `BevyLinter`, and codes are unique.
+/// Every rule file is registered in `BevyLinter`, and codes are unique.
 #[test]
-fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/checkers");
+fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/rules");
     let mut files = BTreeSet::new();
     for entry in std::fs::read_dir(dir)? {
         let path = entry?.path();
@@ -127,14 +127,14 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
         }
     }
     let linter = BevyLinter::default();
-    let checkers = &linter.checkers;
-    let names: BTreeSet<String> = checkers.iter().map(|c| c.name().to_string()).collect();
-    let codes: BTreeSet<&str> = checkers.iter().map(|c| c.code()).collect();
+    let rules = &linter.rules;
+    let names: BTreeSet<String> = rules.iter().map(|c| c.name().to_string()).collect();
+    let codes: BTreeSet<&str> = rules.iter().map(|c| c.code()).collect();
     if files != names {
-        return Err(format!("checker files {files:?} != registered {names:?}").into());
+        return Err(format!("rule files {files:?} != registered {names:?}").into());
     }
-    if codes.len() != checkers.len() {
-        return Err("duplicate checker codes".into());
+    if codes.len() != rules.len() {
+        return Err("duplicate rule codes".into());
     }
     Ok(())
 }
@@ -142,12 +142,12 @@ fn every_checker_file_is_registered() -> Result<(), Box<dyn std::error::Error>> 
 /// Codes are exactly `LELEBEVY001..LELEBEVY<count>`, in registration order.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    for (index, checker) in BevyLinter::default().checkers.iter().enumerate() {
+    for (index, rule) in BevyLinter::default().rules.iter().enumerate() {
         assert_eq!(
-            checker.code(),
+            rule.code(),
             format!("LELEBEVY{:03}", index + 1),
             "{}",
-            checker.name()
+            rule.name()
         );
     }
 }

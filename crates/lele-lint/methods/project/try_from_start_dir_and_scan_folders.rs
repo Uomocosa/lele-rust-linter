@@ -5,7 +5,6 @@ use crate::Entry;
 use crate::Error;
 use crate::ModuleInfo;
 use crate::Project;
-use crate::ScannedDir;
 
 pub fn try_from_start_dir_and_scan_folders(
     start_dir: Option<&Path>,
@@ -15,7 +14,7 @@ pub fn try_from_start_dir_and_scan_folders(
     let base_path = start_dir.unwrap_or(&cwd);
 
     if let Some(folders) = scan_folders {
-        return discover_folders(base_path, folders);
+        return Project::try_from_folders(base_path, folders);
     }
 
     let root = methods::project::find_cargo_root(base_path)?;
@@ -26,7 +25,7 @@ pub fn try_from_start_dir_and_scan_folders(
     let entries = Entry::walk(&src_dir, &src_dir)?;
     let module_info = ModuleInfo::build(&entries);
     let (parsed_files, mut parse_failures) = Entry::parse_all(&entries);
-    let examples = scan_examples(&root)?;
+    let examples = Project::scan_examples(&root)?;
     parse_failures.extend(examples.parse_failures);
     Ok(Project {
         root,
@@ -36,46 +35,6 @@ pub fn try_from_start_dir_and_scan_folders(
         parsed_files,
         example_entries: examples.entries,
         example_parsed_files: examples.parsed_files,
-        parse_failures,
-        ..Project::default()
-    })
-}
-
-// needed helper: examples/ is linted by default alongside src/ and methods/
-fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {
-    let dir = root.join("examples");
-    if !dir.is_dir() {
-        return Ok(ScannedDir::default());
-    }
-    let entries = Entry::walk(&dir, &dir)?;
-    let (parsed_files, parse_failures) = Entry::parse_all(&entries);
-    Ok(ScannedDir {
-        entries,
-        parsed_files,
-        parse_failures,
-    })
-}
-
-// needed helper: aggregate scanning over explicitly-passed folders (relative to the invocation base)
-fn discover_folders(base_path: &Path, folders: &[PathBuf]) -> Result<Project, Error> {
-    let mut entries = Vec::new();
-    for folder in folders {
-        let rel_dir = folder.strip_prefix("/").unwrap_or(folder.as_path());
-        let abs_dir = base_path.join(rel_dir);
-        if !abs_dir.exists() || !abs_dir.is_dir() {
-            return Err(Error::NoScanFolder(abs_dir));
-        }
-        entries.extend(Entry::walk(&abs_dir, base_path)?);
-    }
-    let module_info = ModuleInfo::build(&entries);
-    let (parsed_files, parse_failures) = Entry::parse_all(&entries);
-    let owned_base = base_path.to_path_buf();
-    Ok(Project {
-        root: owned_base.clone(),
-        src_dir: owned_base,
-        entries,
-        module_info,
-        parsed_files,
         parse_failures,
         ..Project::default()
     })

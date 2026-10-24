@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::path::{Component, Path, PathBuf};
+use std::path::PathBuf;
 
 use lele_lint::ItemMarker;
 
@@ -20,66 +20,13 @@ pub fn test_only_files(project: &scan::BevyProject) -> HashSet<PathBuf> {
             {
                 continue;
             }
-            found.extend(module_files(source.relative_path, module));
+            found.extend(scan::BevyProject::module_files(
+                source.relative_path,
+                module,
+            ));
         }
     }
     found
-}
-
-// needed helper: the file(s) an out-of-line `mod name;` loads, honouring `#[path = ".."]`
-fn module_files(declaring: &Path, module: &syn::ItemMod) -> Vec<PathBuf> {
-    let dir = declaring.parent().unwrap_or_else(|| Path::new(""));
-    if let Some(path) = path_attr(&module.attrs) {
-        return vec![normalize(&dir.join(path))];
-    }
-    let name = module.ident.to_string();
-    let is_mod_rs = declaring
-        .file_name()
-        .is_some_and(|file| file == "mod.rs" || file == "lib.rs" || file == "main.rs");
-    let base = if is_mod_rs {
-        dir.to_path_buf()
-    } else {
-        dir.join(declaring.file_stem().unwrap_or_default())
-    };
-    vec![
-        normalize(&base.join(format!("{name}.rs"))),
-        normalize(&base.join(&name).join("mod.rs")),
-    ]
-}
-
-// needed helper: the string value of a `#[path = "..."]` attribute
-fn path_attr(attrs: &[syn::Attribute]) -> Option<String> {
-    attrs.iter().find_map(|attr| {
-        let syn::Meta::NameValue(pair) = &attr.meta else {
-            return None;
-        };
-        if !pair.path.is_ident("path") {
-            return None;
-        }
-        let syn::Expr::Lit(syn::ExprLit {
-            lit: syn::Lit::Str(value),
-            ..
-        }) = &pair.value
-        else {
-            return None;
-        };
-        Some(value.value())
-    })
-}
-
-// needed helper: lexically resolves `.`/`..` so paths match the project's relative keys
-fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for part in path.components() {
-        match part {
-            Component::ParentDir => {
-                out.pop();
-            }
-            Component::CurDir => {}
-            other => out.push(other),
-        }
-    }
-    out
 }
 
 #[cfg(test)]

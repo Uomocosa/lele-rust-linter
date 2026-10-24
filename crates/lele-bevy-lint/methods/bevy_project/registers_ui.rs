@@ -1,37 +1,10 @@
-use std::collections::BTreeSet;
-use std::path::PathBuf;
-
 use crate::scan;
 
 pub fn registers_ui(project: &scan::BevyProject, registered: &[Vec<String>]) -> bool {
     let extra = project.require_visuals();
     registered
         .iter()
-        .any(|segments| file_spawns_ui(*project, segments, &extra))
-}
-
-// needed helper: does the file a registered path points at spawn its UI from that fn?
-fn file_spawns_ui(
-    project: scan::BevyProject,
-    segments: &[String],
-    extra: &BTreeSet<String>,
-) -> bool {
-    let Some((name, modules)) = segments.split_last() else {
-        return false;
-    };
-    let mut rel_path = PathBuf::new();
-    for module in modules {
-        if module.as_str() != "crate" {
-            rel_path.push(module);
-        }
-    }
-    rel_path.push(format!("{name}.rs"));
-    project.parsed_files.get(&rel_path).is_some_and(|file| {
-        scan::ScannedFile(file)
-            .prod_visuals(extra)
-            .iter()
-            .any(|found| found.owner == *name)
-    })
+        .any(|segments| scan::BevyProject::file_spawns_ui(*project, segments, &extra))
 }
 
 #[cfg(test)]

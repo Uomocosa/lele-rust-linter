@@ -9,7 +9,16 @@ pub struct RawCode<'a>(pub &'a str);
 #[atomic_delegates]
 impl RawCode<'_> {
     pub fn find_comments(&self) -> Vec<common::CommentHit> {}
-    pub fn is_annotated_as_helper(&self, fn_line: usize) -> bool {}
+    pub fn ends_with_test_usage_opt_out(&self) -> bool {}
+}
+
+#[rustfmt::skip]
+impl RawCode<'_> {
+    pub(crate) fn line_of(source: &str, offset: usize) -> usize {
+        source
+            .get(..offset)
+            .map_or(1, |prefix| prefix.matches('\n').count().saturating_add(1))
+    }
 }
 
 #[cfg(test)]
@@ -18,8 +27,8 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let code = RawCode("// needed helper: x\nfn helper() {}\n");
-        assert_eq!(code.find_comments().len(), 1);
-        assert!(code.is_annotated_as_helper(2));
+        let code = RawCode("// a comment\nfn helper() {}\n// no test_usage necessary\n");
+        assert_eq!(code.find_comments().len(), 2);
+        assert!(code.ends_with_test_usage_opt_out());
     }
 }

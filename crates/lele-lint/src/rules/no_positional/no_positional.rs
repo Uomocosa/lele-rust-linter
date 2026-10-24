@@ -1,0 +1,99 @@
+use crate::Category;
+use crate::ExampleFile;
+use crate::Project;
+use crate::Rule;
+use crate::RuleDoc;
+use crate::RuleViolation;
+use atomic_delegate_macros::atomic_delegate;
+
+pub struct NoPositional;
+
+impl NoPositional {
+    pub const NAME: &'static str = "no_positional";
+    pub const CODE: &'static str = "LELE010";
+    pub const DOC: RuleDoc = RuleDoc {
+        category: Category::Types,
+        summary: "No positional field access (`.0`, `.1`).",
+        why: "A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.",
+        bad: &[
+            ExampleFile {
+                path: "src/lib.rs",
+                source: r"pub mod meters;
+pub use meters::Meters;
+",
+            },
+            ExampleFile {
+                path: "src/meters.rs",
+                source: r"use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { self.0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+",
+            },
+        ],
+        good: &[
+            ExampleFile {
+                path: "src/lib.rs",
+                source: r"pub mod meters;
+pub use meters::Meters;
+",
+            },
+            ExampleFile {
+                path: "src/meters.rs",
+                source: r"use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+",
+            },
+        ],
+    };
+}
+
+#[rustfmt::skip]
+impl Rule for NoPositional {
+    fn name(&self) -> &'static str { Self::NAME }
+    fn code(&self) -> &'static str { Self::CODE }
+    fn doc(&self) -> RuleDoc { Self::DOC }
+    #[atomic_delegate(NoPositional)]
+    fn check(&self, project: &Project) -> Vec<RuleViolation> {}
+}
+
+#[rustfmt::skip]
+impl NoPositional {
+    pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
+        rules.push(Box::new(NoPositional));
+    }
+}
+
+// no test_usage necessary

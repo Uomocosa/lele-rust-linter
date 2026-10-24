@@ -1,0 +1,5 @@
+# Test crates consumed by the e2e tests of crates/lele-lint and crates/lele-bevy-lint.
+# Never built: an empty workspace keeps cargo from treating these as parent-workspace members.
+[workspace]
+members = []
+exclude = ["lele-lint/*", "lele-bevy-lint/*"]

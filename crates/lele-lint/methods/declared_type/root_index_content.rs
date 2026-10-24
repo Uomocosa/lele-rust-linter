@@ -5,21 +5,12 @@ use std::fmt::Write;
 pub fn root_index_content(types: &BTreeMap<String, common::DeclaredType>) -> String {
     let mut out = String::new();
     for (type_snake, declared) in types {
-        if let Some(cfg) = combined_cfg(&declared.cfgs) {
+        if let Some(cfg) = common::DeclaredType::combined_cfg(&declared.cfgs) {
             let _ = writeln!(out, "#[cfg({cfg})]");
         }
         let _ = writeln!(out, "pub mod {type_snake};");
     }
     out
-}
-
-// needed helper: combine a type's cfg predicates into one `cfg(...)` argument
-fn combined_cfg(cfgs: &[String]) -> Option<String> {
-    match cfgs {
-        [] => None,
-        [single] => Some(single.clone()),
-        many => Some(format!("all({})", many.join(", "))),
-    }
 }
 
 #[cfg(test)]

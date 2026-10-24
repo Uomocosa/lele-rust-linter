@@ -1,4 +1,4 @@
-use crate::checkers;
+use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -10,14 +10,14 @@ const REQUIRED_KEYS: &[&str] = &[
 ];
 
 pub fn check(
-    _self: &checkers::clippy_config_clippy::ClippyConfigClippy,
+    _self: &rules::clippy_config_clippy::ClippyConfigClippy,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let path = project.config_base().join("clippy.toml");
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
         Err(_) => {
-            return vec![RuleViolation::from_file(path, checkers::clippy_config_clippy::ClippyConfigClippy::CODE, "clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true".to_string())];
+            return vec![RuleViolation::from_file(path, rules::clippy_config_clippy::ClippyConfigClippy::CODE, "clippy.toml not found — add it with allow-unwrap-in-tests, allow-expect-in-tests, allow-panic-in-tests, allow-indexing-slicing-in-tests = true".to_string())];
         }
     };
     let value: toml::Value = match content.parse() {
@@ -25,7 +25,7 @@ pub fn check(
         Err(e) => {
             return vec![RuleViolation::from_file(
                 path,
-                checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
+                rules::clippy_config_clippy::ClippyConfigClippy::CODE,
                 format!("clippy.toml parse error: {e}"),
             )];
         }
@@ -35,7 +35,7 @@ pub fn check(
         None => {
             return vec![RuleViolation::from_file(
                 path,
-                checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
+                rules::clippy_config_clippy::ClippyConfigClippy::CODE,
                 "clippy.toml must be a table with allow-* = true entries".to_string(),
             )];
         }
@@ -46,7 +46,7 @@ pub fn check(
             Some(toml::Value::Boolean(true)) => {}
             _ => violations.push(RuleViolation::from_file(
                 path.clone(),
-                checkers::clippy_config_clippy::ClippyConfigClippy::CODE,
+                rules::clippy_config_clippy::ClippyConfigClippy::CODE,
                 format!("clippy.toml missing {key} = true — minimum clippy config requires it"),
             )),
         }

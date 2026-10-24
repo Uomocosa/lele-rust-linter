@@ -1,0 +1,35 @@
+[[violations]]
+file = "Cargo.toml"
+code = "LELE028"
+
+[[violations]]
+file = "click_counter/increment.rs"
+code = "LELE030"
+
+[[violations]]
+file = "click_counter/mod.rs"
+code = "LELE030"
+
+[[violations]]
+file = "click_counter/new.rs"
+code = "LELE030"
+
+[[violations]]
+file = "mod.rs"
+code = "LELE030"
+
+[[violations]]
+file = "src/clicker/click_counter.rs"
+code = "LELE009"
+
+[[violations]]
+file = "src/clicker/click_counter.rs"
+code = "LELE027"
+
+[[violations]]
+file = "src/clicker/click_counter.rs"
+code = "LELE031"
+
+[[violations]]
+file = "src/clicker/click_counter.rs"
+code = "LELE032"

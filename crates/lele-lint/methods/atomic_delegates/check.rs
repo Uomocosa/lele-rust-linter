@@ -1,15 +1,14 @@
-use crate::checkers;
 use crate::common;
+use crate::rules;
 use crate::FnBody;
 use crate::ImplBlock;
 use crate::ImplMethod;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
-use syn::spanned::Spanned;
 
 pub fn check(
-    _self: &checkers::atomic_delegates::AtomicDelegates,
+    _self: &rules::atomic_delegates::AtomicDelegates,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -35,7 +34,7 @@ pub fn check(
                 continue;
             }
 
-            if !has_any_method(impl_block) {
+            if !rules::atomic_delegates::AtomicDelegates::has_any_method(impl_block) {
                 continue;
             }
 
@@ -66,8 +65,9 @@ pub fn check(
                 .collect();
 
             if !methods_over_three.is_empty() && !is_trait_impl {
-                let names = names_str(&methods_over_three);
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
+                let names =
+                    rules::atomic_delegates::AtomicDelegates::names_str(&methods_over_three);
+                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
                         "method(s) `{names}` have >3 statements — extract each into `<type>_<method>.rs`"
                     )));
                 continue;
@@ -100,8 +100,10 @@ pub fn check(
                         .any(|attr| ItemMarker(attr).is_atomic_delegates())
                 {
                     for method in &one_liners {
-                        if FnBody(&method.block).is_delegate_call() && !is_one_line_body(method) {
-                            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), checkers::atomic_delegates::AtomicDelegates::CODE, format!(
+                        if FnBody(&method.block).is_delegate_call()
+                            && !rules::atomic_delegates::AtomicDelegates::is_one_line_body(method)
+                        {
+                            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
                                     "one-liner method `{}` body must be on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
@@ -137,7 +139,7 @@ pub fn check(
                     };
                     violations.push(RuleViolation::from_file(
                         project.src_dir.join(rel_path),
-                        checkers::atomic_delegates::AtomicDelegates::CODE,
+                        rules::atomic_delegates::AtomicDelegates::CODE,
                         message,
                     ));
                 }
@@ -148,42 +150,19 @@ pub fn check(
     violations
 }
 
-// needed helper: method presence check in impl block
-fn has_any_method(impl_block: &syn::ItemImpl) -> bool {
-    impl_block
-        .items
-        .iter()
-        .any(|item| matches!(item, syn::ImplItem::Fn(_)))
-}
-
-// needed helper: comma-separated ident list
-fn names_str(idents: &[&syn::Ident]) -> String {
-    idents
-        .iter()
-        .map(|i| i.to_string())
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-// needed helper: whether the delegate-call block spans exactly one source line
-fn is_one_line_body(method: &syn::ImplItemFn) -> bool {
-    let span = method.block.span();
-    span.start().line == span.end().line
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers;
+    use crate::rules;
     use crate::Project;
 
     #[test]
     fn test_usage() {
-        let checker = checkers::atomic_delegates::AtomicDelegates;
+        let rule = rules::atomic_delegates::AtomicDelegates;
         let project = Project::default();
-        assert!(check(&checker, &project).is_empty());
+        assert!(check(&rule, &project).is_empty());
     }
 
     #[test]
@@ -196,7 +175,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        let violations = check(&rules::atomic_delegates::AtomicDelegates, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("#[rustfmt::skip]"));
     }
@@ -209,7 +188,7 @@ mod tests {
             syn::parse_str("pub struct Foo;\nimpl Foo { pub fn new() -> Self { Self } }\n")
                 .unwrap(),
         );
-        assert!(check(&checkers::atomic_delegates::AtomicDelegates, &project).is_empty());
+        assert!(check(&rules::atomic_delegates::AtomicDelegates, &project).is_empty());
     }
 
     #[test]
@@ -222,7 +201,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        let violations = check(&rules::atomic_delegates::AtomicDelegates, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("move the constructor"));
     }
@@ -237,7 +216,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        let violations = check(&rules::atomic_delegates::AtomicDelegates, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("#[rustfmt::skip]"));
     }
@@ -252,7 +231,7 @@ mod tests {
             )
             .unwrap(),
         );
-        let violations = check(&checkers::atomic_delegates::AtomicDelegates, &project);
+        let violations = check(&rules::atomic_delegates::AtomicDelegates, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("must be on one line"));
     }
@@ -267,6 +246,6 @@ mod tests {
             )
             .unwrap(),
         );
-        assert!(check(&checkers::atomic_delegates::AtomicDelegates, &project).is_empty());
+        assert!(check(&rules::atomic_delegates::AtomicDelegates, &project).is_empty());
     }
 }

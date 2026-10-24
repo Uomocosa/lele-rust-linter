@@ -1,15 +1,15 @@
 use syn::spanned::Spanned;
 
-use crate::checkers;
+use crate::rules;
 use crate::ImplBlock;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
-const CODE: &str = checkers::constructor_naming::ConstructorNaming::CODE;
+const CODE: &str = rules::constructor_naming::ConstructorNaming::CODE;
 
 pub fn check(
-    _self: &checkers::constructor_naming::ConstructorNaming,
+    _self: &rules::constructor_naming::ConstructorNaming,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -37,14 +37,21 @@ pub fn check(
                 let sig = &method.sig;
                 if sig.receiver().is_some()
                     || sig.ident == "new"
-                    || takes_self_typed_argument(sig, &self_name)
+                    || rules::constructor_naming::ConstructorNaming::takes_self_typed_argument(
+                        sig, &self_name,
+                    )
                 {
                     continue;
                 }
-                let Some(shape) = constructed_shape(&sig.output, &self_name) else {
+                let Some(shape) = rules::constructor_naming::ConstructorNaming::constructed_shape(
+                    &sig.output,
+                    &self_name,
+                ) else {
                     continue;
                 };
-                if let Some(message) = advice(sig, &self_name, shape) {
+                if let Some(message) =
+                    rules::constructor_naming::ConstructorNaming::advice(sig, &self_name, shape)
+                {
                     violations.push(RuleViolation::from_site(
                         absolute.clone(),
                         sig.fn_token.span().start().line,
@@ -59,89 +66,12 @@ pub fn check(
     violations
 }
 
-// needed helper: two or more arguments building `Self` need `from_`, fallible ones `try_from_`
-fn advice(sig: &syn::Signature, self_name: &str, shape: &str) -> Option<String> {
-    if sig.inputs.len() < 2 {
-        return None;
-    }
-    let prefix = if shape == "Self" {
-        "from_"
-    } else {
-        "try_from_"
-    };
-    let name = sig.ident.to_string();
-    let is_fallible_name = name.starts_with("try_from_");
-    let is_named = match prefix {
-        "from_" => name.starts_with("from_"),
-        _ => is_fallible_name,
-    };
-    if is_named {
-        return None;
-    }
-    let suggested = name
-        .strip_prefix("try_from_")
-        .or_else(|| name.strip_prefix("from_"))
-        .unwrap_or(&name);
-    Some(format!(
-        "`{self_name}::{name}` builds `{self_name}` from {} arguments — rename it `{prefix}<what it is built from>` (e.g. `{prefix}{suggested}`); `from_*` returns `Self`, `try_from_*` returns `Result<Self, _>`/`Option<Self>`",
-        sig.inputs.len()
-    ))
-}
-
-// needed helper: `merge(a: Self, b: Option<Self>) -> Self` is an operation on the type, not a constructor
-fn takes_self_typed_argument(sig: &syn::Signature, self_name: &str) -> bool {
-    sig.inputs.iter().any(|input| {
-        let syn::FnArg::Typed(typed) = input else {
-            return false;
-        };
-        quote::ToTokens::to_token_stream(&*typed.ty)
-            .into_iter()
-            .any(|token| matches!(token, proc_macro2::TokenTree::Ident(ident) if ident == "Self" || ident == self_name))
-    })
-}
-
-// needed helper: `Self`, `Result<Self, _>` or `Option<Self>` — the wrapper name, or `Self`
-fn constructed_shape(output: &syn::ReturnType, self_name: &str) -> Option<&'static str> {
-    fn is_self(ty: &syn::Type, self_name: &str) -> bool {
-        matches!(ty, syn::Type::Path(path)
-        if path.qself.is_none()
-            && path.path.segments.len() == 1
-            && path.path.segments.last().is_some_and(|segment| {
-                segment.arguments.is_none()
-                    && (segment.ident == "Self" || segment.ident == self_name)
-            }))
-    }
-
-    let syn::ReturnType::Type(_, ty) = output else {
-        return None;
-    };
-    if is_self(ty, self_name) {
-        return Some("Self");
-    }
-    let syn::Type::Path(path) = &**ty else {
-        return None;
-    };
-    let segment = path.path.segments.last()?;
-    let wrapper = match segment.ident.to_string().as_str() {
-        "Result" => "Result",
-        "Option" => "Option",
-        _ => return None,
-    };
-    let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
-        return None;
-    };
-    match args.args.first()? {
-        syn::GenericArgument::Type(inner) if is_self(inner, self_name) => Some(wrapper),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers::constructor_naming::ConstructorNaming;
+    use crate::rules::constructor_naming::ConstructorNaming;
     use crate::Project;
 
     #[test]

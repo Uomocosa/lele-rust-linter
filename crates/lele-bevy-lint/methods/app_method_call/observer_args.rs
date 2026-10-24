@@ -1,5 +1,4 @@
 use crate::scan;
-use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
 const OBSERVER_METHODS: [&str; 2] = ["add_observer", "observe"];
@@ -11,25 +10,12 @@ pub fn observer_args(node: &scan::AppMethodCall) -> Option<Vec<String>> {
     }
     let mut found = Vec::new();
     {
-        let mut collector = ObserverCollector(&mut found);
+        let mut collector = scan::ObserverCollector(&mut found);
         for arg in &node.args {
             collector.visit_expr(arg);
         }
     }
     Some(found)
-}
-
-// needed helper: the last path segment of every path in an observer argument
-#[derive(Deref, DerefMut)]
-struct ObserverCollector<'a>(&'a mut Vec<String>);
-
-impl<'ast> Visit<'ast> for ObserverCollector<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        if let Some(last) = node.segments.last() {
-            self.push(last.ident.to_string());
-        }
-        syn::visit::visit_path(self, node);
-    }
 }
 
 #[cfg(test)]

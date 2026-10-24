@@ -1,0 +1,15 @@
+// Spawns a Bevy visual component but defines no ui_png test (LELEBEVY003).
+// Uses dummy types to avoid an actual Bevy dependency; the rule only
+// matches on the last path segment. The receiver is deliberately not named
+// Commands so the bevy_folder (LELEBEVY002) rule stays quiet here.
+
+pub struct Sprite;
+pub struct Spawner;
+
+pub fn setup(spawner: &mut Spawner) {
+    spawn_cursor(spawner);
+}
+
+pub fn spawn_cursor(spawner: &mut Spawner) {
+    spawner.spawn((Sprite,));
+}

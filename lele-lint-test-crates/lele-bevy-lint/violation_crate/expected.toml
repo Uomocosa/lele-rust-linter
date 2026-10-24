@@ -1,0 +1,59 @@
+[[violations]]
+file = "src/bad_bevy_export/mod.rs"
+code = "LELEBEVY001"
+
+[[violations]]
+file = "src/bad_bevy_folder/tick_enemies.rs"
+code = "LELEBEVY002"
+
+[[violations]]
+file = "src/bad_bevy_plugin/plugin.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_plugin/plugin.rs"
+code = "LELEBEVY006"
+
+[[violations]]
+file = "src/bad_bevy_plugin_spread/bevy_systems/spawn_hud.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_plugin_spread/plugin.rs"
+code = "LELEBEVY006"
+
+[[violations]]
+file = "src/bad_bevy_ui/chained.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_ui/copy_preview.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_ui/cursor.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_ui/discarded.rs"
+code = "LELEBEVY007"
+
+[[violations]]
+file = "src/bad_bevy_ui/missing_mp4.rs"
+code = "LELEBEVY004"
+
+[[violations]]
+file = "src/bad_bevy_ui/no_contract.rs"
+code = "LELEBEVY003"
+
+[[violations]]
+file = "src/bad_bevy_ui/no_contract.rs"
+code = "LELEBEVY007"
+
+[[violations]]
+file = "src/bad_bevy_ui/restyle.rs"
+code = "LELEBEVY005"
+
+[[violations]]
+file = "src/bad_bevy_ui/uncentered.rs"
+code = "LELEBEVY008"

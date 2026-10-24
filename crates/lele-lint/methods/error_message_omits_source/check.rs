@@ -1,12 +1,12 @@
 use syn::spanned::Spanned;
 
-use crate::checkers;
+use crate::rules;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn check(
-    _self: &checkers::error_message_omits_source::ErrorMessageOmitsSource,
+    _self: &rules::error_message_omits_source::ErrorMessageOmitsSource,
     project: &Project,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
@@ -30,15 +30,22 @@ pub fn check(
                 else {
                     continue;
                 };
-                let Some(source_field) = source_field_name(&variant.fields) else {
+                let Some(source_field) =
+                    rules::error_message_omits_source::ErrorMessageOmitsSource::source_field_name(
+                        &variant.fields,
+                    )
+                else {
                     continue;
                 };
-                if message_prints_field(message, &source_field) {
+                if rules::error_message_omits_source::ErrorMessageOmitsSource::message_prints_field(
+                    message,
+                    &source_field,
+                ) {
                     violations.push(RuleViolation::from_site(
                         project.absolute_path(source.origin, source.relative_path),
                         message.span().start().line,
                         0,
-                        checkers::error_message_omits_source::ErrorMessageOmitsSource::CODE,
+                        rules::error_message_omits_source::ErrorMessageOmitsSource::CODE,
                         format!(
                             "`{}::{}` prints its source `{source_field}` — reporters already print the `source()` chain; drop it from the message, or write `#[error(transparent)]` to forward the source's message",
                             item_enum.ident, variant.ident
@@ -51,41 +58,12 @@ pub fn check(
     violations
 }
 
-// needed helper: the `#[from]`/`#[source]` field, or the field named `source` (name or tuple index)
-fn source_field_name(fields: &syn::Fields) -> Option<String> {
-    fields.iter().enumerate().find_map(|(index, field)| {
-        let is_marked = field
-            .attrs
-            .iter()
-            .any(|attr| attr.path().is_ident("from") || attr.path().is_ident("source"));
-        let name = field
-            .ident
-            .as_ref()
-            .map_or_else(|| index.to_string(), ToString::to_string);
-        (is_marked || name == "source").then_some(name)
-    })
-}
-
-// needed helper: `{field}` / `{field:…}` in the literal, or `.field` among the format args
-fn message_prints_field(message: &syn::Attribute, field: &str) -> bool {
-    let syn::Meta::List(list) = &message.meta else {
-        return false;
-    };
-    let compact: String = list.tokens.to_string().split_whitespace().collect();
-    let argument = format!(".{field}");
-    compact.contains(&format!("{{{field}}}"))
-        || compact.contains(&format!("{{{field}:"))
-        || compact
-            .split(',')
-            .any(|part| part.trim_end_matches(')') == argument)
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use super::check;
-    use crate::checkers::error_message_omits_source::ErrorMessageOmitsSource;
+    use crate::rules::error_message_omits_source::ErrorMessageOmitsSource;
     use crate::Project;
 
     fn count(src: &str) -> usize {

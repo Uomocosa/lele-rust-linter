@@ -1,5 +1,7 @@
 use derive_more::Deref;
 
+use quote::ToTokens;
+
 use crate::FnBody;
 
 #[derive(Clone, Copy, Deref)]
@@ -9,7 +11,7 @@ pub struct ImplMethod<'a>(pub &'a syn::ImplItemFn);
 impl ImplMethod<'_> {
     pub fn is_real_constructor(&self) -> bool {
         self.sig.receiver().is_none()
-            && !matches!(self.sig.output, syn::ReturnType::Default)
+            && self.sig.output.to_token_stream().to_string().split_whitespace().any(|token| token == "Self")
             && !FnBody(&self.block).is_delegate_call()
             && !FnBody(&self.block).is_methods_dispatch()
     }
@@ -34,5 +36,10 @@ mod tests {
         assert!(!ImplMethod(&method).is_real_constructor());
         let unit: syn::ImplItemFn = syn::parse_quote! { pub fn reset() { let _ = 1; } };
         assert!(!ImplMethod(&unit).is_real_constructor());
+        let fallible: syn::ImplItemFn = syn::parse_quote! { pub fn parse(raw: &str) -> Result<Self, Error> { Err(Error::Bad) } };
+        assert!(ImplMethod(&fallible).is_real_constructor());
+        let helper: syn::ImplItemFn =
+            syn::parse_quote! { pub(crate) fn base(hits: u32) -> u32 { hits.saturating_mul(10) } };
+        assert!(!ImplMethod(&helper).is_real_constructor());
     }
 }

@@ -8,9 +8,9 @@ pub struct FnBody<'a>(pub &'a syn::Block);
 
 #[atomic_delegates]
 impl FnBody<'_> {
-    pub fn is_delegate_call(&self) -> bool {}
-    pub fn is_methods_dispatch(&self) -> bool {}
-    pub fn single_path_call_segments(&self) -> Option<Vec<String>> {}
+    pub fn is_delegate_call(self) -> bool {}
+    pub fn is_methods_dispatch(self) -> bool {}
+    pub fn single_path_call_segments(self) -> Option<Vec<String>> {}
 }
 
 #[rustfmt::skip]

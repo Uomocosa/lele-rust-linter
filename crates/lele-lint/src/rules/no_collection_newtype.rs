@@ -18,6 +18,7 @@ impl NoCollectionNewtype {
         category: Category::Types,
         summary: "No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.",
         why: "The element is the concept; a collection wrapper hides the standard collection API behind a new name.",
+        fix: "Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`.",
         bad: rule_examples!("no_collection_newtype/bad"),
         good: rule_examples!("no_collection_newtype/good"),
     };

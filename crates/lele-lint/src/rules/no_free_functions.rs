@@ -19,6 +19,7 @@ impl NoFreeFunctions {
         category: Category::Delegates,
         summary: "A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.",
         why: "`src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.",
+        fix: "Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `methods/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.",
         bad: rule_examples!("no_free_functions/bad"),
         good: rule_examples!("no_free_functions/good"),
     };

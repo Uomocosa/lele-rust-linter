@@ -17,6 +17,7 @@ impl ConstructorNaming {
         category: Category::Types,
         summary: "An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.",
         why: "Every constructor reads the same way at the call site: `from_` says it builds the type, `try_` says it can fail.",
+        fix: "Rename the constructor to `from_<what>` when it returns `Self`, or `try_from_<what>` when it returns `Result<Self, _>` or `Option<Self>`.",
         bad: rule_examples!("constructor_naming/bad"),
         good: rule_examples!("constructor_naming/good"),
     };

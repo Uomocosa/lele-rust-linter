@@ -19,6 +19,7 @@ impl SingleFieldNewtype {
         category: Category::Types,
         summary: "A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.",
         why: "Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.",
+        fix: "Rewrite a one-field struct as `pub struct X(pub T)` with `#[derive(Deref)]` (`derive_more`) and read it as `*x`; give structs with two or more fields named fields.",
         bad: rule_examples!("single_field_newtype/bad"),
         good: rule_examples!("single_field_newtype/good"),
     };

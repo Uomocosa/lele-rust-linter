@@ -23,6 +23,7 @@ impl ContainerPlacement {
         category: Category::Layout,
         summary: "Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.",
         why: "Small data types don't need a file and a test each; grouping them keeps atomic files for code that does something.",
+        fix: "Move the behavior-free type into its domain's `__basic__/<role>.rs` (`structs.rs`, `enums.rs`, ...) and import it as `basic::<Type>`; a type with an `impl` keeps its own file.",
         bad: rule_examples!("container_placement/bad"),
         good: rule_examples!("container_placement/good"),
     };

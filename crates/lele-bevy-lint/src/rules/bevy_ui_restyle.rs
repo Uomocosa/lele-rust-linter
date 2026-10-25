@@ -18,6 +18,7 @@ impl BevyUiRestyle {
         category: Category::Tests,
         summary: "A file with a system that restyles UI (`&mut` on a styling component) must ship a preview that renders that system: a `*_ui_png_preview` with at least two `State`s when it is driven by input or state, or a `*_ui_mp4_preview` when it is driven by time.",
         why: "A restyle never changes the set of entities, so a spawn-only preview cannot see it; only a rendering that names the restyle system (with a before/after pair, or a clip for motion) proves the change lands.",
+        fix: "Add a preview that runs the restyling system: a `*_ui_png_preview` with two `State`s (before, after) for input or state changes, or a `*_ui_mp4_preview` for time-driven changes.",
         bad: rule_examples!("bevy_ui_restyle/bad"),
         good: rule_examples!("bevy_ui_restyle/good"),
     };

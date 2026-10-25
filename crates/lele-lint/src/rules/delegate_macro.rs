@@ -24,6 +24,7 @@ impl DelegateMacro {
         category: Category::Delegates,
         summary: "Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.",
         why: "The macro wires each shell to `methods/<type>/<method>.rs`; one block per type means one place to read the type's API. The optional `pub(crate)`-only block lets internal helpers sit after inline `pub` fns, as `impl_item_order` requires.",
+        fix: "Gather every empty-bodied shell of the type into one `#[atomic_delegates] impl <Type>` block (plus at most one block holding only `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.",
         bad: rule_examples!("delegate_macro/bad"),
         good: rule_examples!("delegate_macro/good"),
     };

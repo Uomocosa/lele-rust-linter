@@ -21,6 +21,7 @@ impl MethodFileCoLocation {
         category: Category::Layout,
         summary: "A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.",
         why: "A method file that drifts away from its type is impossible to find from the type.",
+        fix: "Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.",
         bad: rule_examples!("method_file_co_location/bad"),
         good: rule_examples!("method_file_co_location/good"),
     };

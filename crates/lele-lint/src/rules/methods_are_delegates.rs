@@ -16,6 +16,7 @@ impl MethodsAreDelegates {
         category: Category::Delegates,
         summary: "A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.",
         why: "`methods/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.",
+        fix: "Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.",
         bad: rule_examples!("methods_are_delegates/bad"),
         good: rule_examples!("methods_are_delegates/good"),
     };

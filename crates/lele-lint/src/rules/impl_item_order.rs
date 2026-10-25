@@ -16,6 +16,7 @@ impl ImplItemOrder {
         category: Category::Delegates,
         summary: "A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.",
         why: "Every type file reads the same way: how a value is made, what it is, its API, then its internal machinery.",
+        fix: "Reorder the type's impl blocks and items: `impl Default`, constructors and `From`/`TryFrom`/`FromStr`, other trait impls, `pub` fns, then `pub(crate)` fns.",
         bad: rule_examples!("impl_item_order/bad"),
         good: rule_examples!("impl_item_order/good"),
     };

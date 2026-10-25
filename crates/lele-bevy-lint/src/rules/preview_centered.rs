@@ -16,6 +16,7 @@ impl PreviewCentered {
         category: Category::Tests,
         summary: "A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.",
         why: "Parentless UI nodes lay out at the window's (0,0), so isolated system/component previews pile into the top-left corner, overlap each other and hide state changes; `Plugin`/`App` previews keep their real layout and are exempt.",
+        fix: "Call `lele_bevy_preview::scene::centered_root()` in the scene's `build`, or add the `lele_bevy_preview::scene::bevy_systems::center_roots` system.",
         bad: rule_examples!("preview_centered/bad"),
         good: rule_examples!("preview_centered/good"),
     };

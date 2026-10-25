@@ -31,10 +31,15 @@ sync-methods:
     cargo run --quiet -p lele-lint -- --sync-methods crates/lele-bevy-lint
 
 # regenerate RULES.md / SKILL.md (the rules_md / skill_md tests fail while stale)
-docs:
+docs: skill
     cargo run --quiet -p lele-lint -- --rules-md > crates/lele-lint/RULES.md
     cargo run --quiet -p lele-bevy-lint -- --emit rules-md > crates/lele-bevy-lint/RULES.md
     cargo run --quiet -p lele-bevy-lint -- --emit skill-md > .opencode/skills/bevy-ui-preview/SKILL.md
+
+# regenerate the lele-lint-rules agent skill (skills/lele-lint-rules/SKILL.md)
+skill:
+    mkdir -p skills/lele-lint-rules
+    cargo run --quiet -p lele-lint -- --skill-md > skills/lele-lint-rules/SKILL.md
 
 # --- tool install (reproducible) ---------------------------------------------
 # Install both binaries from this checkout. Use this instead of a bare

@@ -20,6 +20,7 @@ impl NoStutteredPath {
         category: Category::Imports,
         summary: "No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.",
         why: "The module and type say the same word twice; the type name alone is already unambiguous.",
+        fix: "Import the type once (`use crate::Meters;`) and write `Meters` instead of `meters::Meters`.",
         bad: rule_examples!("no_stuttered_path/bad"),
         good: rule_examples!("no_stuttered_path/good"),
     };

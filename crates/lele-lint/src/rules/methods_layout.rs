@@ -18,6 +18,7 @@ impl MethodsLayout {
         category: Category::Delegates,
         summary: "Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).",
         why: "`methods/` hides bodies until you need them; the type file stays a short list of what the type can do.",
+        fix: "Create `methods/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `methods/` `mod.rs` indexes.",
         bad: rule_examples!("methods_layout/bad"),
         good: rule_examples!("methods_layout/good"),
     };

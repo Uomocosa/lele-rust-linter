@@ -17,6 +17,7 @@ impl ErrorMessageOmitsSource {
         category: Category::Types,
         summary: "An `#[error(\"…\")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.",
         why: "Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.",
+        fix: "Remove the source field (`{0}`, `{source}`) from the `#[error(\"…\")]` text, or use `#[error(transparent)]` to forward it.",
         bad: rule_examples!("error_message_omits_source/bad"),
         good: rule_examples!("error_message_omits_source/good"),
     };

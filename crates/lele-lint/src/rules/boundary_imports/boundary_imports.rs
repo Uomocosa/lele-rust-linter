@@ -22,6 +22,7 @@ impl BoundaryImports {
         category: Category::Imports,
         summary: "A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.",
         why: "A boundary marks a pure core; forbidden imports are how I/O and frameworks leak in.",
+        fix: "Remove the forbidden import from the boundary folder and pass the needed data in from outside; never edit `lele.toml` to allow it.",
         bad: rule_examples!("boundary_imports/bad"),
         good: rule_examples!("boundary_imports/good"),
     };

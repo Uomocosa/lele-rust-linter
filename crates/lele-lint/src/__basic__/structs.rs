@@ -99,6 +99,7 @@ pub struct RuleDoc {
     pub category: basic::enums::Category,
     pub summary: &'static str,
     pub why: &'static str,
+    pub fix: &'static str,
     pub bad: &'static [ExampleFile],
     pub good: &'static [ExampleFile],
 }

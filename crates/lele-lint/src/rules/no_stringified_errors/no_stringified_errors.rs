@@ -18,6 +18,7 @@ impl NoStringifiedErrors {
         category: Category::Types,
         summary: "A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.",
         why: "Text throws away the error's type, its `source()` chain and `?` conversions; callers can only print it, never match or inspect it.",
+        fix: "Keep the caught error as a typed field: `#[from] source: io::Error` or `#[source]`, instead of `.to_string()` or `format!`.",
         bad: rule_examples!("no_stringified_errors/bad"),
         good: rule_examples!("no_stringified_errors/good"),
     };

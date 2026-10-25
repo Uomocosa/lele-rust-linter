@@ -26,6 +26,8 @@ One public (`pub` or `pub(crate)`) item per file, and the file is named after it
 
 **Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
 
+**Fix:** Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
+
 **Bad** (reports LELE001):
 
 `src/greeting.rs`
@@ -112,6 +114,8 @@ File and folder names are snake_case.
 
 **Why:** Module names are derived from file names; one casing keeps paths predictable.
 
+**Fix:** Rename the file or folder to snake_case and update the `mod` line that declares it.
+
 **Bad** (reports LELE002):
 
 `src/Guest.rs`
@@ -184,6 +188,8 @@ pub use guest::Guest;
 A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
 
 **Why:** A method file that drifts away from its type is impossible to find from the type.
+
+**Fix:** Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
 
 **Bad** (reports LELE003):
 
@@ -340,6 +346,8 @@ A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) sha
 
 **Why:** Constants placed too high leak across domains; placed too low they get duplicated.
 
+**Fix:** Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.
+
 **Bad** (reports LELE019):
 
 `src/constants.rs`
@@ -452,6 +460,8 @@ Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in
 
 **Why:** Small data types don't need a file and a test each; grouping them keeps atomic files for code that does something.
 
+**Fix:** Move the behavior-free type into its domain's `__basic__/<role>.rs` (`structs.rs`, `enums.rs`, ...) and import it as `basic::<Type>`; a type with an `impl` keeps its own file.
+
 **Bad** (reports LELE020):
 
 `src/lib.rs`
@@ -514,6 +524,8 @@ pub struct Item {
 `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 
 **Why:** `mod.rs` is the folder's table of contents; logic hidden there is logic nobody looks for.
+
+**Fix:** Move every item that is not `mod`, `pub mod` or `pub use` out of `mod.rs` into its own atomic file, and re-export it from `mod.rs`.
 
 **Bad** (reports LELE023):
 
@@ -582,6 +594,8 @@ pub use guest::Guest;
 A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
 
 **Why:** The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name.
+
+**Fix:** Declare the folder as `#[path = "__basic__/mod.rs"] pub mod basic;` and write `basic::` in every path, never `__basic__`.
 
 **Bad** (reports LELE038):
 
@@ -665,6 +679,8 @@ pub struct Item {
 A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
 
 **Why:** Method bodies are reached only through the type's methods, so callers can't depend on the file layout.
+
+**Fix:** Change `pub mod <method_file>;` to `mod <method_file>;` and remove any `pub use` of it; callers use the type's method instead.
 
 **Bad** (reports LELE004):
 
@@ -813,6 +829,8 @@ No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of
 
 **Why:** `src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.
 
+**Fix:** Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `methods/<type>/<fn>.rs`.
+
 **Bad** (reports LELE008):
 
 `src/lib.rs`
@@ -889,6 +907,8 @@ mod tests {
 Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
 
 **Why:** Longer methods belong in `methods/<type>/<method>.rs`; short ones stay readable as one line each.
+
+**Fix:** Move each method longer than 3 statements to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
 
 **Bad** (reports LELE017):
 
@@ -985,6 +1005,8 @@ mod tests {
 
 **Why:** Constructors list every field; rustfmt keeps them one field per line so diffs stay readable.
 
+**Fix:** Move `impl Default` and real constructors out of the `#[rustfmt::skip]` block into an impl block without the attribute.
+
 **Bad** (reports LELE018):
 
 `src/lib.rs`
@@ -1074,6 +1096,8 @@ mod tests {
 No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 
 **Why:** A nested helper hides from the type that owns it; only the recursion's own walk belongs inside its public function (RATIONALE §11).
+
+**Fix:** Lift the inner `fn` out of the body into a `pub(crate)` method or associated fn of the type that owns the outer function; only a tree walk's `fn recursion` may stay inside.
 
 **Bad** (reports LELE021):
 
@@ -1215,6 +1239,8 @@ A type's impls in `src/` follow one order: `impl Default`, constructors (receive
 
 **Why:** Every type file reads the same way: how a value is made, what it is, its API, then its internal machinery.
 
+**Fix:** Reorder the type's impl blocks and items: `impl Default`, constructors and `From`/`TryFrom`/`FromStr`, other trait impls, `pub` fns, then `pub(crate)` fns.
+
 **Bad** (reports LELE027):
 
 `src/lib.rs`
@@ -1307,6 +1333,8 @@ mod tests {
 Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).
 
 **Why:** `methods/` hides bodies until you need them; the type file stays a short list of what the type can do.
+
+**Fix:** Create `methods/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `methods/` `mod.rs` indexes.
 
 **Bad** (reports LELE030):
 
@@ -1465,6 +1493,8 @@ mod tests {
 Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
 
 **Why:** The macro wires each shell to `methods/<type>/<method>.rs`; one block per type means one place to read the type's API. The optional `pub(crate)`-only block lets internal helpers sit after inline `pub` fns, as `impl_item_order` requires.
+
+**Fix:** Gather every empty-bodied shell of the type into one `#[atomic_delegates] impl <Type>` block (plus at most one block holding only `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
 
 **Bad** (reports LELE032):
 
@@ -1661,6 +1691,8 @@ A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its ow
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
+**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `methods/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
+
 **Bad** (reports LELE034):
 
 `src/lib.rs`
@@ -1812,6 +1844,8 @@ mod tests {
 A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 **Why:** `methods/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.
+
+**Fix:** Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.
 
 **Bad** (reports LELE035):
 
@@ -2030,6 +2064,8 @@ A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go
 
 **Why:** Each domain's `mod.rs` then describes only that domain, and the crate's public surface is in one file.
 
+**Fix:** Delete the `pub use` of another domain's item from this `mod.rs` and add it to `lib.rs` instead.
+
 **Bad** (reports LELE005):
 
 `src/lib.rs`
@@ -2115,6 +2151,8 @@ pub struct Item {
 No `meters::Meters` paths for crate-root modules: import the type once and write `Meters`.
 
 **Why:** The module and type say the same word twice; the type name alone is already unambiguous.
+
+**Fix:** Import the type once (`use crate::Meters;`) and write `Meters` instead of `meters::Meters`.
 
 **Bad** (reports LELE011):
 
@@ -2248,6 +2286,8 @@ mod tests {
 
 **Why:** `super::` paths break when files move; domain paths read the same from every file.
 
+**Fix:** Replace `super::x` with the domain path: add `use crate::<domain>;` and write `<domain>::x`.
+
 **Bad** (reports LELE013):
 
 `src/lib.rs`
@@ -2372,6 +2412,8 @@ A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters
 
 **Why:** Root items are used as `crate::Meters`, never `crate::meters::Meters`.
 
+**Fix:** In `lib.rs`, declare the root file as a private `mod meters;` and re-export its item with `pub use meters::Meters;`.
+
 **Bad** (reports LELE015):
 
 `src/lib.rs`
@@ -2442,6 +2484,8 @@ mod tests {
 Import the domain, not the item: `use crate::stock;` then `stock::Item`.
 
 **Why:** The domain prefix at every use site says where a name comes from, so names never need to be unique crate-wide.
+
+**Fix:** Import the domain, not the item: `use crate::stock;` at the top, then write `stock::Item` at each use site.
 
 **Bad** (reports LELE016):
 
@@ -2599,6 +2643,8 @@ pub struct Item {
 
 **Why:** All cross-domain dependencies of a file are then visible in its `use` lines at the top.
 
+**Fix:** Move each `crate::a::B` used in the body into a `use` line at the top of the file and use the short name.
+
 **Bad** (reports LELE025):
 
 `src/lib.rs`
@@ -2753,6 +2799,8 @@ A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
 
 **Why:** A boundary marks a pure core; forbidden imports are how I/O and frameworks leak in.
 
+**Fix:** Remove the forbidden import from the boundary folder and pass the needed data in from outside; never edit `lele.toml` to allow it.
+
 **Bad** (reports LELE033):
 
 `lele.toml`
@@ -2861,6 +2909,8 @@ No positional field access (`.0`, `.1`).
 
 **Why:** A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.
 
+**Fix:** Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields.
+
 **Bad** (reports LELE010):
 
 `src/lib.rs`
@@ -2932,6 +2982,8 @@ mod tests {
 A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
 
 **Why:** Code always says `freenet::Client` through the domain prefix, so the prefix in the type name is said twice.
+
+**Fix:** Drop the folder name from the type name (`freenet::FreenetClient` → `freenet::Client`) and update every use.
 
 **Bad** (reports LELE012):
 
@@ -3027,6 +3079,8 @@ No getters or setters that only read or write a public field, including through 
 
 **Why:** The field is already public; an accessor adds a second name for the same thing.
 
+**Fix:** Delete the getter or setter and make callers read or write the public field directly.
+
 **Bad** (reports LELE014):
 
 `src/lib.rs`
@@ -3121,6 +3175,8 @@ A struct with one field is a tuple newtype deriving `Deref`; two or more fields 
 
 **Why:** Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.
 
+**Fix:** Rewrite a one-field struct as `pub struct X(pub T)` with `#[derive(Deref)]` (`derive_more`) and read it as `*x`; give structs with two or more fields named fields.
+
 **Bad** (reports LELE022):
 
 `src/lib.rs`
@@ -3189,6 +3245,8 @@ pub struct Meters(pub u32);
 No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
+
+**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`.
 
 **Bad** (reports LELE026):
 
@@ -3259,6 +3317,8 @@ pub struct Room(pub String);
 An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
 
 **Why:** A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.
+
+**Fix:** Replace the one-argument builder with `impl From<A> for <Type>` (`impl TryFrom<A>` if it returns `Result`) and update callers to `Type::from(a)` or `a.into()`.
 
 **Bad** (reports LELE036):
 
@@ -3356,6 +3416,8 @@ An associated fn with two or more arguments and no `self` that returns `Self` is
 
 **Why:** Every constructor reads the same way at the call site: `from_` says it builds the type, `try_` says it can fail.
 
+**Fix:** Rename the constructor to `from_<what>` when it returns `Self`, or `try_from_<what>` when it returns `Result<Self, _>` or `Option<Self>`.
+
 **Bad** (reports LELE037):
 
 `src/lib.rs`
@@ -3451,6 +3513,8 @@ mod tests {
 A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
 
 **Why:** Text throws away the error's type, its `source()` chain and `?` conversions; callers can only print it, never match or inspect it.
+
+**Fix:** Keep the caught error as a typed field: `#[from] source: io::Error` or `#[source]`, instead of `.to_string()` or `format!`.
 
 **Bad** (reports LELE039):
 
@@ -3582,6 +3646,8 @@ An `#[error("…")]` message does not print its own source (the `#[from]`/`#[sou
 
 **Why:** Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.
 
+**Fix:** Remove the source field (`{0}`, `{source}`) from the `#[error("…")]` text, or use `#[error(transparent)]` to forward it.
+
 **Bad** (reports LELE040):
 
 `src/error.rs`
@@ -3631,6 +3697,8 @@ pub use error::Error;
 No `#[cfg(test)]` inside `__basic__/` containers.
 
 **Why:** Containers hold declarations only; test the function or method that uses the types instead.
+
+**Fix:** Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.
 
 **Bad** (reports LELE006):
 
@@ -3716,6 +3784,8 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 
 **Why:** The test sits next to what it tests, so reading one means reading the other.
 
+**Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.
+
 **Bad** (reports LELE007):
 
 `src/guest.rs`
@@ -3797,6 +3867,8 @@ Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, 
 
 **Why:** The usage test is the function's documentation: it shows how to call it and proves it works.
 
+**Fix:** Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.
+
 **Bad** (reports LELE009):
 
 `src/guest.rs`
@@ -3863,6 +3935,8 @@ pub use guest::Guest;
 No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
 
 **Why:** Every silenced lint is a decision the user made on purpose, recorded with its reason.
+
+**Fix:** Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.
 
 **Bad** (reports LELE024):
 
@@ -3949,6 +4023,8 @@ No comments in `src/` or `methods/`, except a final `// no test_usage necessary`
 
 **Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe.
 
+**Fix:** Delete the comment and move its meaning into names, types or the `test_usage` test.
+
 **Bad** (reports LELE031):
 
 `src/guest.rs`
@@ -4027,6 +4103,8 @@ pub use guest::Guest;
 
 **Why:** Every crate gets the same strict baseline, so no crate silently allows unwraps, panics or lossy casts.
 
+**Fix:** Add the `[lints.clippy]` block shown by `lele-lint --explain LELE028` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.
+
 **Bad** (reports LELE028):
 
 `Cargo.toml`
@@ -4071,6 +4149,8 @@ as_conversions = "deny"
 `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
 **Why:** Tests may unwrap and index freely; production code may not.
+
+**Fix:** Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in `clippy.toml`.
 
 **Bad** (reports LELE029):
 

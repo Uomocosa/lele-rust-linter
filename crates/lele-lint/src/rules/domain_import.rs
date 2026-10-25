@@ -19,6 +19,7 @@ impl DomainImport {
         category: Category::Imports,
         summary: "Import the domain, not the item: `use crate::stock;` then `stock::Item`.",
         why: "The domain prefix at every use site says where a name comes from, so names never need to be unique crate-wide.",
+        fix: "Import the domain, not the item: `use crate::stock;` at the top, then write `stock::Item` at each use site.",
         bad: rule_examples!("domain_import/bad"),
         good: rule_examples!("domain_import/good"),
     };

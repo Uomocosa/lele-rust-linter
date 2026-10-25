@@ -20,6 +20,7 @@ impl MethodVisibility {
         category: Category::Delegates,
         summary: "A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.",
         why: "Method bodies are reached only through the type's methods, so callers can't depend on the file layout.",
+        fix: "Change `pub mod <method_file>;` to `mod <method_file>;` and remove any `pub use` of it; callers use the type's method instead.",
         bad: rule_examples!("method_visibility/bad"),
         good: rule_examples!("method_visibility/good"),
     };

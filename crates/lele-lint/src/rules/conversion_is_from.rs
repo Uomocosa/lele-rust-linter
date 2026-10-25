@@ -17,6 +17,7 @@ impl ConversionIsFrom {
         category: Category::Types,
         summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.",
         why: "A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.",
+        fix: "Replace the one-argument builder with `impl From<A> for <Type>` (`impl TryFrom<A>` if it returns `Result`) and update callers to `Type::from(a)` or `a.into()`.",
         bad: rule_examples!("conversion_is_from/bad"),
         good: rule_examples!("conversion_is_from/good"),
     };

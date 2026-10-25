@@ -16,6 +16,7 @@ impl BevyUi {
         category: Category::Tests,
         summary: "A file whose visual spawn is reachable from production must ship a `*_ui_png_preview` test whose `Scene::build` renders that spawn (or the file's `Plugin`) through `lele_bevy_preview::run(...)`.",
         why: "UI that is never rendered cannot be reviewed; the named preview test is the contract that forces an artifact for every production visual, and naming the real spawner keeps it from rendering a copy.",
+        fix: "Add a `*_ui_png_preview` `#[test]` to the file whose `Scene::build` spawns that UI (or adds its `Plugin`) and runs it through `lele_bevy_preview::run(...)`; see the bevy-ui-preview skill.",
         bad: rule_examples!("bevy_ui/bad"),
         good: rule_examples!("bevy_ui/good"),
     };

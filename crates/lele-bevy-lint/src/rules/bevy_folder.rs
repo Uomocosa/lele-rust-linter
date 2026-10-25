@@ -19,6 +19,7 @@ impl BevyFolder {
         category: Category::Layout,
         summary: "A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.",
         why: "Systems are the domain's Bevy edge; keeping them in one folder makes the plugin surface readable.",
+        fix: "Move the system into `<domain>/bevy_systems/<system>.rs` and re-export it from `bevy_systems/mod.rs` and the domain `mod.rs`.",
         bad: rule_examples!("bevy_folder/bad"),
         good: rule_examples!("bevy_folder/good"),
     };

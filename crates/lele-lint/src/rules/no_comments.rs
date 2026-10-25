@@ -20,6 +20,7 @@ impl NoComments {
         category: Category::Style,
         summary: "No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.",
         why: "Names, signatures and the usage test carry the meaning; comments drift from the code they describe.",
+        fix: "Delete the comment and move its meaning into names, types or the `test_usage` test.",
         bad: rule_examples!("no_comments/bad"),
         good: rule_examples!("no_comments/good"),
     };

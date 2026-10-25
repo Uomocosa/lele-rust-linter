@@ -16,6 +16,7 @@ impl HelpersAreMethods {
         category: Category::Delegates,
         summary: "No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` and test code are exempt.",
         why: "`src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.",
+        fix: "Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `methods/<type>/<fn>.rs`.",
         bad: rule_examples!("helpers_are_methods/bad"),
         good: rule_examples!("helpers_are_methods/good"),
     };

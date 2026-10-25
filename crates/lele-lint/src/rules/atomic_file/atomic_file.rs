@@ -22,6 +22,7 @@ impl AtomicFile {
         category: Category::Layout,
         summary: "One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).",
         why: "A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.",
+        fix: "Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.",
         bad: rule_examples!("atomic_file/bad"),
         good: rule_examples!("atomic_file/good"),
     };

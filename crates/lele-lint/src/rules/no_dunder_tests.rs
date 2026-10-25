@@ -18,6 +18,7 @@ impl NoDunderTests {
         category: Category::Tests,
         summary: "No `#[cfg(test)]` inside `__basic__/` containers.",
         why: "Containers hold declarations only; test the function or method that uses the types instead.",
+        fix: "Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.",
         bad: rule_examples!("no_dunder_tests/bad"),
         good: rule_examples!("no_dunder_tests/good"),
     };

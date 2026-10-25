@@ -19,6 +19,7 @@ impl DunderModuleName {
         category: Category::Layout,
         summary: "A dunder folder or file (`__basic__/`) is declared `#[path = \"__basic__/mod.rs\"] pub mod basic;` and named `basic` everywhere in code.",
         why: "The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name.",
+        fix: "Declare the folder as `#[path = \"__basic__/mod.rs\"] pub mod basic;` and write `basic::` in every path, never `__basic__`.",
         bad: rule_examples!("dunder_module_name/bad"),
         good: rule_examples!("dunder_module_name/good"),
     };

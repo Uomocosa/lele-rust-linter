@@ -19,6 +19,7 @@ impl RootReexport {
         category: Category::Imports,
         summary: "A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.",
         why: "Root items are used as `crate::Meters`, never `crate::meters::Meters`.",
+        fix: "In `lib.rs`, declare the root file as a private `mod meters;` and re-export its item with `pub use meters::Meters;`.",
         bad: rule_examples!("root_reexport/bad"),
         good: rule_examples!("root_reexport/good"),
     };

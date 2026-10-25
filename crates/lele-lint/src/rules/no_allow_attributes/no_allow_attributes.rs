@@ -16,6 +16,7 @@ impl NoAllowAttributes {
         category: Category::Style,
         summary: "No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.",
         why: "Every silenced lint is a decision the user made on purpose, recorded with its reason.",
+        fix: "Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.",
         bad: rule_examples!("no_allow_attributes/bad"),
         good: rule_examples!("no_allow_attributes/good"),
     };

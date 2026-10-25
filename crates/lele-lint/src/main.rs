@@ -19,6 +19,9 @@ struct Args {
     #[arg(long = "rules-md")]
     rules_md: bool,
 
+    #[arg(long = "skill-md")]
+    skill_md: bool,
+
     #[arg(long = "sync-methods")]
     sync_methods: bool,
 }
@@ -38,6 +41,11 @@ fn main() {
 
     if args.rules_md {
         print!("{}", linter.rules_markdown());
+        return;
+    }
+
+    if args.skill_md {
+        print!("{}", linter.skill_markdown());
         return;
     }
 

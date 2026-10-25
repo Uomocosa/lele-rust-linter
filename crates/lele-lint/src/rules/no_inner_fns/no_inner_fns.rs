@@ -16,6 +16,7 @@ impl NoInnerFns {
         category: Category::Delegates,
         summary: "No `fn` inside a function body, except a tree walk's inner `fn recursion`.",
         why: "A nested helper hides from the type that owns it; only the recursion's own walk belongs inside its public function (RATIONALE §11).",
+        fix: "Lift the inner `fn` out of the body into a `pub(crate)` method or associated fn of the type that owns the outer function; only a tree walk's `fn recursion` may stay inside.",
         bad: rule_examples!("no_inner_fns/bad"),
         good: rule_examples!("no_inner_fns/good"),
     };

@@ -16,6 +16,7 @@ impl BevyPluginScene {
         category: Category::Tests,
         summary: "A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.",
         why: "A plugin is the assembly point for a whole screen; its scene preview proves the assembled screen renders.",
+        fix: "Add a `*_ui_scene_preview` `#[test]` whose `Scene::build` adds the plugin and runs it through `lele_bevy_preview::run(...)`.",
         bad: rule_examples!("bevy_plugin_scene/bad"),
         good: rule_examples!("bevy_plugin_scene/good"),
     };

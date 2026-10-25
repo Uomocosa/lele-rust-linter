@@ -18,6 +18,7 @@ impl NoSuperImports {
         category: Category::Imports,
         summary: "`super::` is allowed only inside `#[cfg(test)]`; production code imports the domain (`use crate::stock;`).",
         why: "`super::` paths break when files move; domain paths read the same from every file.",
+        fix: "Replace `super::x` with the domain path: add `use crate::<domain>;` and write `<domain>::x`.",
         bad: rule_examples!("no_super_imports/bad"),
         good: rule_examples!("no_super_imports/good"),
     };

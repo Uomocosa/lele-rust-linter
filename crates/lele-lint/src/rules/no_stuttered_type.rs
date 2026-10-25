@@ -20,6 +20,7 @@ impl NoStutteredType {
         category: Category::Types,
         summary: "A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).",
         why: "Code always says `freenet::Client` through the domain prefix, so the prefix in the type name is said twice.",
+        fix: "Drop the folder name from the type name (`freenet::FreenetClient` → `freenet::Client`) and update every use.",
         bad: rule_examples!("no_stuttered_type/bad"),
         good: rule_examples!("no_stuttered_type/good"),
     };

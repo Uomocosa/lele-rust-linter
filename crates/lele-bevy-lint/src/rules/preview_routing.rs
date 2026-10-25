@@ -19,6 +19,7 @@ impl PreviewRouting {
         category: Category::Tests,
         summary: "Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.",
         why: "A preview test that renders and asserts nothing can pass while producing a blank frame; routing through the harness and checking its `Result` makes `NoVisual`/`StaticClip` fail the test.",
+        fix: "Make the preview fn a `#[test]` that calls `lele_bevy_preview::run(...)` and checks the result with `?`, `.unwrap()` or `.expect(..)`.",
         bad: rule_examples!("preview_routing/bad"),
         good: rule_examples!("preview_routing/good"),
     };

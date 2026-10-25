@@ -18,6 +18,7 @@ impl ModRsPurity {
         category: Category::Layout,
         summary: "`mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.",
         why: "`mod.rs` is the folder's table of contents; logic hidden there is logic nobody looks for.",
+        fix: "Move every item that is not `mod`, `pub mod` or `pub use` out of `mod.rs` into its own atomic file, and re-export it from `mod.rs`.",
         bad: rule_examples!("mod_rs_purity/bad"),
         good: rule_examples!("mod_rs_purity/good"),
     };

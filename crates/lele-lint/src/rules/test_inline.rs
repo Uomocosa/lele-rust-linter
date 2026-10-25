@@ -16,6 +16,7 @@ impl TestInline {
         category: Category::Tests,
         summary: "Unit tests live in the same file as the code (no `tests/` folders under `src/`).",
         why: "The test sits next to what it tests, so reading one means reading the other.",
+        fix: "Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.",
         bad: rule_examples!("test_inline/bad"),
         good: rule_examples!("test_inline/good"),
     };

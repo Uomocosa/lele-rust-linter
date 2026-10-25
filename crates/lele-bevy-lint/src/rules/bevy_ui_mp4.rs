@@ -16,6 +16,7 @@ impl BevyUiMp4 {
         category: Category::Tests,
         summary: "A file that spawns UI reachable from production and drives it over time (`Time`, `Timer`, animation) must ship a `*_ui_mp4_preview` test whose `Scene` has a `Timeline`.",
         why: "Static frames cannot show motion; a time-driven UI needs a recorded clip to be reviewable. One-tick input changes are covered by `bevy_ui_restyle`'s before/after states instead.",
+        fix: "Add a `*_ui_mp4_preview` `#[test]` whose `Scene` has a `Timeline` that drives the time-based UI; see the bevy-ui-preview skill.",
         bad: rule_examples!("bevy_ui_mp4/bad"),
         good: rule_examples!("bevy_ui_mp4/good"),
     };

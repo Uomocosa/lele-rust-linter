@@ -18,6 +18,7 @@ impl NoCrossDomainReexport {
         category: Category::Imports,
         summary: "A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.",
         why: "Each domain's `mod.rs` then describes only that domain, and the crate's public surface is in one file.",
+        fix: "Delete the `pub use` of another domain's item from this `mod.rs` and add it to `lib.rs` instead.",
         bad: rule_examples!("no_cross_domain_reexport/bad"),
         good: rule_examples!("no_cross_domain_reexport/good"),
     };

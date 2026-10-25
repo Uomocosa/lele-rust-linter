@@ -16,6 +16,7 @@ impl ClippyConfigClippy {
         category: Category::Config,
         summary: "`clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.",
         why: "Tests may unwrap and index freely; production code may not.",
+        fix: "Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in `clippy.toml`.",
         bad: rule_examples!("clippy_config_clippy/bad"),
         good: rule_examples!("clippy_config_clippy/good"),
     };

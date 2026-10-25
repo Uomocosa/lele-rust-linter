@@ -16,6 +16,7 @@ impl NoCratePaths {
         category: Category::Imports,
         summary: "`crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).",
         why: "All cross-domain dependencies of a file are then visible in its `use` lines at the top.",
+        fix: "Move each `crate::a::B` used in the body into a `use` line at the top of the file and use the short name.",
         bad: rule_examples!("no_crate_paths/bad"),
         good: rule_examples!("no_crate_paths/good"),
     };

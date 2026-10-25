@@ -25,6 +25,7 @@ impl Default for Linter {
 impl Linter {
     pub fn run(&self, project: &Project) -> i32 {}
     pub fn rules_markdown(&self) -> String {}
+    pub fn skill_markdown(&self) -> String {}
     pub fn render_rule(rule: &dyn Rule) -> String {}
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}

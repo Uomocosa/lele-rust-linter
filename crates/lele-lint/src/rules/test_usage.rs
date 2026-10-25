@@ -20,6 +20,7 @@ impl TestUsage {
         category: Category::Tests,
         summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.",
         why: "The usage test is the function's documentation: it shows how to call it and proves it works.",
+        fix: "Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.",
         bad: rule_examples!("test_usage/bad"),
         good: rule_examples!("test_usage/good"),
     };

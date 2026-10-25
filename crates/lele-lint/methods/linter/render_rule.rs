@@ -8,6 +8,7 @@ pub fn render_rule(rule: &dyn Rule) -> String {
     let _ = writeln!(out, "### {} `{}`\n", rule.code(), rule.name());
     let _ = writeln!(out, "{}\n", doc.summary);
     let _ = writeln!(out, "**Why:** {}\n", doc.why);
+    let _ = writeln!(out, "**Fix:** {}\n", doc.fix);
     let _ = writeln!(out, "**Bad** (reports {}):\n", rule.code());
     out.push_str(&Linter::render_files(doc.bad));
     let _ = writeln!(out, "**Good:**\n");

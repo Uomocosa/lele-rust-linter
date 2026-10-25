@@ -19,6 +19,7 @@ impl NoTrivialAccessors {
         category: Category::Types,
         summary: "No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).",
         why: "The field is already public; an accessor adds a second name for the same thing.",
+        fix: "Delete the getter or setter and make callers read or write the public field directly.",
         bad: rule_examples!("no_trivial_accessors/bad"),
         good: rule_examples!("no_trivial_accessors/good"),
     };

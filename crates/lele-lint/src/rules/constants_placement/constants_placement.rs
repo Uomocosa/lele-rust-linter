@@ -21,6 +21,7 @@ impl ConstantsPlacement {
         category: Category::Layout,
         summary: "A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.",
         why: "Constants placed too high leak across domains; placed too low they get duplicated.",
+        fix: "Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.",
         bad: rule_examples!("constants_placement/bad"),
         good: rule_examples!("constants_placement/good"),
     };

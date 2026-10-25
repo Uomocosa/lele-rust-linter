@@ -18,6 +18,7 @@ impl ConstructorNoSkip {
         category: Category::Delegates,
         summary: "`impl Default` and real constructors are never `#[rustfmt::skip]`.",
         why: "Constructors list every field; rustfmt keeps them one field per line so diffs stay readable.",
+        fix: "Move `impl Default` and real constructors out of the `#[rustfmt::skip]` block into an impl block without the attribute.",
         bad: rule_examples!("constructor_no_skip/bad"),
         good: rule_examples!("constructor_no_skip/good"),
     };

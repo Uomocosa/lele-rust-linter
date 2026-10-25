@@ -17,6 +17,7 @@ impl SnakeCaseFiles {
         category: Category::Layout,
         summary: "File and folder names are snake_case.",
         why: "Module names are derived from file names; one casing keeps paths predictable.",
+        fix: "Rename the file or folder to snake_case and update the `mod` line that declares it.",
         bad: rule_examples!("snake_case_files/bad"),
         good: rule_examples!("snake_case_files/good"),
     };

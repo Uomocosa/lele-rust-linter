@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 
 pub struct ErrorMessageOmitsSource;
 
@@ -16,40 +17,8 @@ impl ErrorMessageOmitsSource {
         category: Category::Types,
         summary: "An `#[error(\"…\")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.",
         why: "Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod error;
-pub use error::Error;
-",
-            },
-            ExampleFile {
-                path: "src/error.rs",
-                source: r#"#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("i/o error: {0}")]
-    Io(#[from] std::io::Error),
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod error;
-pub use error::Error;
-",
-            },
-            ExampleFile {
-                path: "src/error.rs",
-                source: r#"#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("i/o error")]
-    Io(#[from] std::io::Error),
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("error_message_omits_source/bad"),
+        good: rule_examples!("error_message_omits_source/good"),
     };
 }
 

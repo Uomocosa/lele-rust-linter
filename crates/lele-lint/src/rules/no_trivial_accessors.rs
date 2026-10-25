@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -18,88 +19,8 @@ impl NoTrivialAccessors {
         category: Category::Types,
         summary: "No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).",
         why: "The field is already public; an accessor adds a second name for the same thing.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn health(&self) -> u32 { self.health }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn is_alive(&self) -> bool { self.health > 0 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        assert!(player::Player::default().is_alive());
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("no_trivial_accessors/bad"),
+        good: rule_examples!("no_trivial_accessors/good"),
     };
 }
 

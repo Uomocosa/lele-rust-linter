@@ -5,6 +5,7 @@ use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use rule_examples_macro::rule_examples;
 
 pub struct NoAllowAttributes;
 
@@ -15,80 +16,8 @@ impl NoAllowAttributes {
         category: Category::Style,
         summary: "No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.",
         why: "Every silenced lint is a decision the user made on purpose, recorded with its reason.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-            ExampleFile {
-                path: "lele.toml",
-                source: r#"[lele.lint]
-
-[[lele.lint.clippy_allow_whitelist]]
-allow = "clippy::needless_pass_by_value"
-file = "src/guest.rs"
-reason = "example: the signature is fixed by a trait in another crate"
-"#,
-            },
-        ],
+        bad: rule_examples!("no_allow_attributes/bad"),
+        good: rule_examples!("no_allow_attributes/good"),
     };
 }
 

@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 
 pub struct AtomicDelegates;
 
@@ -16,89 +17,8 @@ impl AtomicDelegates {
         category: Category::Delegates,
         summary: "Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.",
         why: "Longer methods belong in `methods/<type>/<method>.rs`; short ones stay readable as one line each.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-impl Player {
-    pub fn is_alive(&self) -> bool {
-        self.health > 0
-    }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn is_alive(&self) -> bool { self.health > 0 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        assert!(player::Player::default().is_alive());
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("atomic_delegates/bad"),
+        good: rule_examples!("atomic_delegates/good"),
     };
 }
 

@@ -5,6 +5,7 @@ use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use rule_examples_macro::rule_examples;
 
 pub struct TestInline;
 
@@ -15,76 +16,8 @@ impl TestInline {
         category: Category::Tests,
         summary: "Unit tests live in the same file as the code (no `tests/` folders under `src/`).",
         why: "The test sits next to what it tests, so reading one means reading the other.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-            ExampleFile {
-                path: "src/tests/greet_more.rs",
-                source: r#"#[test]
-fn greets_empty_name() {
-    assert_eq!(crate::Guest(String::new()).greet(), "Hello, !");
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("test_inline/bad"),
+        good: rule_examples!("test_inline/good"),
     };
 }
 

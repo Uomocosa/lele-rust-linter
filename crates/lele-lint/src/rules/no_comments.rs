@@ -1,3 +1,4 @@
+use rule_examples_macro::rule_examples;
 use std::path::Path;
 
 use crate::Category;
@@ -19,69 +20,8 @@ impl NoComments {
         category: Category::Style,
         summary: "No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.",
         why: "Names, signatures and the usage test carry the meaning; comments drift from the code they describe.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-// Builds the greeting shown on the title screen.
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("no_comments/bad"),
+        good: rule_examples!("no_comments/good"),
     };
 }
 

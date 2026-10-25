@@ -1,0 +1,6 @@
+[[lele.boundary]]
+name = "session is pure"
+why = "no io"
+folders = ["src/session"]
+cannot_use = ["std::time"]
+require = "honest"

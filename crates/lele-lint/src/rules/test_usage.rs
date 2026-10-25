@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::path::Path;
 
 const OPT_OUT: &str = "// no test_usage necessary";
@@ -19,58 +20,8 @@ impl TestUsage {
         category: Category::Tests,
         summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.",
         why: "The usage test is the function's documentation: it shows how to call it and proves it works.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("test_usage/bad"),
+        good: rule_examples!("test_usage/good"),
     };
 }
 

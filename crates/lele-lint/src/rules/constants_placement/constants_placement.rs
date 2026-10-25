@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
@@ -20,103 +21,8 @@ impl ConstantsPlacement {
         category: Category::Layout,
         summary: "A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.",
         why: "Constants placed too high leak across domains; placed too low they get duplicated.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod constants;
-pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/constants.rs",
-                source: r"pub const MAX_HEALTH: u32 = 100;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod health;
-
-pub use health::Health;
-",
-            },
-            ExampleFile {
-                path: "src/player/health.rs",
-                source: r"use derive_more::Deref;
-
-use crate::constants;
-
-#[derive(Deref)]
-pub struct Health(pub u32);
-
-#[rustfmt::skip]
-impl Health {
-    pub fn clamped(&self) -> u32 { (**self).min(constants::MAX_HEALTH) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Health;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Health(150).clamped(), 100);
-    }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r#"mod health;
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::constants::MAX_HEALTH;
-pub use health::Health;
-"#,
-            },
-            ExampleFile {
-                path: "src/player/__basic__/mod.rs",
-                source: r"pub mod constants;
-",
-            },
-            ExampleFile {
-                path: "src/player/__basic__/constants.rs",
-                source: r"pub const MAX_HEALTH: u32 = 100;
-",
-            },
-            ExampleFile {
-                path: "src/player/health.rs",
-                source: r"use derive_more::Deref;
-
-use crate::player;
-
-#[derive(Deref)]
-pub struct Health(pub u32);
-
-#[rustfmt::skip]
-impl Health {
-    pub fn clamped(&self) -> u32 { (**self).min(player::MAX_HEALTH) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Health;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Health(150).clamped(), 100);
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("constants_placement/bad"),
+        good: rule_examples!("constants_placement/good"),
     };
 }
 

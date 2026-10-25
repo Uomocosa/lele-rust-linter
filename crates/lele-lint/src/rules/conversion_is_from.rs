@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 
 pub struct ConversionIsFrom;
 
@@ -16,90 +17,8 @@ impl ConversionIsFrom {
         category: Category::Types,
         summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.",
         why: "A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod reading;
-",
-            },
-            ExampleFile {
-                path: "src/reading/mod.rs",
-                source: r"mod reading;
-
-pub use reading::Reading;
-",
-            },
-            ExampleFile {
-                path: "src/reading/reading.rs",
-                source: r#"pub struct Reading {
-    pub sensor: String,
-    pub celsius: i32,
-}
-
-impl Reading {
-    pub fn from_sensor(sensor: &str) -> Self {
-        Self {
-            sensor: sensor.to_string(),
-            celsius: 21,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::reading;
-
-    #[test]
-    fn test_usage() {
-        let reading = reading::Reading::from_sensor("kitchen");
-        assert_eq!(reading.celsius, 21);
-    }
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod reading;
-",
-            },
-            ExampleFile {
-                path: "src/reading/mod.rs",
-                source: r"mod reading;
-
-pub use reading::Reading;
-",
-            },
-            ExampleFile {
-                path: "src/reading/reading.rs",
-                source: r#"pub struct Reading {
-    pub sensor: String,
-    pub celsius: i32,
-}
-
-impl From<&str> for Reading {
-    fn from(sensor: &str) -> Self {
-        Self {
-            sensor: sensor.to_string(),
-            celsius: 21,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::reading;
-
-    #[test]
-    fn test_usage() {
-        let reading = reading::Reading::from("kitchen");
-        assert_eq!(reading.celsius, 21);
-    }
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("conversion_is_from/bad"),
+        good: rule_examples!("conversion_is_from/good"),
     };
 }
 

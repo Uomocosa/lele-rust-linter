@@ -258,6 +258,7 @@ dependencies = [
  "lele-snake-case",
  "proc-macro2",
  "rstest",
+ "rule-examples-macro",
  "serde",
  "syn 2.0.119",
  "tempfile",
@@ -275,6 +276,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rstest",
+ "rule-examples-macro",
  "rustc_lexer",
  "serde",
  "syn 2.0.119",
@@ -422,6 +424,15 @@ dependencies = [
  "rustc_version",
  "syn 2.0.119",
  "unicode-ident",
+]
+
+[[package]]
+name = "rule-examples-macro"
+version = "0.0.6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

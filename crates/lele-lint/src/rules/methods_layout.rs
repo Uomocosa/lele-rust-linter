@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::path::Path;
 
 pub struct MethodsLayout;
@@ -17,149 +18,8 @@ impl MethodsLayout {
         category: Category::Delegates,
         summary: "Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).",
         why: "`methods/` hides bodies until you need them; the type file stays a short list of what the type can do.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r#"pub mod player;
-
-#[path = "../methods/mod.rs"]
-pub mod methods;
-"#,
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r#"pub mod player;
-
-#[path = "../methods/mod.rs"]
-pub mod methods;
-"#,
-            },
-            ExampleFile {
-                path: "src/player/mod.rs",
-                source: r"mod player;
-
-pub use player::Player;
-",
-            },
-            ExampleFile {
-                path: "src/player/player.rs",
-                source: r"use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-",
-            },
-            ExampleFile {
-                path: "methods/mod.rs",
-                source: r"pub mod player;
-",
-            },
-            ExampleFile {
-                path: "methods/player/mod.rs",
-                source: r"mod heal;
-pub use heal::heal;
-",
-            },
-            ExampleFile {
-                path: "methods/player/heal.rs",
-                source: r"use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("methods_layout/bad"),
+        good: rule_examples!("methods_layout/good"),
     };
 }
 

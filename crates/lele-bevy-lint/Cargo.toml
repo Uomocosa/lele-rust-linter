@@ -10,6 +10,7 @@ name = "lele-bevy-lint"
 path = "src/main.rs"
 
 [dependencies]
+rule-examples-macro.workspace = true
 lele-lint.workspace = true
 lele-snake-case.workspace = true
 atomic-delegate-macros.workspace = true

@@ -7,6 +7,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::collections::HashSet;
 
 pub struct RootReexport;
@@ -18,67 +19,8 @@ impl RootReexport {
         category: Category::Imports,
         summary: "A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.",
         why: "Root items are used as `crate::Meters`, never `crate::meters::Meters`.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod meters;
-",
-            },
-            ExampleFile {
-                path: "src/meters.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::meters::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod meters;
-pub use meters::Meters;
-",
-            },
-            ExampleFile {
-                path: "src/meters.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("root_reexport/bad"),
+        good: rule_examples!("root_reexport/good"),
     };
 }
 

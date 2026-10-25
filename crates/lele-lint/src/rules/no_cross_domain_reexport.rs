@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::path::Path;
 
 pub struct NoCrossDomainReexport;
@@ -17,76 +18,8 @@ impl NoCrossDomainReexport {
         category: Category::Imports,
         summary: "A `mod.rs` re-exports only items from its own folder; cross-domain re-exports go in `lib.rs`.",
         why: "Each domain's `mod.rs` then describes only that domain, and the crate's public surface is in one file.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod shop;
-pub mod stock;
-",
-            },
-            ExampleFile {
-                path: "src/shop/mod.rs",
-                source: r"pub use crate::stock::Item;
-",
-            },
-            ExampleFile {
-                path: "src/stock/mod.rs",
-                source: r#"#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::structs::Item;
-"#,
-            },
-            ExampleFile {
-                path: "src/stock/__basic__/mod.rs",
-                source: r"pub mod structs;
-",
-            },
-            ExampleFile {
-                path: "src/stock/__basic__/structs.rs",
-                source: r"pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod shop;
-pub mod stock;
-
-pub use stock::Item;
-",
-            },
-            ExampleFile {
-                path: "src/shop/mod.rs",
-                source: r"
-",
-            },
-            ExampleFile {
-                path: "src/stock/mod.rs",
-                source: r#"#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::structs::Item;
-"#,
-            },
-            ExampleFile {
-                path: "src/stock/__basic__/mod.rs",
-                source: r"pub mod structs;
-",
-            },
-            ExampleFile {
-                path: "src/stock/__basic__/structs.rs",
-                source: r"pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-",
-            },
-        ],
+        bad: rule_examples!("no_cross_domain_reexport/bad"),
+        good: rule_examples!("no_cross_domain_reexport/good"),
     };
 }
 

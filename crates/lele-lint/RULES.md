@@ -28,13 +28,6 @@ One public (`pub` or `pub(crate)`) item per file, and the file is named after it
 
 **Bad** (reports LELE001):
 
-`src/lib.rs`
-
-```rust
-mod greeting;
-pub use greeting::{farewell, greet};
-```
-
 `src/greeting.rs`
 
 ```rust
@@ -47,16 +40,14 @@ pub fn farewell(name: &str) -> String {
 }
 ```
 
-**Good:**
-
 `src/lib.rs`
 
 ```rust
-mod guest;
-mod host;
-pub use guest::Guest;
-pub use host::Host;
+mod greeting;
+pub use greeting::{farewell, greet};
 ```
+
+**Good:**
 
 `src/guest.rs`
 
@@ -106,6 +97,15 @@ mod tests {
 }
 ```
 
+`src/lib.rs`
+
+```rust
+mod guest;
+mod host;
+pub use guest::Guest;
+pub use host::Host;
+```
+
 ### LELE002 `snake_case_files`
 
 File and folder names are snake_case.
@@ -113,14 +113,6 @@ File and folder names are snake_case.
 **Why:** Module names are derived from file names; one casing keeps paths predictable.
 
 **Bad** (reports LELE002):
-
-`src/lib.rs`
-
-```rust
-#[path = "Guest.rs"]
-mod guest;
-pub use guest::Guest;
-```
 
 `src/Guest.rs`
 
@@ -146,14 +138,15 @@ mod tests {
 }
 ```
 
-**Good:**
-
 `src/lib.rs`
 
 ```rust
+#[path = "Guest.rs"]
 mod guest;
 pub use guest::Guest;
 ```
+
+**Good:**
 
 `src/guest.rs`
 
@@ -179,6 +172,13 @@ mod tests {
 }
 ```
 
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
+```
+
 ### LELE003 `method_file_co_location`
 
 A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
@@ -192,6 +192,24 @@ A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
 ```rust
 pub mod game;
 pub mod player;
+```
+
+`src/game/mod.rs`
+
+```rust
+mod player_rename;
+
+pub use player_rename::rename;
+```
+
+`src/game/player_rename.rs`
+
+```rust
+use crate::player;
+
+pub fn rename(player: &mut player::Player, name: String) {
+    player.name = name;
+}
 ```
 
 `src/player/mod.rs`
@@ -220,25 +238,13 @@ impl Default for Player {
 }
 ```
 
-`src/game/mod.rs`
-
-```rust
-mod player_rename;
-
-pub use player_rename::rename;
-```
-
-`src/game/player_rename.rs`
-
-```rust
-use crate::player;
-
-pub fn rename(player: &mut player::Player, name: String) {
-    player.name = name;
-}
-```
-
 **Good:**
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
 
 `src/lib.rs`
 
@@ -247,6 +253,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -294,46 +334,6 @@ mod tests {
 }
 ```
 
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
-    }
-}
-```
-
 ### LELE019 `constants_placement`
 
 A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
@@ -342,25 +342,17 @@ A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) sha
 
 **Bad** (reports LELE019):
 
-`src/lib.rs`
-
-```rust
-pub mod constants;
-pub mod player;
-```
-
 `src/constants.rs`
 
 ```rust
 pub const MAX_HEALTH: u32 = 100;
 ```
 
-`src/player/mod.rs`
+`src/lib.rs`
 
 ```rust
-mod health;
-
-pub use health::Health;
+pub mod constants;
+pub mod player;
 ```
 
 `src/player/health.rs`
@@ -389,35 +381,20 @@ mod tests {
 }
 ```
 
+`src/player/mod.rs`
+
+```rust
+mod health;
+
+pub use health::Health;
+```
+
 **Good:**
 
 `src/lib.rs`
 
 ```rust
 pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod health;
-#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::constants::MAX_HEALTH;
-pub use health::Health;
-```
-
-`src/player/__basic__/mod.rs`
-
-```rust
-pub mod constants;
-```
-
-`src/player/__basic__/constants.rs`
-
-```rust
-pub const MAX_HEALTH: u32 = 100;
 ```
 
 `src/player/health.rs`
@@ -446,6 +423,29 @@ mod tests {
 }
 ```
 
+`src/player/mod.rs`
+
+```rust
+mod health;
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+
+pub use basic::constants::MAX_HEALTH;
+pub use health::Health;
+```
+
+`src/player/__basic__/constants.rs`
+
+```rust
+pub const MAX_HEALTH: u32 = 100;
+```
+
+`src/player/__basic__/mod.rs`
+
+```rust
+pub mod constants;
+```
+
 ### LELE020 `container_placement`
 
 Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
@@ -460,14 +460,6 @@ Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in
 pub mod stock;
 ```
 
-`src/stock/mod.rs`
-
-```rust
-mod item;
-
-pub use item::Item;
-```
-
 `src/stock/item.rs`
 
 ```rust
@@ -475,6 +467,14 @@ pub struct Item {
     pub name: String,
     pub price: u32,
 }
+```
+
+`src/stock/mod.rs`
+
+```rust
+mod item;
+
+pub use item::Item;
 ```
 
 **Good:**
@@ -545,14 +545,6 @@ impl Guest {
 pub mod greeting;
 ```
 
-`src/greeting/mod.rs`
-
-```rust
-mod guest;
-
-pub use guest::Guest;
-```
-
 `src/greeting/guest.rs`
 
 ```rust
@@ -575,6 +567,14 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/greeting/mod.rs`
+
+```rust
+mod guest;
+
+pub use guest::Guest;
 ```
 
 ### LELE038 `dunder_module_name`
@@ -713,6 +713,12 @@ pub fn rename(player: &mut player::Player, name: String) {
 
 **Good:**
 
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
 `src/lib.rs`
 
 ```rust
@@ -720,6 +726,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -763,46 +803,6 @@ mod tests {
         let mut player = player::Player::default();
         player.heal(5);
         assert_eq!(player.health, 100);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
     }
 }
 ```
@@ -1114,6 +1114,12 @@ mod tests {
 
 **Good:**
 
+`methods/mod.rs`
+
+```rust
+pub mod tree;
+```
+
 `src/lib.rs`
 
 ```rust
@@ -1121,47 +1127,6 @@ pub mod tree;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
-```
-
-`src/tree/mod.rs`
-
-```rust
-mod tree;
-
-pub use tree::Tree;
-```
-
-`src/tree/tree.rs`
-
-```rust
-use atomic_delegate_macros::atomic_delegates;
-
-#[derive(Default)]
-pub struct Tree {
-    pub value: u32,
-    pub children: Vec<Tree>,
-}
-
-#[atomic_delegates]
-impl Tree {
-    pub fn total(&self) -> u32 {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::tree;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(tree::Tree::default().total(), 0);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod tree;
 ```
 
 `methods/tree/mod.rs`
@@ -1205,6 +1170,41 @@ mod tests {
             children: vec![leaf],
         };
         assert_eq!(total(&root), 3);
+    }
+}
+```
+
+`src/tree/mod.rs`
+
+```rust
+mod tree;
+
+pub use tree::Tree;
+```
+
+`src/tree/tree.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+#[derive(Default)]
+pub struct Tree {
+    pub value: u32,
+    pub children: Vec<Tree>,
+}
+
+#[atomic_delegates]
+impl Tree {
+    pub fn total(&self) -> u32 {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tree;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(tree::Tree::default().total(), 0);
     }
 }
 ```
@@ -1366,6 +1366,12 @@ mod tests {
 
 **Good:**
 
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
 `src/lib.rs`
 
 ```rust
@@ -1373,6 +1379,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1416,46 +1456,6 @@ mod tests {
         let mut player = player::Player::default();
         player.heal(5);
         assert_eq!(player.health, 100);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
     }
 }
 ```
@@ -1468,6 +1468,12 @@ Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl bloc
 
 **Bad** (reports LELE032):
 
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
 `src/lib.rs`
 
 ```rust
@@ -1475,6 +1481,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1519,17 +1559,21 @@ mod tests {
 }
 ```
 
+**Good:**
+
 `methods/mod.rs`
 
 ```rust
 pub mod player;
 ```
 
-`methods/player/mod.rs`
+`src/lib.rs`
 
 ```rust
-mod heal;
-pub use heal::heal;
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
 ```
 
 `methods/player/heal.rs`
@@ -1559,15 +1603,11 @@ mod tests {
 }
 ```
 
-**Good:**
-
-`src/lib.rs`
+`methods/player/mod.rs`
 
 ```rust
-pub mod player;
-
-#[path = "../methods/mod.rs"]
-pub mod methods;
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1611,46 +1651,6 @@ mod tests {
         let mut player = player::Player::default();
         player.heal(5);
         assert_eq!(player.health, 100);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
     }
 }
 ```
@@ -1667,25 +1667,6 @@ A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its ow
 
 ```rust
 pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod heal;
-mod player;
-
-pub use heal::heal;
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
 ```
 
 `src/player/heal.rs`
@@ -1711,7 +1692,32 @@ mod tests {
 }
 ```
 
+`src/player/mod.rs`
+
+```rust
+mod heal;
+mod player;
+
+pub use heal::heal;
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+```
+
 **Good:**
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
 
 `src/lib.rs`
 
@@ -1720,64 +1726,6 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
 ```
 
 `methods/player/heal.rs`
@@ -1807,21 +1755,11 @@ mod tests {
 }
 ```
 
-### LELE035 `methods_are_delegates`
-
-A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
-
-**Why:** `methods/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.
-
-**Bad** (reports LELE035):
-
-`src/lib.rs`
+`methods/player/mod.rs`
 
 ```rust
-pub mod player;
-
-#[path = "../methods/mod.rs"]
-pub mod methods;
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1869,17 +1807,27 @@ mod tests {
 }
 ```
 
+### LELE035 `methods_are_delegates`
+
+A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
+
+**Why:** `methods/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.
+
+**Bad** (reports LELE035):
+
 `methods/mod.rs`
 
 ```rust
 pub mod player;
 ```
 
-`methods/player/mod.rs`
+`src/lib.rs`
 
 ```rust
-mod heal;
-pub use heal::heal;
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+pub mod methods;
 ```
 
 `methods/player/heal.rs`
@@ -1913,7 +1861,65 @@ mod tests {
 }
 ```
 
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
 **Good:**
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
 
 `src/lib.rs`
 
@@ -1922,6 +1928,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = player::Player::capped(healed);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1970,46 +2010,6 @@ mod tests {
         let mut player = player::Player::default();
         player.heal(5);
         assert_eq!(player.health, 100);
-    }
-}
-```
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = player::Player::capped(healed);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
     }
 }
 ```
@@ -2452,14 +2452,6 @@ pub mod shop;
 pub mod stock;
 ```
 
-`src/shop/mod.rs`
-
-```rust
-mod cart;
-
-pub use cart::Cart;
-```
-
 `src/shop/cart.rs`
 
 ```rust
@@ -2492,6 +2484,14 @@ mod tests {
         assert_eq!(cart.total(), 3);
     }
 }
+```
+
+`src/shop/mod.rs`
+
+```rust
+mod cart;
+
+pub use cart::Cart;
 ```
 
 `src/stock/mod.rs`
@@ -2527,14 +2527,6 @@ pub mod shop;
 pub mod stock;
 ```
 
-`src/shop/mod.rs`
-
-```rust
-mod cart;
-
-pub use cart::Cart;
-```
-
 `src/shop/cart.rs`
 
 ```rust
@@ -2567,6 +2559,14 @@ mod tests {
         assert_eq!(cart.total(), 3);
     }
 }
+```
+
+`src/shop/mod.rs`
+
+```rust
+mod cart;
+
+pub use cart::Cart;
 ```
 
 `src/stock/mod.rs`
@@ -2608,14 +2608,6 @@ pub mod shop;
 pub mod stock;
 ```
 
-`src/shop/mod.rs`
-
-```rust
-mod cart;
-
-pub use cart::Cart;
-```
-
 `src/shop/cart.rs`
 
 ```rust
@@ -2646,6 +2638,14 @@ mod tests {
         assert_eq!(cart.total(), 3);
     }
 }
+```
+
+`src/shop/mod.rs`
+
+```rust
+mod cart;
+
+pub use cart::Cart;
 ```
 
 `src/stock/mod.rs`
@@ -2681,14 +2681,6 @@ pub mod shop;
 pub mod stock;
 ```
 
-`src/shop/mod.rs`
-
-```rust
-mod cart;
-
-pub use cart::Cart;
-```
-
 `src/shop/cart.rs`
 
 ```rust
@@ -2721,6 +2713,14 @@ mod tests {
         assert_eq!(cart.total(), 3);
     }
 }
+```
+
+`src/shop/mod.rs`
+
+```rust
+mod cart;
+
+pub use cart::Cart;
 ```
 
 `src/stock/mod.rs`
@@ -2941,14 +2941,6 @@ A type does not repeat its folder's name (`freenet::Client`, not `freenet::Freen
 pub mod freenet;
 ```
 
-`src/freenet/mod.rs`
-
-```rust
-mod freenet_client;
-
-pub use freenet_client::FreenetClient;
-```
-
 `src/freenet/freenet_client.rs`
 
 ```rust
@@ -2977,20 +2969,20 @@ mod tests {
 }
 ```
 
+`src/freenet/mod.rs`
+
+```rust
+mod freenet_client;
+
+pub use freenet_client::FreenetClient;
+```
+
 **Good:**
 
 `src/lib.rs`
 
 ```rust
 pub mod freenet;
-```
-
-`src/freenet/mod.rs`
-
-```rust
-mod client;
-
-pub use client::Client;
 ```
 
 `src/freenet/client.rs`
@@ -3019,6 +3011,14 @@ mod tests {
         assert_eq!(client.url(), "ws://localhost:7509");
     }
 }
+```
+
+`src/freenet/mod.rs`
+
+```rust
+mod client;
+
+pub use client::Client;
 ```
 
 ### LELE014 `no_trivial_accessors`
@@ -3454,28 +3454,6 @@ A caught error is never stored as text in the crate's own error enum (`map_err`,
 
 **Bad** (reports LELE039):
 
-`src/lib.rs`
-
-```rust
-mod error;
-pub use error::Error;
-
-mod config_text;
-pub use config_text::ConfigText;
-```
-
-`src/error.rs`
-
-```rust
-use std::path::PathBuf;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("cannot read {path}: {message}")]
-    Read { path: PathBuf, message: String },
-}
-```
-
 `src/config_text.rs`
 
 ```rust
@@ -3512,7 +3490,17 @@ mod tests {
 }
 ```
 
-**Good:**
+`src/error.rs`
+
+```rust
+use std::path::PathBuf;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("cannot read {path}: {message}")]
+    Read { path: PathBuf, message: String },
+}
+```
 
 `src/lib.rs`
 
@@ -3524,21 +3512,7 @@ mod config_text;
 pub use config_text::ConfigText;
 ```
 
-`src/error.rs`
-
-```rust
-use std::path::PathBuf;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("cannot read {path}")]
-    Read {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-}
-```
+**Good:**
 
 `src/config_text.rs`
 
@@ -3576,6 +3550,32 @@ mod tests {
 }
 ```
 
+`src/error.rs`
+
+```rust
+use std::path::PathBuf;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("cannot read {path}")]
+    Read {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+
+mod config_text;
+pub use config_text::ConfigText;
+```
+
 ### LELE040 `error_message_omits_source`
 
 An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
@@ -3583,13 +3583,6 @@ An `#[error("…")]` message does not print its own source (the `#[from]`/`#[sou
 **Why:** Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.
 
 **Bad** (reports LELE040):
-
-`src/lib.rs`
-
-```rust
-mod error;
-pub use error::Error;
-```
 
 `src/error.rs`
 
@@ -3601,14 +3594,14 @@ pub enum Error {
 }
 ```
 
-**Good:**
-
 `src/lib.rs`
 
 ```rust
 mod error;
 pub use error::Error;
 ```
+
+**Good:**
 
 `src/error.rs`
 
@@ -3618,6 +3611,13 @@ pub enum Error {
     #[error("i/o error")]
     Io(#[from] std::io::Error),
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
 ```
 
 ## Tests
@@ -3718,13 +3718,6 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 
 **Bad** (reports LELE007):
 
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
 `src/guest.rs`
 
 ```rust
@@ -3747,6 +3740,13 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 `src/tests/greet_more.rs`
@@ -3760,13 +3760,6 @@ fn greets_empty_name() {
 
 **Good:**
 
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
 `src/guest.rs`
 
 ```rust
@@ -3789,6 +3782,13 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 ### LELE009 `test_usage`
@@ -3799,13 +3799,6 @@ Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, 
 
 **Bad** (reports LELE009):
 
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
 `src/guest.rs`
 
 ```rust
@@ -3820,14 +3813,14 @@ impl Guest {
 }
 ```
 
-**Good:**
-
 `src/lib.rs`
 
 ```rust
 mod guest;
 pub use guest::Guest;
 ```
+
+**Good:**
 
 `src/guest.rs`
 
@@ -3851,6 +3844,13 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 ## Style
@@ -3866,13 +3866,6 @@ No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the e
 
 **Bad** (reports LELE024):
 
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
 `src/guest.rs`
 
 ```rust
@@ -3896,41 +3889,16 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 **Good:**
-
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
-`src/guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-```
 
 `lele.toml`
 
@@ -3943,13 +3911,30 @@ file = "src/guest.rs"
 reason = "example: the signature is fixed by a trait in another crate"
 ```
 
-### LELE031 `no_comments`
+`src/guest.rs`
 
-No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.
+```rust
+use derive_more::Deref;
 
-**Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe.
+#[derive(Deref)]
+pub struct Guest(pub String);
 
-**Bad** (reports LELE031):
+#[rustfmt::skip]
+impl Guest {
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
+    }
+}
+```
 
 `src/lib.rs`
 
@@ -3957,6 +3942,14 @@ No comments in `src/` or `methods/`, except a final `// no test_usage necessary`
 mod guest;
 pub use guest::Guest;
 ```
+
+### LELE031 `no_comments`
+
+No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.
+
+**Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe.
+
+**Bad** (reports LELE031):
 
 `src/guest.rs`
 
@@ -3983,14 +3976,14 @@ mod tests {
 }
 ```
 
-**Good:**
-
 `src/lib.rs`
 
 ```rust
 mod guest;
 pub use guest::Guest;
 ```
+
+**Good:**
 
 `src/guest.rs`
 
@@ -4014,6 +4007,13 @@ mod tests {
         assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
     }
 }
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 ## Crate config

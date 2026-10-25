@@ -5,6 +5,7 @@ use lele_lint::Project;
 use lele_lint::Rule;
 use lele_lint::RuleDoc;
 use lele_lint::RuleViolation;
+use rule_examples_macro::rule_examples;
 
 pub struct BevyExport;
 
@@ -15,34 +16,8 @@ impl BevyExport {
         category: Category::Layout,
         summary: "A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.",
         why: "Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.",
-        bad: &[
-            ExampleFile {
-                path: "src/inventory/mod.rs",
-                source: r"pub mod bevy_systems;
-
-pub use bevy_systems::poll_inv;
-",
-            },
-            ExampleFile {
-                path: "src/inventory/bevy_systems/mod.rs",
-                source: r"pub mod poll_inv;
-pub use poll_inv::poll_inv;
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/inventory/mod.rs",
-                source: r"pub mod bevy_systems;
-",
-            },
-            ExampleFile {
-                path: "src/inventory/bevy_systems/mod.rs",
-                source: r"pub mod poll_inv;
-pub use poll_inv::poll_inv;
-",
-            },
-        ],
+        bad: rule_examples!("bevy_export/bad"),
+        good: rule_examples!("bevy_export/good"),
     };
 }
 

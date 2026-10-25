@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 
 pub struct SnakeCaseFiles;
 
@@ -16,69 +17,8 @@ impl SnakeCaseFiles {
         category: Category::Layout,
         summary: "File and folder names are snake_case.",
         why: "Module names are derived from file names; one casing keeps paths predictable.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r#"#[path = "Guest.rs"]
-mod guest;
-pub use guest::Guest;
-"#,
-            },
-            ExampleFile {
-                path: "src/Guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod guest;
-pub use guest::Guest;
-",
-            },
-            ExampleFile {
-                path: "src/guest.rs",
-                source: r#"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-"#,
-            },
-        ],
+        bad: rule_examples!("snake_case_files/bad"),
+        good: rule_examples!("snake_case_files/good"),
     };
 }
 

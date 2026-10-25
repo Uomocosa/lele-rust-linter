@@ -1,0 +1,6 @@
+[lele.lint]
+
+[[lele.lint.clippy_allow_whitelist]]
+allow = "clippy::needless_pass_by_value"
+file = "src/guest.rs"
+reason = "example: the signature is fixed by a trait in another crate"

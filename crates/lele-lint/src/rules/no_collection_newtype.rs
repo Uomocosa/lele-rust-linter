@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::path::Path;
 
 pub struct NoCollectionNewtype;
@@ -17,62 +18,8 @@ impl NoCollectionNewtype {
         category: Category::Types,
         summary: "No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.",
         why: "The element is the concept; a collection wrapper hides the standard collection API behind a new name.",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod lobby;
-",
-            },
-            ExampleFile {
-                path: "src/lobby/mod.rs",
-                source: r#"#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::newtypes::Rooms;
-"#,
-            },
-            ExampleFile {
-                path: "src/lobby/__basic__/mod.rs",
-                source: r"pub mod newtypes;
-",
-            },
-            ExampleFile {
-                path: "src/lobby/__basic__/newtypes.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Rooms(pub Vec<String>);
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod lobby;
-",
-            },
-            ExampleFile {
-                path: "src/lobby/mod.rs",
-                source: r#"#[path = "__basic__/mod.rs"]
-pub mod basic;
-
-pub use basic::newtypes::Room;
-"#,
-            },
-            ExampleFile {
-                path: "src/lobby/__basic__/mod.rs",
-                source: r"pub mod newtypes;
-",
-            },
-            ExampleFile {
-                path: "src/lobby/__basic__/newtypes.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Room(pub String);
-",
-            },
-        ],
+        bad: rule_examples!("no_collection_newtype/bad"),
+        good: rule_examples!("no_collection_newtype/good"),
     };
 }
 

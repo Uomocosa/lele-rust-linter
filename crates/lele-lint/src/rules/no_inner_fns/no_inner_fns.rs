@@ -5,6 +5,7 @@ use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use rule_examples_macro::rule_examples;
 
 pub struct NoInnerFns;
 
@@ -15,132 +16,8 @@ impl NoInnerFns {
         category: Category::Delegates,
         summary: "No `fn` inside a function body, except a tree walk's inner `fn recursion`.",
         why: "A nested helper hides from the type that owns it; only the recursion's own walk belongs inside its public function (RATIONALE §11).",
-        bad: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"mod round;
-pub use round::Round;
-",
-            },
-            ExampleFile {
-                path: "src/round.rs",
-                source: r"pub struct Round {
-    pub hits: u32,
-    pub misses: u32,
-}
-
-impl Round {
-    pub fn score(&self) -> u32 {
-        fn base(hits: u32) -> u32 {
-            hits.saturating_mul(10)
-        }
-        base(self.hits).saturating_sub(self.misses)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Round;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
-    }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r#"pub mod tree;
-
-#[path = "../methods/mod.rs"]
-pub mod methods;
-"#,
-            },
-            ExampleFile {
-                path: "src/tree/mod.rs",
-                source: r"mod tree;
-
-pub use tree::Tree;
-",
-            },
-            ExampleFile {
-                path: "src/tree/tree.rs",
-                source: r"use atomic_delegate_macros::atomic_delegates;
-
-#[derive(Default)]
-pub struct Tree {
-    pub value: u32,
-    pub children: Vec<Tree>,
-}
-
-#[atomic_delegates]
-impl Tree {
-    pub fn total(&self) -> u32 {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::tree;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(tree::Tree::default().total(), 0);
-    }
-}
-",
-            },
-            ExampleFile {
-                path: "methods/mod.rs",
-                source: r"pub mod tree;
-",
-            },
-            ExampleFile {
-                path: "methods/tree/mod.rs",
-                source: r"mod total;
-pub use total::total;
-",
-            },
-            ExampleFile {
-                path: "methods/tree/total.rs",
-                source: r"use crate::tree;
-
-pub fn total(tree: &tree::Tree) -> u32 {
-    fn recursion(tree: &tree::Tree, out: &mut u32) {
-        *out = out.saturating_add(tree.value);
-        for child in &tree.children {
-            recursion(child, out);
-        }
-    }
-
-    let mut out = 0;
-    recursion(tree, &mut out);
-    out
-}
-
-#[cfg(test)]
-mod tests {
-    use super::total;
-    use crate::tree::Tree;
-
-    #[test]
-    fn test_usage() {
-        let leaf = Tree {
-            value: 2,
-            children: Vec::new(),
-        };
-        let root = Tree {
-            value: 1,
-            children: vec![leaf],
-        };
-        assert_eq!(total(&root), 3);
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("no_inner_fns/bad"),
+        good: rule_examples!("no_inner_fns/good"),
     };
 }
 

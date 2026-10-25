@@ -363,21 +363,6 @@ Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be
 
 **Bad** (reports LELEBEVY007):
 
-`src/discovery/ui/spawn_root.rs`
-
-```rust
-pub fn setup(s: &mut S) { s.spawn((Node,)); }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn spawn_root_ui_png_preview() {
-        let shot = std::path::PathBuf::from("spawn_root.png");
-        assert!(shot.exists());
-    }
-}
-```
-
 `src/discovery/ui/room_row.rs`
 
 ```rust
@@ -390,6 +375,21 @@ mod tests {
     #[test]
     fn room_row_ui_png_preview() {
         let _ = run(&scene(), &Config::default(), "x");
+    }
+}
+```
+
+`src/discovery/ui/spawn_root.rs`
+
+```rust
+pub fn setup(s: &mut S) { s.spawn((Node,)); }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn spawn_root_ui_png_preview() {
+        let shot = std::path::PathBuf::from("spawn_root.png");
+        assert!(shot.exists());
     }
 }
 ```

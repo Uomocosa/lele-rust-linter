@@ -17,6 +17,7 @@ rust-version = "1.98"
 atomic-delegate-macros = { path = "crates/atomic-delegate-macros" }
 lele-snake-case = { path = "crates/lele-snake-case" }
 lele-lint = { path = "crates/lele-lint" }
+rule-examples-macro = { path = "crates/rule-examples-macro" }
 
 clap = { version = "=4.6.6", features = ["derive"] }
 derive_more = { version = "=1.0.0", features = ["deref", "deref_mut", "display"] }

@@ -8,6 +8,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -21,88 +22,8 @@ impl BoundaryImports {
         category: Category::Imports,
         summary: "A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.",
         why: "A boundary marks a pure core; forbidden imports are how I/O and frameworks leak in.",
-        bad: &[
-            ExampleFile {
-                path: "lele.toml",
-                source: r#"[[lele.boundary]]
-name = "session is pure"
-why = "no io"
-folders = ["src/session"]
-cannot_use = ["std::time"]
-require = "honest"
-"#,
-            },
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod session;
-",
-            },
-            ExampleFile {
-                path: "src/session/mod.rs",
-                source: r"mod session;
-pub use session::Session;
-",
-            },
-            ExampleFile {
-                path: "src/session/session.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Session(pub u64);
-
-#[rustfmt::skip]
-impl Session {
-    pub fn expiry(&self) -> u64 { std::time::SystemTime::now().elapsed().map_or(**self, |_| self.saturating_sub(1)) }
-}
-",
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "lele.toml",
-                source: r#"[[lele.boundary]]
-name = "session is pure"
-why = "no io"
-folders = ["src/session"]
-cannot_use = ["std::time"]
-require = "honest"
-"#,
-            },
-            ExampleFile {
-                path: "src/lib.rs",
-                source: r"pub mod session;
-",
-            },
-            ExampleFile {
-                path: "src/session/mod.rs",
-                source: r"mod session;
-pub use session::Session;
-",
-            },
-            ExampleFile {
-                path: "src/session/session.rs",
-                source: r"use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Session(pub u64);
-
-#[rustfmt::skip]
-impl Session {
-    pub fn expiry(&self) -> u64 { self.saturating_sub(1) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Session;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Session(3).expiry(), 2);
-    }
-}
-",
-            },
-        ],
+        bad: rule_examples!("boundary_imports/bad"),
+        good: rule_examples!("boundary_imports/good"),
     };
 }
 

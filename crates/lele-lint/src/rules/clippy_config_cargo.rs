@@ -6,6 +6,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use rule_examples_macro::rule_examples;
 use std::path::PathBuf;
 
 pub struct ClippyConfigCargo;
@@ -17,43 +18,8 @@ impl ClippyConfigCargo {
         category: Category::Config,
         summary: "`Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).",
         why: "Every crate gets the same strict baseline, so no crate silently allows unwraps, panics or lossy casts.",
-        bad: &[
-            ExampleFile {
-                path: "Cargo.toml",
-                source: r#"[package]
-name = "example"
-version = "0.1.0"
-edition = "2021"
-"#,
-            },
-        ],
-        good: &[
-            ExampleFile {
-                path: "Cargo.toml",
-                source: r#"[package]
-name = "example"
-version = "0.1.0"
-edition = "2021"
-
-[lints.clippy]
-pedantic = { level = "deny", priority = -1 }
-nursery = { level = "deny", priority = -1 }
-unwrap_used = "deny"
-expect_used = "deny"
-indexing_slicing = "deny"
-arithmetic_side_effects = "deny"
-unreachable = "deny"
-unimplemented = "deny"
-unchecked_time_subtraction = "deny"
-todo = "deny"
-string_slice = "deny"
-panic_in_result_fn = "deny"
-panic = "deny"
-exit = "deny"
-as_conversions = "deny"
-"#,
-            },
-        ],
+        bad: rule_examples!("clippy_config_cargo/bad"),
+        good: rule_examples!("clippy_config_cargo/good"),
     };
 }
 

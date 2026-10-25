@@ -29,6 +29,7 @@ impl Linter {
     pub fn render_rule(rule: &dyn Rule) -> String {}
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}
+    pub fn retain_codes(&mut self, codes: &[String]) -> Vec<String> {}
     pub fn render_report(
         violations: &[RuleViolation],
         rules: &[Box<dyn Rule>],

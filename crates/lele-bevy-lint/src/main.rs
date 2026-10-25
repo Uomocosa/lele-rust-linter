@@ -33,7 +33,18 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let linter = BevyLinter::from(args.common.error_format);
+    let mut linter = BevyLinter::from(args.common.error_format);
+
+    if let Some(codes) = &args.common.only {
+        let unknown = linter.retain_codes(codes);
+        if !unknown.is_empty() {
+            eprintln!(
+                "lele_bevy_lint: no rule with code or name `{}`",
+                unknown.join("`, `")
+            );
+            process::exit(1);
+        }
+    }
 
     if args.common.rule_list {
         linter.print_rule_list();

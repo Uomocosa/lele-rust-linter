@@ -18,6 +18,7 @@ the rules (domains, atomic files, delegates), load the `lele-syntax-rs` skill. B
    the error count per rule.
 2. Fix ONE rule code at a time, in the order of the sections below (layout first, style
    last). Between codes in the same section, start with the one that has the fewest errors.
+   `lele-lint --only <CODE> <crate>` shows just that code's errors (comma-separate several).
 3. Unsure what a rule wants? `lele-lint --explain <CODE>` prints a Bad and a Good example
    crate. Copy the Good shape.
 4. Re-run the linter after each code: fixes cascade, so the list changes every time.
@@ -33,7 +34,8 @@ A fix for one rule must not break another. Before saving, check the file against
 - Named in snake_case after its one public item (LELE001, LELE002).
 - Ends with `#[cfg(test)] mod tests` holding a `test_usage` test, or with
   `// no test_usage necessary` when there is nothing to test (LELE009).
-- No comments (LELE031); no `#[allow]`/`#[expect]` (LELE024).
+- No comments (LELE031): before deleting one, move what it says into the item's name or its
+  `test_usage` test. No `#[allow]`/`#[expect]` (LELE024).
 - Imports the domain, not the item (`use crate::stock;` then `stock::Item`, LELE016);
   no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
 - Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).

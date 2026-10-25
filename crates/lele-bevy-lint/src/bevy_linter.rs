@@ -1,10 +1,11 @@
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
+use derive_more::DerefMut;
 use lele_lint::ErrorFormat;
 use lele_lint::Linter;
 
-#[derive(Deref)]
+#[derive(Deref, DerefMut)]
 pub struct BevyLinter(pub Linter);
 
 impl Default for BevyLinter {

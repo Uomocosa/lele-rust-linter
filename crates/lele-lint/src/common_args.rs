@@ -15,6 +15,9 @@ pub struct CommonArgs {
     #[arg(long, value_name = "CODE")]
     pub explain: Option<String>,
 
+    #[arg(long, value_name = "CODES", value_delimiter = ',')]
+    pub only: Option<Vec<String>>,
+
     #[arg(long, value_name = "PATH")]
     pub config: Option<PathBuf>,
 

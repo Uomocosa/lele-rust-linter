@@ -36,10 +36,10 @@ docs: skill
     cargo run --quiet -p lele-bevy-lint -- --emit rules-md > crates/lele-bevy-lint/RULES.md
     cargo run --quiet -p lele-bevy-lint -- --emit skill-md > .opencode/skills/bevy-ui-preview/SKILL.md
 
-# regenerate the lele-lint-rules agent skill (skills/lele-lint-rules/SKILL.md)
+# regenerate the lele-lint-rules-rs agent skill (skills/lele-lint-rules-rs/SKILL.md)
 skill:
-    mkdir -p skills/lele-lint-rules
-    cargo run --quiet -p lele-lint -- --skill-md > skills/lele-lint-rules/SKILL.md
+    mkdir -p skills/lele-lint-rules-rs
+    cargo run --quiet -p lele-lint -- --skill-md > skills/lele-lint-rules-rs/SKILL.md
 
 # --- tool install (reproducible) ---------------------------------------------
 # Install both binaries from this checkout. Use this instead of a bare

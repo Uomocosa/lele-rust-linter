@@ -4,12 +4,12 @@ use lele_lint::Linter;
 
 const MAX_SKILL_LINES: usize = 250;
 
-/// `skills/lele-lint-rules/SKILL.md` is generated from the rule docs and must not drift from
+/// `skills/lele-lint-rules-rs/SKILL.md` is generated from the rule docs and must not drift from
 /// them. Regenerate it with `just docs`.
 #[test]
 fn skill_md_is_up_to_date() -> Result<(), Box<dyn std::error::Error>> {
     let path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../skills/lele-lint-rules/SKILL.md");
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../skills/lele-lint-rules-rs/SKILL.md");
     let actual = Linter::default().skill_markdown();
     let expected = std::fs::read_to_string(&path).unwrap_or_default();
     if expected == actual {

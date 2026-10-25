@@ -6,7 +6,7 @@ use crate::Linter;
 use crate::Rule;
 
 const HEADER: &str = "---
-name: lele-lint-rules
+name: lele-lint-rules-rs
 description: Use when lele-lint reports LELE0xx errors, or before writing or reviewing Rust in a crate checked by lele-lint. One entry per rule with the fix to apply, listed in fix order. Generated from the linter, so it never drifts from it.
 ---
 
@@ -88,7 +88,7 @@ mod tests {
     fn test_usage() {
         let linter = Linter::default();
         let text = skill_markdown(&linter);
-        assert!(text.starts_with("---\nname: lele-lint-rules\n"));
+        assert!(text.starts_with("---\nname: lele-lint-rules-rs\n"));
         for rule in &linter.rules {
             assert!(text.contains(&format!("**{} `{}`**", rule.code(), rule.name())));
         }

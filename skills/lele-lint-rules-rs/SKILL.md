@@ -63,7 +63,7 @@ A fix for one rule must not break another. Before saving, check the file against
 
 - **LELE004 `method_visibility`**: A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
   - Fix: Change `pub mod <method_file>;` to `mod <method_file>;` and remove any `pub use` of it; callers use the type's method instead.
-- **LELE008 `helpers_are_methods`**: No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` and test code are exempt.
+- **LELE008 `helpers_are_methods`**: No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
   - Fix: Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `methods/<type>/<fn>.rs`.
 - **LELE017 `atomic_delegates`**: Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
   - Fix: Move each method longer than 3 statements to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.

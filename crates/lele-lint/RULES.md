@@ -664,7 +664,7 @@ pub struct Item {
 ## Delegates: methods and `methods/`
 
 - [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
-- [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` and test code are exempt.
+- [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
 - [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
@@ -825,7 +825,7 @@ mod tests {
 
 ### LELE008 `helpers_are_methods`
 
-No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` and test code are exempt.
+No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
 
 **Why:** `src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.
 

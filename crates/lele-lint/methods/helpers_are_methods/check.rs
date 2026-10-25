@@ -16,7 +16,11 @@ pub fn check(
         if rel_path.components().any(|c| c.as_os_str() == "tests") {
             continue;
         }
-        let is_main_file = rel_path.file_name().is_some_and(|name| name == "main.rs");
+        let is_bin_root = rel_path
+            .parent()
+            .is_some_and(|dir| dir == std::path::Path::new("bin"));
+        let is_main_file =
+            is_bin_root || rel_path.file_name().is_some_and(|name| name == "main.rs");
         let absolute = project.src_dir.join(rel_path);
         for item in &file.items {
             match item {
@@ -97,11 +101,16 @@ mod tests {
             PathBuf::from("main.rs"),
             syn::parse_str("fn main() {}").unwrap(),
         );
+        project.parsed_files.insert(
+            PathBuf::from("bin/new_game_id.rs"),
+            syn::parse_str("fn main() {} fn bin_helper() {}").unwrap(),
+        );
         let messages: Vec<String> = check(&HelpersAreMethods, &project)
             .into_iter()
             .map(|v| v.message)
             .collect();
-        assert_eq!(messages.len(), 2);
+        assert_eq!(messages.len(), 3);
+        assert!(messages.iter().any(|m| m.contains("`bin_helper`")));
         assert!(messages.iter().any(|m| m.contains("`hidden`")));
         assert!(messages.iter().any(|m| m.contains("`helper`")));
     }

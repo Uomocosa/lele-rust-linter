@@ -73,7 +73,7 @@ pub fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> Strin
         ),
     };
     format!(
-        "free fn `{name}` has no owner type — {advice}; then run `lele-lint --sync-methods`. A true process/task entry point goes in [[lele.lint.entry_points]]"
+        "free fn `{name}` has no owner type — {advice}; then run `lele-lint --sync-methods`. Only if the user confirms it is a process/task entry point, list it in `[[lele.lint.entry_points]]` instead"
     )
 }
 

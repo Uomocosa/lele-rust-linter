@@ -119,7 +119,7 @@ mod tests {
             &project,
         );
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("SHAPE-F"));
+        assert!(violations[0].message.contains("must hold only its fn"));
     }
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
         assert!(
             violations
                 .iter()
-                .any(|d| d.message.contains("rename to `parse_source_files.rs`")),
+                .any(|d| d.message.contains("rename it to `parse_source_files.rs`")),
             "expected rename diagnostic, got {violations:?}"
         );
     }
@@ -212,7 +212,7 @@ mod tests {
         assert!(
             violations.iter().any(|d| d
                 .message
-                .contains("must live at `methods/project/discover.rs`")),
+                .contains("move it to `methods/project/discover.rs`")),
             "expected mislocated diagnostic, got {violations:?}"
         );
     }

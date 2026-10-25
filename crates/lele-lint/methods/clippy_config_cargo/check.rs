@@ -50,13 +50,13 @@ pub fn check(
             for key in ["pedantic", "nursery"] {
                 match table.get(key) {
                     Some(v) if rules::clippy_config_cargo::ClippyConfigCargo::is_deny_with_priority(v, true) => {}
-                    _ => violations.push(RuleViolation::from_file(cargo_path.clone(), rules::clippy_config_cargo::ClippyConfigCargo::CODE, format!("Cargo.toml [lints.clippy].{key} {} — minimum clippy config requires it", "must be { level = \"deny\", priority = -1 }"))),
+                    _ => violations.push(RuleViolation::from_file(cargo_path.clone(), rules::clippy_config_cargo::ClippyConfigCargo::CODE, format!("Cargo.toml `[lints.clippy].{key}` is missing or weaker than required — set it to {}", "`{ level = \"deny\", priority = -1 }`"))),
                 }
             }
             for key in REQUIRED_LINTS {
                 match table.get(*key) {
                     Some(v) if rules::clippy_config_cargo::ClippyConfigCargo::is_deny_with_priority(v, false) => {}
-                    _ => violations.push(RuleViolation::from_file(cargo_path.clone(), rules::clippy_config_cargo::ClippyConfigCargo::CODE, format!("Cargo.toml [lints.clippy].{key} {} — minimum clippy config requires it", "must be \"deny\""))),
+                    _ => violations.push(RuleViolation::from_file(cargo_path.clone(), rules::clippy_config_cargo::ClippyConfigCargo::CODE, format!("Cargo.toml `[lints.clippy].{key}` is missing or weaker than required — set it to {}", "`\"deny\"`"))),
                 }
             }
             violations

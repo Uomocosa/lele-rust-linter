@@ -35,13 +35,13 @@ pub fn check(
                     item.sig.ident
                 )),
                 syn::Item::Impl(_) => Some(
-                    "`impl` block in a method file; impls live next to their type in `src/`, bodies in `methods/<type>/<method>.rs`".to_string(),
+                    "`impl` block in a method file — move it to `src/`: impls live next to their type in `src/`, bodies in `methods/<type>/<method>.rs`".to_string(),
                 ),
                 syn::Item::Struct(syn::ItemStruct { ident, .. })
                 | syn::Item::Enum(syn::ItemEnum { ident, .. })
                 | syn::Item::Trait(syn::ItemTrait { ident, .. })
                 | syn::Item::Type(syn::ItemType { ident, .. }) => Some(format!(
-                    "type `{ident}` in a method file; types live in `src/` (`pub(crate)` for internal machinery)"
+                    "type `{ident}` in a method file — move it to `src/` (as `pub(crate)` if it is internal machinery)"
                 )),
                 _ => Some(format!(
                     "only `use`, private `const`, `pub fn {stem}` and `#[cfg(test)] mod tests` may appear in a method file"

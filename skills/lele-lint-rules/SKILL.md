@@ -25,6 +25,21 @@ the rules (domains, atomic files, delegates), load the `lele-syntax-rs` skill. B
    entries in `lele.toml`, `Cargo.toml` or `clippy.toml` (adding the required clippy
    baseline for LELE028/LELE029 is fine). If a fix seems to need one, stop and ask the user.
 
+## Every file you create or edit
+
+A fix for one rule must not break another. Before saving, check the file against this list
+(most cascades come from new files):
+
+- Named in snake_case after its one public item (LELE001, LELE002).
+- Ends with `#[cfg(test)] mod tests` holding a `test_usage` test, or with
+  `// no test_usage necessary` when there is nothing to test (LELE009).
+- No comments (LELE031); no `#[allow]`/`#[expect]` (LELE024).
+- Imports the domain, not the item (`use crate::stock;` then `stock::Item`, LELE016);
+  no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
+- Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).
+- A data type with no `impl` goes in the domain's `__basic__/` (LELE020).
+- A method body over 3 statements lives in `methods/<type>/<method>.rs` (LELE017, LELE030).
+
 ## Layout: files and folders
 
 - **LELE001 `atomic_file`**: One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).

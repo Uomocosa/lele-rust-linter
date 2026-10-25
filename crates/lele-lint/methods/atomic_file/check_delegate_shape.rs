@@ -41,11 +41,11 @@ pub fn check_delegate_shape(
         .is_some_and(|entry| entry.methods.contains(rest));
     let message = if is_delegate {
         format!(
-            "delegate method file `{file_stem}.rs` for `{type_name}::{rest}` must live at `methods/{type_snake}/{rest}.rs`, not in `src/`"
+            "delegate method file `{file_stem}.rs` for `{type_name}::{rest}` is in `src/` — move it to `methods/{type_snake}/{rest}.rs`"
         )
     } else {
         format!(
-            "filename mismatch — `{file_stem}.rs` looks like a method file for `{type_name}` but `{rest}` is not an atomic delegate; rename to `{rest}.rs`"
+            "filename mismatch: `{file_stem}.rs` looks like a method file for `{type_name}` but `{rest}` is not an atomic delegate — rename it to `{rest}.rs`, or make `{rest}` a method of `{type_name}` (a constructor such as `new` goes in `{type_snake}.rs`)"
         )
     };
     vec![RuleViolation::from_file(

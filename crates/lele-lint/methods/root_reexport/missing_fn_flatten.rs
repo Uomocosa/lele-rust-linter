@@ -26,12 +26,12 @@ pub fn missing_fn_flatten(stem: &str, file: &syn::File, lib: &syn::File) -> Vec<
     for name in fns {
         if !has_private_mod {
             missing.push(format!(
-                "SHAPE-F fn-file `{stem}.rs` holds `pub fn {name}` — declare private `mod {stem};` in lib.rs (not `pub mod`)"
+                "root fn file `{stem}.rs` holds `pub fn {name}` — declare private `mod {stem};` in lib.rs (not `pub mod`)"
             ));
         }
         if !reexported.contains(&(stem.to_string(), name.clone())) {
             missing.push(format!(
-                "SHAPE-F fn-file `{stem}.rs` holds `pub fn {name}` — add `pub use {stem}::{name};` to lib.rs for `crate::{name}()`"
+                "root fn file `{stem}.rs` holds `pub fn {name}` — add `pub use {stem}::{name};` to lib.rs for `crate::{name}()`"
             ));
         }
     }

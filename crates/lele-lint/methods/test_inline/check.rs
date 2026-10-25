@@ -12,7 +12,7 @@ pub fn check(_self: &rules::test_inline::TestInline, project: &Project) -> Vec<R
         }
         if rules::test_inline::TestInline::has_tests_component(&entry.relative_path) {
             violations.push(RuleViolation::from_file(entry.absolute_path.clone(), rules::test_inline::TestInline::CODE, format!(
-                    "unit tests must be in the same file as the primary item — delete `{}` and move the tests inline",
+                    "unit tests are in a separate file `{}` — move them into `#[cfg(test)] mod tests` of the file they test, then delete this file",
                     entry.relative_path.display()
                 )));
         }

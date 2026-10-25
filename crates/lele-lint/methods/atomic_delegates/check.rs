@@ -68,7 +68,7 @@ pub fn check(
                 let names =
                     rules::atomic_delegates::AtomicDelegates::names_str(&methods_over_three);
                 violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
-                        "method(s) `{names}` have >3 statements — extract each into `<type>_<method>.rs`"
+                        "method(s) `{names}` have >3 statements — move each body to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block"
                     )));
                 continue;
             }

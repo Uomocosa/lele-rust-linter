@@ -48,7 +48,7 @@ pub fn check(
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, first.line,
                 rules::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
-                    "`fn {}` restyles UI on `{}` but defines no `*_ui_{}_preview` test whose `Scene::build` renders it (register, call or add one of `{}`)",
+                    "`fn {}` restyles UI on `{}` but defines no `*_ui_{}_preview` test whose `Scene::build` renders it — add one that registers, calls or adds one of `{}`",
                     first.system,
                     subject_list,
                     rules::bevy_ui_restyle::BevyUiRestyle::suffix(kind),

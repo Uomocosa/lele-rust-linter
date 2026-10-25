@@ -60,7 +60,7 @@ pub fn check(
                     project,
                     &rel,
                     format!(
-                        "missing `methods/{type_snake}/{method}.rs` for `{type_snake}::{method}` — create it with `pub fn {method}` and a `test_usage` test"
+                        "missing `methods/{type_snake}/{method}.rs` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead"
                     ),
                 )),
             }
@@ -76,7 +76,7 @@ pub fn check(
                     project,
                     &mod_rel,
                     format!(
-                        "`methods/{type_snake}/mod.rs` is out of date — run `lele_lint --sync-methods`"
+                        "`methods/{type_snake}/mod.rs` is out of date — run `lele-lint --sync-methods`"
                     ),
                 ));
             }
@@ -84,7 +84,7 @@ pub fn check(
             violations.push(rules::methods_layout::MethodsLayout::file_violation(
                 project,
                 &mod_rel,
-                format!("missing `methods/{type_snake}/mod.rs` — run `lele_lint --sync-methods`"),
+                format!("missing `methods/{type_snake}/mod.rs` — run `lele-lint --sync-methods`"),
             ));
         }
     }
@@ -123,14 +123,14 @@ pub fn check(
                 violations.push(rules::methods_layout::MethodsLayout::file_violation(
                     project,
                     root_mod,
-                    "`methods/mod.rs` is out of date — run `lele_lint --sync-methods`".to_string(),
+                    "`methods/mod.rs` is out of date — run `lele-lint --sync-methods`".to_string(),
                 ));
             }
         } else {
             violations.push(rules::methods_layout::MethodsLayout::file_violation(
                 project,
                 root_mod,
-                "missing `methods/mod.rs` — run `lele_lint --sync-methods`".to_string(),
+                "missing `methods/mod.rs` — run `lele-lint --sync-methods`".to_string(),
             ));
         }
     }

@@ -47,7 +47,7 @@ pub fn check(
             _ => violations.push(RuleViolation::from_file(
                 path.clone(),
                 rules::clippy_config_clippy::ClippyConfigClippy::CODE,
-                format!("clippy.toml missing {key} = true — minimum clippy config requires it"),
+                format!("clippy.toml is missing `{key}` — add `{key} = true`"),
             )),
         }
     }

@@ -126,7 +126,7 @@ cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview -- --nocapture
 
 ### LELEBEVY001 `bevy_export`
 
-A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.
+A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.
 
 **Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
 

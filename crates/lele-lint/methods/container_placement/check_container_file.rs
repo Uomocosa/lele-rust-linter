@@ -1,6 +1,7 @@
 use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
+use lele_snake_case::ToLeleSnakeCase;
 use std::path::Path;
 
 pub fn check_container_file(
@@ -26,7 +27,7 @@ pub fn check_container_file(
         };
         if rules::container_placement::ContainerPlacement::has_behavior(file, &name) {
             violations.push(RuleViolation::from_file(file_path.to_path_buf(), rules::container_placement::ContainerPlacement::CODE, format!(
-                    "`{name}` has impls; `{stem}.rs` holds behavior-free items only — move it to `{name}.rs`"
+                    "`{name}` has impls; `{stem}.rs` holds behavior-free items only — move it to its own `{}.rs`", name.to_snake_case()
                 )));
             continue;
         }

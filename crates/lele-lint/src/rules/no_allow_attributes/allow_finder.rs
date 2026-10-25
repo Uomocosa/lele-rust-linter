@@ -27,7 +27,7 @@ impl<'ast> Visit<'ast> for AllowFinder<'_> {
         }
         let start = attr.span().start();
         self.violations.push(RuleViolation::from_site(self.file.clone(), start.line, start.column, rules::no_allow_attributes::NoAllowAttributes::CODE, format!(
-                "`{kind}` attribute is banned — add an [[lele.lint.clippy_allow_whitelist]] entry with the exact `allow` lint path, `file` and a non-empty `reason` in lele.toml to whitelist it"
+                "`{kind}` attribute is banned — remove it and fix the code the lint points at; a `[[lele.lint.clippy_allow_whitelist]]` entry in lele.toml needs the user's approval"
             )));
     }
 }

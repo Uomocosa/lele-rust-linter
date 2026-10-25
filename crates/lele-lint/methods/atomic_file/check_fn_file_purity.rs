@@ -46,7 +46,7 @@ pub fn check_fn_file_purity(
             &format!("`{}.rs`", name.to_snake_case())
         };
         violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_file::AtomicFile::CODE, format!(
-                "SHAPE-F fn-file `{file_stem}.rs` must hold only the fn — move exposed `{kind} {name}` to {home} (O2-extraction)"
+                "fn file `{file_stem}.rs` must hold only its fn — move exposed `{kind} {name}` to {home}"
             )));
     }
     violations

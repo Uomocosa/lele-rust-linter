@@ -12,12 +12,12 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELEBEVY001 `bevy_export`](#lelebevy001-bevy_export): A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.
+- [LELEBEVY001 `bevy_export`](#lelebevy001-bevy_export): A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.
 - [LELEBEVY002 `bevy_folder`](#lelebevy002-bevy_folder): A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.
 
 ### LELEBEVY001 `bevy_export`
 
-A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.
+A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.
 
 **Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
 

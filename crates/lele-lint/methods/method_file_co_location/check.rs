@@ -48,7 +48,7 @@ pub fn check(
                     .collect::<Vec<_>>()
                     .join(", ");
                 violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
-                        "method file `{}` must be co-located with `{type_snake}.rs`; found in: {candidates}",
+                        "method file `{}` is not next to `{type_snake}.rs` — move it into the folder holding `{type_snake}.rs` (found in: {candidates})",
                         rel_path.display()
                     )));
             }

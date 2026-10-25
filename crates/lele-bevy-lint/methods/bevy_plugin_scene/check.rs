@@ -27,7 +27,7 @@ pub fn check(
             scan::BevyProject(project).violation(source.origin, rel_path, 1,
                 rules::bevy_plugin_scene::BevyPluginScene::CODE,
                 String::from(
-                    "file defines a `Plugin` whose domain spawns UI but has no `*_ui_scene_preview` test routing through `lele_bevy_preview::run`",
+                    "file defines a `Plugin` whose domain spawns UI but has no `*_ui_scene_preview` test routing through `lele_bevy_preview::run` — add one (see the bevy-ui-preview skill)",
                 ),
             )
         });

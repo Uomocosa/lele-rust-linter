@@ -14,7 +14,7 @@ impl BevyExport {
     pub const CODE: &'static str = "LELEBEVY001";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.",
+        summary: "A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.",
         why: "Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.",
         fix: "Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `bevy_systems/mod.rs`.",
         bad: rule_examples!("bevy_export/bad"),

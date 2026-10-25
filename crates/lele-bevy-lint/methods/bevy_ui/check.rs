@@ -25,7 +25,7 @@ pub fn check(_self: &rules::bevy_ui::BevyUi, project: &Project) -> Vec<RuleViola
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
                 rules::bevy_ui::BevyUi::CODE,
                 format!(
-                    "file spawns UI `{}` reachable from production but defines no `*_ui_png_preview` test that renders it through `lele_bevy_preview::run`",
+                    "file spawns UI `{}` reachable from production but defines no `*_ui_png_preview` test that renders it through `lele_bevy_preview::run` — add one (see the bevy-ui-preview skill)",
                     visual.visual
                 ),
             ));

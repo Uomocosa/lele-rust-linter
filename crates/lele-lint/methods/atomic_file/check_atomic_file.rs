@@ -1,6 +1,7 @@
 use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
+use lele_snake_case::ToLeleSnakeCase;
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -24,16 +25,23 @@ pub fn check_atomic_file(
         known_stems,
     );
     for extra in pub_items.get(1..).unwrap_or(&[]) {
-        let suggested_file = format!("{}_{}.rs", file_stem, extra.name);
+        let kind = extra.kind.kind_str();
+        let message = if kind == "fn" {
+            format!(
+                "only one public item per file — make `pub fn {}` a method of the type it works on (first argument or return type), with its body in `methods/<type>/{}.rs`",
+                extra.name, extra.name
+            )
+        } else {
+            format!(
+                "only one public item per file — move `pub {kind} {}` to its own `{}.rs`",
+                extra.name,
+                extra.name.to_snake_case()
+            )
+        };
         violations.push(RuleViolation::from_file(
             project.src_dir.join(rel_path),
             rules::atomic_file::AtomicFile::CODE,
-            format!(
-                "only one public item per file — move `pub {} {}` to `{}`",
-                extra.kind.kind_str(),
-                extra.name,
-                suggested_file
-            ),
+            message,
         ));
     }
     violations.extend(rules::atomic_file::AtomicFile::check_fn_file_purity(

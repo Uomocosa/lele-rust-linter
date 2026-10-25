@@ -28,7 +28,7 @@ pub fn check(_self: &rules::bevy_ui_mp4::BevyUiMp4, project: &Project) -> Vec<Ru
             scan::BevyProject(project).violation(source.origin, rel_path, visual.line,
                 rules::bevy_ui_mp4::BevyUiMp4::CODE,
                 format!(
-                    "file spawns UI `{}` and drives it over time ({}) but defines no `*_ui_mp4_preview` test",
+                    "file spawns UI `{}` and drives it over time ({}) but defines no `*_ui_mp4_preview` test — add one whose `Scene` has a `Timeline` (see the bevy-ui-preview skill)",
                     visual.visual,
                     found_drivers.join(", ")
                 ),

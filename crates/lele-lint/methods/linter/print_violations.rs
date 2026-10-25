@@ -1,14 +1,19 @@
+use std::io::Write as _;
+
 use crate::ErrorFormat;
 use crate::Linter;
 use crate::RuleViolation;
 
 pub fn print_violations(linter: &Linter, violations: &[RuleViolation]) {
     let mut stderr = std::io::stderr().lock();
-    for d in violations {
-        match linter.error_format {
-            ErrorFormat::Github => Linter::print_github(d, &mut stderr),
-            ErrorFormat::Clippy => Linter::print_clippy(d, &mut stderr),
+    match linter.error_format {
+        ErrorFormat::Clippy => {
+            let report = Linter::render_report(violations, Linter::use_color());
+            let _ = stderr.write_all(report.as_bytes());
         }
+        ErrorFormat::Github => violations
+            .iter()
+            .for_each(|d| Linter::print_github(d, &mut stderr)),
     }
 }
 

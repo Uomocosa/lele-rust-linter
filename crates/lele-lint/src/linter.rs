@@ -8,6 +8,7 @@ use crate::Project;
 use crate::Rule;
 use crate::RuleViolation;
 use std::fmt::Write as _;
+use std::io::IsTerminal as _;
 use std::io::Write;
 
 pub struct Linter {
@@ -27,6 +28,14 @@ impl Linter {
     pub fn render_rule(rule: &dyn Rule) -> String {}
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}
+    pub fn render_report(violations: &[RuleViolation], color: bool) -> String {}
+    pub fn render_violation(
+        violation: &RuleViolation,
+        source: Option<&str>,
+        color: bool,
+    ) -> String {
+    }
+    pub fn render_summary(violations: &[RuleViolation], color: bool) -> String {}
 }
 
 #[rustfmt::skip]
@@ -37,19 +46,12 @@ impl Linter {
             .find(|c| c.code().eq_ignore_ascii_case(code_or_name) || c.name() == code_or_name)
             .map(|c| Self::render_rule(c.as_ref()))
     }
-    pub(crate) fn print_clippy(d: &RuleViolation, w: &mut impl Write) {
-        let _ = match d.location {
-            Location::File => writeln!(w, "{}: error[{}]: {}", d.file.display(), d.code, d.message),
-            Location::Site { line, col } => writeln!(
-                w,
-                "{}:{}:{}: error[{}]: {}",
-                d.file.display(),
-                line,
-                col,
-                d.code,
-                d.message
-            ),
-        };
+    pub(crate) fn use_color() -> bool {
+        std::env::var_os("CLICOLOR_FORCE").is_some_and(|value| value != "0")
+            || (std::env::var_os("NO_COLOR").is_none() && std::io::stderr().is_terminal())
+    }
+    pub(crate) fn paint(color: bool, style: &str, text: &str) -> String {
+        if color { format!("\x1b[{style}m{text}\x1b[0m") } else { text.to_owned() }
     }
     pub(crate) fn print_github(d: &RuleViolation, w: &mut impl Write) {
         let _ = match d.location {

@@ -1,12 +1,18 @@
 mod default;
 mod print_rule_list;
 mod print_violations;
+mod render_report;
 mod render_rule;
+mod render_summary;
+mod render_violation;
 mod rules_markdown;
 mod run;
 pub use default::default;
 pub use print_rule_list::print_rule_list;
 pub use print_violations::print_violations;
+pub use render_report::render_report;
 pub use render_rule::render_rule;
+pub use render_summary::render_summary;
+pub use render_violation::render_violation;
 pub use rules_markdown::rules_markdown;
 pub use run::run;

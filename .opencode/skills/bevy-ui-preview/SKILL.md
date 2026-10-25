@@ -130,7 +130,7 @@ A domain declares `pub mod bevy_systems;` but never re-exports its systems at th
 
 **Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
 
-**Fix:** Add `pub use bevy_systems::<system>;` for each system to the domain's `mod.rs`, so callers write `domain::<system>`.
+**Fix:** Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `bevy_systems/mod.rs`.
 
 **Bad** (reports LELEBEVY001):
 
@@ -171,7 +171,7 @@ A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system
 
 **Why:** Systems are the domain's Bevy edge; keeping them in one folder makes the plugin surface readable.
 
-**Fix:** Move the system into `<domain>/bevy_systems/<system>.rs` and re-export it from `bevy_systems/mod.rs` and the domain `mod.rs`.
+**Fix:** Move the system into `<domain>/bevy_systems/<system>.rs`, re-export it from `bevy_systems/mod.rs` only, and register it as `<domain>::bevy_systems::<system>`.
 
 **Bad** (reports LELEBEVY002):
 

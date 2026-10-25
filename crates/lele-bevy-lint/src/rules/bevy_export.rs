@@ -16,7 +16,7 @@ impl BevyExport {
         category: Category::Layout,
         summary: "A domain declares `pub mod bevy_systems;` but never re-exports its systems at the domain root.",
         why: "Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.",
-        fix: "Add `pub use bevy_systems::<system>;` for each system to the domain's `mod.rs`, so callers write `domain::<system>`.",
+        fix: "Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `bevy_systems/mod.rs`.",
         bad: rule_examples!("bevy_export/bad"),
         good: rule_examples!("bevy_export/good"),
     };

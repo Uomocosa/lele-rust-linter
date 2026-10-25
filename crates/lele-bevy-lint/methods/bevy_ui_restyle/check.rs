@@ -62,7 +62,7 @@ pub fn check(
             violations.push(scan::BevyProject(project).violation(source.origin, rel_path, preview.line,
                 rules::bevy_ui_restyle::BevyUiRestyle::CODE,
                 format!(
-                    "`fn {}` shows one state; a restyle needs at least two `State`s (before, after)",
+                    "`fn {}` shows one state — a restyle needs at least two `State`s (before, after)",
                     preview.name
                 ),
             ));

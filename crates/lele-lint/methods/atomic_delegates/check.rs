@@ -104,7 +104,7 @@ pub fn check(
                             && !rules::atomic_delegates::AtomicDelegates::is_one_line_body(method)
                         {
                             violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
-                                    "one-liner method `{}` body must be on one line, e.g. `{{ module::func(self) }}`",
+                                    "one-liner method `{}` spans several lines — put the body on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
                         }
@@ -129,11 +129,11 @@ pub fn check(
                         .collect();
                     let message = if ctors.is_empty() || is_trait_impl {
                         format!(
-                            "one-liner method(s) `{names}` require `#[rustfmt::skip]` on the impl block"
+                            "one-liner method(s) `{names}` in a block without `#[rustfmt::skip]` — add it to the impl block"
                         )
                     } else {
                         format!(
-                            "one-liner method(s) `{names}` share a block with constructor(s) `{}`; move the constructor(s) to their own skip-free block, then add `#[rustfmt::skip]` here",
+                            "one-liner method(s) `{names}` share a block with constructor(s) `{}` — move the constructor(s) to their own skip-free block, then add `#[rustfmt::skip]` here",
                             ctors.join(", ")
                         )
                     };
@@ -233,7 +233,7 @@ mod tests {
         );
         let violations = check(&rules::atomic_delegates::AtomicDelegates, &project);
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("must be on one line"));
+        assert!(violations[0].message.contains("put the body on one line"));
     }
 
     #[test]

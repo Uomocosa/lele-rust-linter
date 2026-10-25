@@ -1,5 +1,5 @@
 [[violations]]
-file = "bad_method_vis/mod.rs"
+file = "src/bad_method_vis/mod.rs"
 code = "LELE004"
 
 [[violations]]

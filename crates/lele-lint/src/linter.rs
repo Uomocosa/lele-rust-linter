@@ -29,10 +29,16 @@ impl Linter {
     pub fn render_rule(rule: &dyn Rule) -> String {}
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}
-    pub fn render_report(violations: &[RuleViolation], color: bool) -> String {}
+    pub fn render_report(
+        violations: &[RuleViolation],
+        rules: &[Box<dyn Rule>],
+        color: bool,
+    ) -> String {
+    }
     pub fn render_violation(
         violation: &RuleViolation,
         source: Option<&str>,
+        rule_fix: Option<&str>,
         color: bool,
     ) -> String {
     }

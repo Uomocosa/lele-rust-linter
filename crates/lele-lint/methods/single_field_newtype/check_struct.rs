@@ -19,13 +19,13 @@ pub fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleV
             if rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(struct_def) {
                 return Vec::new();
             }
-            return vec![RuleViolation::from_file(file_path.to_path_buf(), rules::single_field_newtype::SingleFieldNewtype::CODE, format!("{name} has a single named field without Deref and must be a tuple newtype like `pub struct {name}(pub T)`; named single-field structs must derive Deref"))];
+            return vec![RuleViolation::from_file(file_path.to_path_buf(), rules::single_field_newtype::SingleFieldNewtype::CODE, format!("`{name}` has a single named field and no `Deref` — make it a tuple newtype `pub struct {name}(pub T)` with `#[derive(Deref)]`"))];
         }
         if !rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(struct_def) {
             return vec![RuleViolation::from_file(
                 file_path.to_path_buf(),
                 rules::single_field_newtype::SingleFieldNewtype::CODE,
-                format!("{name} is a single-field tuple newtype and must derive Deref"),
+                format!("`{name}` is a single-field tuple newtype without `Deref` — add `#[derive(Deref)]` (derive_more)"),
             )];
         }
     } else if field_count >= 2 {
@@ -34,7 +34,7 @@ pub fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleV
                 file_path.to_path_buf(),
                 rules::single_field_newtype::SingleFieldNewtype::CODE,
                 format!(
-                    "{name} has multiple fields and must use named fields like `{{ a: A, b: B }}`"
+                    "`{name}` has multiple unnamed fields — use named fields like `{{ a: A, b: B }}`"
                 ),
             )];
         }

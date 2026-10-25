@@ -40,8 +40,8 @@ pub fn check(
                     method_mod_name,
                 )
             {
-                violations.push(RuleViolation::from_file(declared_pub, rules::method_visibility::MethodVisibility::CODE, format!(
-                        "method file `{}` of struct `{}` must be declared with `mod` (private), not `pub mod`",
+                violations.push(RuleViolation::from_file(project.src_dir.join(declared_pub), rules::method_visibility::MethodVisibility::CODE, format!(
+                        "method file `{}` of struct `{}` is declared `pub mod` — declare it with plain `mod`",
                         file_name, struct_name
                     )));
             }
@@ -54,10 +54,10 @@ pub fn check(
                 )
             {
                 violations.push(RuleViolation::from_file(
-                    reexported_at,
+                    project.src_dir.join(reexported_at),
                     rules::method_visibility::MethodVisibility::CODE,
                     format!(
-                        "method file `{}` of struct `{}` must not appear in a `pub use` re-export",
+                        "method file `{}` of struct `{}` is re-exported with `pub use` — remove the re-export",
                         file_name, struct_name
                     ),
                 ));

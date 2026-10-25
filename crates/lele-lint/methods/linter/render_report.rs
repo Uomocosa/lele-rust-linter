@@ -3,9 +3,10 @@ use std::path::Path;
 
 use crate::Linter;
 use crate::Location;
+use crate::Rule;
 use crate::RuleViolation;
 
-pub fn render_report(violations: &[RuleViolation], color: bool) -> String {
+pub fn render_report(violations: &[RuleViolation], rules: &[Box<dyn Rule>], color: bool) -> String {
     let mut by_file: BTreeMap<&Path, Vec<&RuleViolation>> = BTreeMap::new();
     for violation in violations {
         by_file
@@ -26,9 +27,14 @@ pub fn render_report(violations: &[RuleViolation], color: bool) -> String {
         }
         let source = std::fs::read_to_string(file).ok();
         for violation in group {
+            let rule_fix = rules
+                .iter()
+                .find(|rule| rule.code() == violation.code)
+                .map(|rule| rule.doc().fix);
             out.push_str(&Linter::render_violation(
                 violation,
                 source.as_deref(),
+                rule_fix,
                 color,
             ));
         }
@@ -51,7 +57,7 @@ mod tests {
             RuleViolation::from_site(PathBuf::from("b.rs"), 3, 0, "LELE001", String::from("y")),
             RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("z")),
         ];
-        let out = render_report(&violations, false);
+        let out = render_report(&violations, &[], false);
         assert!(!out.contains("── a.rs"));
         let header = out.find("── b.rs (2 errors) ──").unwrap_or(usize::MAX);
         let first = out.find("error[LELE001]: y").unwrap_or(0);

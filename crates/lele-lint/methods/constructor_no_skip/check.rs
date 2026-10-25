@@ -45,7 +45,7 @@ pub fn check(
                 violations.push(RuleViolation::from_file(
                     project.src_dir.join(rel_path),
                     rules::constructor_no_skip::ConstructorNoSkip::CODE,
-                    format!("{blurb} must not have #[rustfmt::skip]",),
+                    format!("{blurb} must not have `#[rustfmt::skip]` — move it to an impl block without the attribute",),
                 ));
             }
         }

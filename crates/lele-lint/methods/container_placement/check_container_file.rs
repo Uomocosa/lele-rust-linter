@@ -36,7 +36,7 @@ pub fn check_container_file(
             violations.push(RuleViolation::from_file(
                 file_path.to_path_buf(),
                 rules::container_placement::ContainerPlacement::CODE,
-                format!("`{name}` is a {hint}; move it to `{hint}`"),
+                format!("`{name}` is in the wrong `__basic__/` file — move it to `{hint}`"),
             ));
         }
     }

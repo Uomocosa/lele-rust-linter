@@ -8,7 +8,7 @@ pub fn print_violations(linter: &Linter, violations: &[RuleViolation]) {
     let mut stderr = std::io::stderr().lock();
     match linter.error_format {
         ErrorFormat::Clippy => {
-            let report = Linter::render_report(violations, Linter::use_color());
+            let report = Linter::render_report(violations, &linter.rules, Linter::use_color());
             let _ = stderr.write_all(report.as_bytes());
         }
         ErrorFormat::Github => violations

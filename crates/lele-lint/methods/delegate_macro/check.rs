@@ -73,7 +73,7 @@ pub fn check(
                     .collect::<Vec<_>>()
                     .join(", ");
                 violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                        "trait impl for `{primary}` has unannotated shells; annotate each with `#[atomic_delegate({primary})]` or the whole block with `#[atomic_delegates]`; empty each shell body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
+                        "trait impl for `{primary}` has unannotated shells — annotate each with `#[atomic_delegate({primary})]` or the whole block with `#[atomic_delegates]`; empty each shell body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
                     )));
                 continue;
             }
@@ -117,7 +117,7 @@ pub fn check(
             let real = rules::delegate_macro::DelegateMacro::real_idents(impl_block);
             if real.is_empty() {
                 violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                        "inherent impl for `{primary}` must be annotated with `#[atomic_delegates]`; empty each body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
+                        "inherent impl for `{primary}` is not annotated with `#[atomic_delegates]` — add it, empty each body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
                     )));
             } else {
                 let kept = real
@@ -126,7 +126,7 @@ pub fn check(
                     .collect::<Vec<_>>()
                     .join(", ");
                 violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                        "inherent impl for `{primary}` mixes shells with hand-written methods; split it into a plain block keeping {kept} and an `#[atomic_delegates]` block with empty bodies moved to {mirrors} (one `pub fn` + `test_usage` per file)"
+                        "inherent impl for `{primary}` mixes shells with hand-written methods — split it into a plain block keeping {kept} and an `#[atomic_delegates]` block with empty bodies moved to {mirrors} (one `pub fn` + `test_usage` per file)"
                     )));
             }
         }

@@ -4,11 +4,18 @@ use crate::Linter;
 use crate::Location;
 use crate::RuleViolation;
 
-pub fn render_violation(violation: &RuleViolation, source: Option<&str>, color: bool) -> String {
+pub fn render_violation(
+    violation: &RuleViolation,
+    source: Option<&str>,
+    rule_fix: Option<&str>,
+    color: bool,
+) -> String {
     let (message, help) = violation
         .message
         .split_once(" — ")
-        .map_or((violation.message.as_str(), None), |(m, h)| (m, Some(h)));
+        .map_or((violation.message.as_str(), rule_fix), |(m, h)| {
+            (m, Some(h))
+        });
     let site = match violation.location {
         Location::File => None,
         Location::Site { line, col } => Some((line, col)),
@@ -93,7 +100,11 @@ mod tests {
             "LELE001",
             String::from("too many items — move `spawn` to `spawn.rs`"),
         );
-        let out = render_violation(&violation, Some("mod x;\npub fn spawn() {}\n"), false);
+        let out = render_violation(&violation, Some("mod x;\npub fn spawn() {}\n"), None, false);
+        let plain = RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("bad"));
+        assert!(
+            render_violation(&plain, None, Some("split it"), false).contains("= help: split it\n")
+        );
         assert!(out.starts_with("error[LELE001]: too many items\n"));
         assert!(out.contains("--> a.rs:2:5\n"));
         assert!(out.contains("2 | pub fn spawn() {}\n"));

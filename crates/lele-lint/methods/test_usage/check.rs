@@ -24,7 +24,7 @@ pub fn check(_self: &rules::test_usage::TestUsage, project: &Project) -> Vec<Rul
 
         if !source.has_test_usage() {
             violations.push(RuleViolation::from_file(absolute, rules::test_usage::TestUsage::CODE, format!(
-                    "file `{}` must contain a `#[cfg(test)] mod tests {{ fn test_usage() {{ ... }} }}` block, or add `{OPT_OUT}` as its last line to opt out",
+                    "file `{}` has no `test_usage` test — add `#[cfg(test)] mod tests {{ #[test] fn test_usage() {{ ... }} }}`, or end the file with `{OPT_OUT}` if there is nothing to test",
                     rel_path.display()
                 )));
         }

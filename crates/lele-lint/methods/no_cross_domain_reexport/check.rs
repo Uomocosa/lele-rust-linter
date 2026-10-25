@@ -34,7 +34,7 @@ pub fn check(
                         module_file.unwrap_or_else(|| project.root.join("src").join(mod_rs_path)),
                         rules::no_cross_domain_reexport::NoCrossDomainReexport::CODE,
                         format!(
-                            "cross-domain re-export `pub use {}` in mod.rs, move to lib.rs",
+                            "cross-domain re-export `pub use {}` in mod.rs — move it to lib.rs",
                             reexported_path
                         ),
                     ));

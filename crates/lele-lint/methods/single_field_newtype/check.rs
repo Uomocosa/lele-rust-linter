@@ -89,7 +89,7 @@ mod tests {
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("derive Deref"));
+        assert!(violations[0].message.contains("#[derive(Deref)]"));
     }
 
     #[test]

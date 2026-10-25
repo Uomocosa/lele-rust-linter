@@ -57,7 +57,7 @@ pub fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> Strin
     let name = &sig.ident;
     let advice = match local.as_slice() {
         [] => format!(
-            "no candidate owner is a crate type — wrap the first argument in a newtype (or bundle the arguments in a struct) and make it the owner of `{name}`"
+            "no candidate owner is a crate type, so wrap the first argument in a newtype (or bundle the arguments in a struct) and make it the owner of `{name}`"
         ),
         [(owner, source)] => format!(
             "move it to `#[atomic_delegates] impl {owner}` ({source}; an associated fn when it takes or returns a collection of `{owner}`), body in `methods/{}/{name}.rs`",
@@ -73,7 +73,7 @@ pub fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> Strin
         ),
     };
     format!(
-        "free fn `{name}` has no owner type; {advice}; then run `lele_lint --sync-methods`. A true process/task entry point goes in [[lele.lint.entry_points]]"
+        "free fn `{name}` has no owner type — {advice}; then run `lele-lint --sync-methods`. A true process/task entry point goes in [[lele.lint.entry_points]]"
     )
 }
 

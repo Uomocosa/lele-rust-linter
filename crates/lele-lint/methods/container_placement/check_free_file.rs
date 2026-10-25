@@ -34,8 +34,7 @@ pub fn check_free_file(
             file_path.to_path_buf(),
             rules::container_placement::ContainerPlacement::CODE,
             format!(
-                "`{name}` is a behavior-free {}; move it to `{}`",
-                role.file(),
+                "`{name}` is a behavior-free type outside `__basic__/` — move it to `{}`",
                 target.join(role.file()).display(),
             ),
         ));

@@ -23,7 +23,7 @@ pub fn check_import(item_use: &syn::ItemUse, dunder_paths: &[DunderPath]) -> Opt
         let second = segments.get(1)?;
         if !rules::domain_import::DomainImport::is_pub_use(item_use) {
             return Some(format!(
-                "use `use crate::{second};` instead of `use {direct};`"
+                "`use {direct};` imports the item — write `use crate::{second};` and qualify the item with it"
             ));
         }
     }

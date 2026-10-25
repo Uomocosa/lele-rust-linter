@@ -54,7 +54,7 @@ pub fn check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> Vec<R
             violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, func.sig.fn_token.span().start().line,
                 rules::bevy_folder::BevyFolder::CODE,
                 format!(
-                    "pub fn `{}` is registered with `app.add_systems()` but lives outside bevy_systems/; move it into the domain's bevy_systems/ folder",
+                    "pub fn `{}` is registered with `app.add_systems()` but lives outside bevy_systems/ — move it into the domain's bevy_systems/ folder",
                     func.sig.ident
                 ),
             ));

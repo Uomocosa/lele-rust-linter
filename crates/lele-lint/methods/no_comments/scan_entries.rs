@@ -26,7 +26,7 @@ pub fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
                 hit.line,
                 0,
                 rules::no_comments::NoComments::CODE,
-                "comments are not allowed in the methods layout (code, tests and logs only)"
+                "comment in the methods layout — delete it and put its meaning in names, types or the test"
                     .to_string(),
             ));
         }

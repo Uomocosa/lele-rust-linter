@@ -18,7 +18,7 @@ pub fn check_delegated_methods(
         let ident = &method.sig.ident;
         if rules::delegate_macro::DelegateMacro::is_reserved(ident) {
             violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                    "`{ident}` is a constructor and must be defined in the struct file, not delegated"
+                    "`{ident}` is a constructor and is delegated — define it in the struct file instead"
                 )));
         }
         if method

@@ -42,7 +42,7 @@ pub fn check(
                         {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
                             violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), rules::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
-                                    "trivial accessor `{}` reads {vis} field `{field}`, make field public/pub(crate) and access directly",
+                                    "trivial accessor `{}` reads {vis} field `{field}` — delete it and read the field directly",
                                     method.sig.ident
                                 )));
                         } else if let Some(field) =
@@ -53,7 +53,7 @@ pub fn check(
                         {
                             let vis = vis_fields.get(&field).cloned().unwrap_or_default();
                             violations.push(RuleViolation::from_file(project.absolute_path(source.origin, rel_path), rules::no_trivial_accessors::NoTrivialAccessors::CODE, format!(
-                                    "trivial setter `{}` assigns {vis} field `{field}`, make field public/pub(crate) and assign directly",
+                                    "trivial setter `{}` assigns {vis} field `{field}` — delete it and assign the field directly",
                                     method.sig.ident
                                 )));
                         }

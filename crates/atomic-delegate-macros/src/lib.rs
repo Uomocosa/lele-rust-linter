@@ -1,5 +1,6 @@
 use lele_snake_case::ToLeleSnakeCase;
 use proc_macro::TokenStream;
+use quote::ToTokens;
 use quote::format_ident;
 use quote::quote;
 use syn::spanned::Spanned;
@@ -89,7 +90,23 @@ fn expand_method(
         }
     }
     let body_fn = format_ident!("{}{}", name, body_suffix);
-    let call = quote!(crate::methods::#module::#body_fn(#(#args),*));
+    let generics: Vec<proc_macro2::TokenStream> = method
+        .sig
+        .generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            syn::GenericParam::Type(ty) => Some(ty.ident.to_token_stream()),
+            syn::GenericParam::Const(c) => Some(c.ident.to_token_stream()),
+            syn::GenericParam::Lifetime(_) => None,
+        })
+        .collect();
+    let turbofish = if generics.is_empty() {
+        quote!()
+    } else {
+        quote!(::<#(#generics),*>)
+    };
+    let call = quote!(crate::methods::#module::#body_fn #turbofish (#(#args),*));
     let body = if method.sig.asyncness.is_some() {
         quote!(#call.await)
     } else {
@@ -202,6 +219,19 @@ mod tests {
         assert!(expanded.contains("crate :: methods :: click_counter :: add (self , delta)"));
         assert!(expanded.contains("crate :: methods :: click_counter :: poll (self) . await"));
         assert!(expanded.contains("# [rustfmt :: skip]"));
+    }
+
+    #[test]
+    fn test_usage_forwards_method_generics() {
+        let input = quote! {
+            impl SuiteConfig {
+                pub fn check<'a, C: ContractInterface, const N: usize>(&'a self, x: &'a [u8; N]) {}
+            }
+        };
+        let expanded = expand(input).unwrap().to_string();
+        assert!(
+            expanded.contains("crate :: methods :: suite_config :: check :: < C , N > (self , x)")
+        );
     }
 
     #[test]

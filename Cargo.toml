@@ -6,6 +6,7 @@ members = [
   "crates/lele-snake-case",
   "crates/lele-lint",
   "crates/lele-bevy-lint",
+  "crates/rule-examples-macro",
 ]
 
 [workspace.package]

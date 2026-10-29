@@ -57,7 +57,7 @@ tools:
 
 # --- prek hooks (commit/push gate; tasks above) -------------------------------
 setup:
-    prek install -t pre-commit -t pre-push
+    prek install -t pre-commit -t pre-push -t post-commit
 
 check:
     prek run --all-files

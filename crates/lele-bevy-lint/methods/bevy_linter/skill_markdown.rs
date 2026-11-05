@@ -128,8 +128,9 @@ everything. Telegram delivery fires only for sendable artifacts when
 not an error. When anything in a scene is sendable, the whole scene (every
 state PNG plus the clip) goes out as one Telegram album with a single
 numbered caption, so before/after images stay together.
-`LELE_PREVIEW_DRY_RUN=1` renders and logs without sending;
+`LELE_PREVIEW_DRY_RUN=1` renders without sending;
 `just preview-stability` proves the pixel hashes are stable.
+Run `just preview-stability` after changing the harness or a time-driven scene, or when an unexpected message arrives.
 
 ## 6. Run commands
 

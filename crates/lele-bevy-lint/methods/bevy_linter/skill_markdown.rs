@@ -114,17 +114,22 @@ colours — a blank frame is an error, not a green test.
 
 ## 5. The change gate
 
-`run` hashes every frame and compares against the per-preview cache:
-`ui_preview/_cache/<preview file>.sent` holds the last hash sent. On a
-re-run, `New` (no `.sent` yet) and `Changed` (hash differs) are sendable and
-`Same` is not. The sent hash is written per successful chunk; a failed chunk
-stays pending and retries. Deleting `_cache` costs one resend. Telegram
-delivery fires only for sendable artifacts when `TELEGRAM_BOT_TOKEN` /
-`TELEGRAM_CHAT_ID` are set; missing credentials are not an error. When
-anything in a scene is sendable, the whole scene (every state PNG plus the
-clip) goes out as one Telegram album with a single numbered caption, so
-before/after images stay together. `LELE_PREVIEW_DRY_RUN=1` renders and logs
-without sending; `just preview-stability` proves the pixel hashes are stable.
+`run` hashes the decoded pixels of every frame and compares against the
+delivered baseline: the top level of `ui_preview/` is what Telegram last
+received (`<scene>__<slug>.png`, `<scene>__<slug>.mp4`, `<scene>_frames/`).
+New renders are built in `_staging/` and compared against it: `New` (no
+delivered file yet) and `Changed` (pixel hash differs) are sendable and `Same`
+is not. A sent chunk is renamed to the top level immediately; a chunk that is
+not sent (no credentials, failure, later chunk, dry run) waits in `_unsent/`
+and retries next run. A later successful send clears the matching `_unsent`
+entry. Deleting a preview resends its scene; deleting the folder resends
+everything. Telegram delivery fires only for sendable artifacts when
+`TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` are set; missing credentials are
+not an error. When anything in a scene is sendable, the whole scene (every
+state PNG plus the clip) goes out as one Telegram album with a single
+numbered caption, so before/after images stay together.
+`LELE_PREVIEW_DRY_RUN=1` renders and logs without sending;
+`just preview-stability` proves the pixel hashes are stable.
 
 ## 6. Run commands
 

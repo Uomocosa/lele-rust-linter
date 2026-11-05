@@ -6,6 +6,6 @@ mod tests {
 
     #[test]
     fn room_row_ui_png_preview() {
-        let _ = run(&scene(), &Config::default(), "x");
+        let _ = run(&scene(), &Config::default());
     }
 }

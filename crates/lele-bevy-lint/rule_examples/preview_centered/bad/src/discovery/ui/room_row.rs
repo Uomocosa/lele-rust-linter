@@ -25,6 +25,6 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }

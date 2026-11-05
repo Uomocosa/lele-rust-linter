@@ -30,7 +30,7 @@ mod tests {
                  #[test]
                  fn spawn_root_ui_png_preview() {
                      let scene = Scene { build, states: vec![State { label, apply: rest }] };
-                     run(&scene, &Config::default(), \"x\").expect(\"preview\");
+                     run(&scene, &Config::default()).expect(\"preview\");
                  }
              }",
         )

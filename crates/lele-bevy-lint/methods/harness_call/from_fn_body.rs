@@ -29,35 +29,32 @@ mod tests {
     #[test]
     fn test_usage_method_form_is_the_harness() {
         assert_eq!(
-            call("{ scene.run(&c, \"x\").expect(\"preview\"); }", false),
+            call("{ scene.run(&c).expect(\"preview\"); }", false),
             HarnessCall::Checked
         );
         assert_eq!(
-            call("{ let _ = scene.run(&c, \"x\"); }", false),
+            call("{ let _ = scene.run(&c); }", false),
             HarnessCall::Unchecked
         );
-        assert_eq!(
-            call("{ scene.run(&c, \"x\"); }", false),
-            HarnessCall::Unchecked
-        );
+        assert_eq!(call("{ scene.run(&c); }", false), HarnessCall::Unchecked);
     }
 
     #[test]
     fn test_usage() {
         assert_eq!(
             call(
-                "{ lele_bevy_preview::run(&s, &c, \"x\").expect(\"preview\"); }",
+                "{ lele_bevy_preview::run(&s, &c).expect(\"preview\"); }",
                 false
             ),
             HarnessCall::Checked
         );
-        assert_eq!(call("{ run(&s, &c, \"x\")?; }", true), HarnessCall::Checked);
+        assert_eq!(call("{ run(&s, &c)?; }", true), HarnessCall::Checked);
         assert_eq!(
-            call("{ let _ = run(&s, &c, \"x\"); }", true),
+            call("{ let _ = run(&s, &c); }", true),
             HarnessCall::Unchecked
         );
         assert_eq!(
-            call("{ run(&s, &c, \"x\").expect(\"p\"); }", false),
+            call("{ run(&s, &c).expect(\"p\"); }", false),
             HarnessCall::Missing
         );
         assert_eq!(call("{ server::run(); }", true), HarnessCall::Missing);

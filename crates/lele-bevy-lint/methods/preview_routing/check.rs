@@ -62,7 +62,7 @@ mod tests {
             "#[cfg(test)]
              mod tests {
                  use lele_bevy_preview::run;
-                 fn spawn_root_ui_png_preview() { let _ = run(&s, &c, \"x\"); }
+                 fn spawn_root_ui_png_preview() { let _ = run(&s, &c); }
              }",
         );
         assert_eq!(found.len(), 2);
@@ -77,7 +77,7 @@ mod tests {
              mod tests {
                  #[test]
                  fn spawn_root_ui_png_preview() {
-                     lele_bevy_preview::run(&s, &c, \"x\").expect(\"preview\");
+                     lele_bevy_preview::run(&s, &c).expect(\"preview\");
                  }
              }",
         );

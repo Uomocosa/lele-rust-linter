@@ -58,7 +58,7 @@ mod tests {
             })
             .collect();
         let body: syn::Block =
-            syn::parse_str("{ run(&scene(), &config(), \"x\").expect(\"preview\"); }").unwrap();
+            syn::parse_str("{ run(&scene(), &config()).expect(\"preview\"); }").unwrap();
         let usage = from_fn_body(&body, &module_fns);
         assert!(usage.build_uses.contains(&"gate_create".to_string()));
         assert_eq!(usage.state_count, 2);

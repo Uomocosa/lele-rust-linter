@@ -29,11 +29,11 @@ mod tests {
 
     #[test]
     fn default_ui_plugin_ui_png_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 
     #[test]
     fn default_ui_plugin_ui_scene_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 }

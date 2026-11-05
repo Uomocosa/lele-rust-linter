@@ -32,6 +32,6 @@ mod tests {
             ],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }

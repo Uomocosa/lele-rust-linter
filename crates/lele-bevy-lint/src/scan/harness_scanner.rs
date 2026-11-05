@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let body: syn::Block = syn::parse_quote! {{ scene.run(&c, "x").expect("preview"); }};
+        let body: syn::Block = syn::parse_quote! {{ scene.run(&c).expect("preview"); }};
         let mut scanner = HarnessScanner {
             is_run_imported: false,
             is_called: false,

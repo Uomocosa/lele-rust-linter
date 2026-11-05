@@ -111,7 +111,7 @@ mod tests {
                  #[test]
                  fn gate_ui_png_preview() {
                      let scene = Scene { build: preview_build, states: vec![State { apply: rest }, State { apply: rest }] };
-                     run(&scene, &Config::default(), \"x\").expect(\"preview\");
+                     run(&scene, &Config::default()).expect(\"preview\");
                  }
              }",
         );
@@ -132,7 +132,7 @@ mod tests {
                  #[test]
                  fn gate_ui_png_preview() {
                      let scene = Scene { build: preview_build, states: vec![State { apply: rest }] };
-                     run(&scene, &Config::default(), \"x\").expect(\"preview\");
+                     run(&scene, &Config::default()).expect(\"preview\");
                  }
              }",
         );
@@ -154,7 +154,7 @@ mod tests {
                  #[test]
                  fn gate_ui_png_preview() {
                      let scene = Scene { build: preview_build, states: vec![State { apply: rest }, State { apply: rest }] };
-                     run(&scene, &Config::default(), \"x\").expect(\"preview\");
+                     run(&scene, &Config::default()).expect(\"preview\");
                  }
              }",
         );

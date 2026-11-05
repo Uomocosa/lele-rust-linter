@@ -26,12 +26,12 @@ mod tests {
 
     #[test]
     fn sync_room_list_ui_png_preview() {
-        run(&scene(None), &Config::default(), "x").expect("preview");
+        run(&scene(None), &Config::default()).expect("preview");
     }
 
     #[test]
     fn sync_room_list_ui_mp4_preview() {
         let clip = Timeline { label: String::from("tick"), frames: 30, fps: 30, apply: rest };
-        run(&scene(Some(clip)), &Config::default(), "x").expect("preview");
+        run(&scene(Some(clip)), &Config::default()).expect("preview");
     }
 }

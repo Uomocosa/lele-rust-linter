@@ -164,7 +164,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -222,13 +222,13 @@ mod tests {
 
     #[test]
     fn sync_room_list_ui_png_preview() {
-        run(&scene(None), &Config::default(), "x").expect("preview");
+        run(&scene(None), &Config::default()).expect("preview");
     }
 
     #[test]
     fn sync_room_list_ui_mp4_preview() {
         let clip = Timeline { label: String::from("tick"), frames: 30, fps: 30, apply: rest };
-        run(&scene(Some(clip)), &Config::default(), "x").expect("preview");
+        run(&scene(Some(clip)), &Config::default()).expect("preview");
     }
 }
 ```
@@ -294,7 +294,7 @@ mod tests {
             ],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -357,12 +357,12 @@ mod tests {
 
     #[test]
     fn default_ui_plugin_ui_png_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 
     #[test]
     fn default_ui_plugin_ui_scene_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 }
 ```
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn room_row_ui_png_preview() {
-        let _ = run(&scene(), &Config::default(), "x");
+        let _ = run(&scene(), &Config::default());
     }
 }
 ```
@@ -436,7 +436,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -481,7 +481,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -519,7 +519,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```

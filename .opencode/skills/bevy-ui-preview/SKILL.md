@@ -80,7 +80,6 @@ mod tests {
                 timeline: None,
             },
             &Config { out_dir: out(), ..Config::default() },
-            env!("CARGO_PKG_NAME"),
         )
         .expect("preview");
     }
@@ -107,12 +106,17 @@ colours — a blank frame is an error, not a green test.
 
 ## 5. The change gate
 
-`run` hashes every frame and persists a manifest. On a re-run, `FirstRun` /
-`New` / `Changed` are sendable and `Same` is not. Telegram delivery fires only
-for sendable artifacts when `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` are set;
-missing credentials are not an error. When anything in a scene is sendable, the
-whole scene (every state PNG plus the clip) goes out as one Telegram album with a
-single numbered caption, so before/after images stay together.
+`run` hashes every frame and compares against the per-preview cache:
+`ui_preview/_cache/<preview file>.sent` holds the last hash sent. On a
+re-run, `New` (no `.sent` yet) and `Changed` (hash differs) are sendable and
+`Same` is not. The sent hash is written per successful chunk; a failed chunk
+stays pending and retries. Deleting `_cache` costs one resend. Telegram
+delivery fires only for sendable artifacts when `TELEGRAM_BOT_TOKEN` /
+`TELEGRAM_CHAT_ID` are set; missing credentials are not an error. When
+anything in a scene is sendable, the whole scene (every state PNG plus the
+clip) goes out as one Telegram album with a single numbered caption, so
+before/after images stay together. `LELE_PREVIEW_DRY_RUN=1` renders and logs
+without sending; `just preview-stability` proves the pixel hashes are stable.
 
 ## 6. Run commands
 
@@ -266,7 +270,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -325,13 +329,13 @@ mod tests {
 
     #[test]
     fn sync_room_list_ui_png_preview() {
-        run(&scene(None), &Config::default(), "x").expect("preview");
+        run(&scene(None), &Config::default()).expect("preview");
     }
 
     #[test]
     fn sync_room_list_ui_mp4_preview() {
         let clip = Timeline { label: String::from("tick"), frames: 30, fps: 30, apply: rest };
-        run(&scene(Some(clip)), &Config::default(), "x").expect("preview");
+        run(&scene(Some(clip)), &Config::default()).expect("preview");
     }
 }
 ```
@@ -398,7 +402,7 @@ mod tests {
             ],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -462,12 +466,12 @@ mod tests {
 
     #[test]
     fn default_ui_plugin_ui_png_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 
     #[test]
     fn default_ui_plugin_ui_scene_preview() {
-        run(&scene(), &Config::default(), "x").expect("preview");
+        run(&scene(), &Config::default()).expect("preview");
     }
 }
 ```
@@ -494,7 +498,7 @@ mod tests {
 
     #[test]
     fn room_row_ui_png_preview() {
-        let _ = run(&scene(), &Config::default(), "x");
+        let _ = run(&scene(), &Config::default());
     }
 }
 ```
@@ -542,7 +546,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -588,7 +592,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```
@@ -626,7 +630,7 @@ mod tests {
             states: vec![State { label: String::from("rest"), apply: rest }],
             timeline: None,
         };
-        run(&scene, &Config::default(), "x").expect("preview");
+        run(&scene, &Config::default()).expect("preview");
     }
 }
 ```

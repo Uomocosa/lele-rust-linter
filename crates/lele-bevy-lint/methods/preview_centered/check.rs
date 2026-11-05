@@ -57,7 +57,7 @@ mod tests {
                  #[test]
                  fn rows_ui_png_preview() {{
                      let scene = Scene {{ kind: Kind::{kind}, build, states: vec![] }};
-                     lele_bevy_preview::run(&scene, &c, \"x\").expect(\"preview\");
+                     lele_bevy_preview::run(&scene, &c).expect(\"preview\");
                  }}
              }}"
         )

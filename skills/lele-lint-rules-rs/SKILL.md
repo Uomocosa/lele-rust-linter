@@ -133,8 +133,8 @@ A fix for one rule must not break another. Before saving, check the file against
 
 - **LELE024 `no_allow_attributes`**: No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
   - Fix: Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.
-- **LELE031 `no_comments`**: No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.
-  - Fix: Delete the comment and move its meaning into names, types or the `test_usage` test.
+- **LELE031 `no_comments`**: No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
+  - Fix: Delete the comment and move its meaning into names, types or the `test_usage` test; in a file named exactly `constants.rs` keep `///` history notes and delete `//` and `/* */`.
 
 ## Crate config
 

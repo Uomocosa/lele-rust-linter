@@ -18,9 +18,9 @@ impl NoComments {
     pub const CODE: &'static str = "LELE031";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Style,
-        summary: "No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.",
-        why: "Names, signatures and the usage test carry the meaning; comments drift from the code they describe.",
-        fix: "Delete the comment and move its meaning into names, types or the `test_usage` test.",
+        summary: "No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.",
+        why: "Names, signatures and the usage test carry the meaning; comments drift from the code they describe. A constant's name cannot say why its value holds, so `constants.rs` may keep `///` history notes recording where a value came from and what was measured.",
+        fix: "Delete the comment and move its meaning into names, types or the `test_usage` test; in a file named exactly `constants.rs` keep `///` history notes and delete `//` and `/* */`.",
         bad: rule_examples!("no_comments/bad"),
         good: rule_examples!("no_comments/good"),
     };

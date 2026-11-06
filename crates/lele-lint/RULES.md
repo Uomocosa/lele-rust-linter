@@ -3928,7 +3928,7 @@ pub use guest::Guest;
 ## Style
 
 - [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
-- [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.
+- [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
 ### LELE024 `no_allow_attributes`
 
@@ -4019,13 +4019,20 @@ pub use guest::Guest;
 
 ### LELE031 `no_comments`
 
-No comments in `src/` or `methods/`, except a final `// no test_usage necessary`.
+No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
-**Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe.
+**Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe. A constant's name cannot say why its value holds, so `constants.rs` may keep `///` history notes recording where a value came from and what was measured.
 
-**Fix:** Delete the comment and move its meaning into names, types or the `test_usage` test.
+**Fix:** Delete the comment and move its meaning into names, types or the `test_usage` test; in a file named exactly `constants.rs` keep `///` history notes and delete `//` and `/* */`.
 
 **Bad** (reports LELE031):
+
+`src/constants.rs`
+
+```rust
+// Dial timeout, do not change it.
+pub const DIAL_TIMEOUT_MS: u64 = 10_000;
+```
 
 `src/guest.rs`
 
@@ -4055,11 +4062,20 @@ mod tests {
 `src/lib.rs`
 
 ```rust
+mod constants;
 mod guest;
 pub use guest::Guest;
 ```
 
 **Good:**
+
+`src/constants.rs`
+
+```rust
+/// Dial timeout in milliseconds.
+/// Copied from the libp2p Kademlia default and measured at 200ms p99 in CI.
+pub const DIAL_TIMEOUT_MS: u64 = 10_000;
+```
 
 `src/guest.rs`
 
@@ -4088,6 +4104,7 @@ mod tests {
 `src/lib.rs`
 
 ```rust
+mod constants;
 mod guest;
 pub use guest::Guest;
 ```

@@ -13,6 +13,11 @@ pub fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
         if entry.kind != EntryKind::File {
             continue;
         }
+        let is_constants = entry
+            .relative_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name == "constants.rs");
         let Ok(content) = std::fs::read_to_string(&entry.absolute_path) else {
             continue;
         };
@@ -20,6 +25,13 @@ pub fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
             if matches!(&hit.kind, common::CommentKind::Line(text) if rules::no_comments::NoComments::is_allowlisted(text))
             {
                 continue;
+            }
+            if is_constants {
+                if let common::CommentKind::Line(text) = &hit.kind {
+                    if text.starts_with("///") && !text.starts_with("////") {
+                        continue;
+                    }
+                }
             }
             violations.push(RuleViolation::from_site(
                 base.join(&entry.relative_path),

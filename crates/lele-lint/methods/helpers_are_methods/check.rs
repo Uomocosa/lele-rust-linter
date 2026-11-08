@@ -21,7 +21,7 @@ pub fn check(
             .is_some_and(|dir| dir == std::path::Path::new("bin"));
         let is_main_file =
             is_bin_root || rel_path.file_name().is_some_and(|name| name == "main.rs");
-        let absolute = project.src_dir.join(rel_path);
+        let absolute = project.absolute_src_path(rel_path);
         for item in &file.items {
             match item {
                 syn::Item::Fn(func)

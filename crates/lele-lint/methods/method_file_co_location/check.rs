@@ -47,7 +47,7 @@ pub fn check(
                     .map(|dir| dir.display().to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
+                violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "method file `{}` is not next to `{type_snake}.rs` — move it into the folder holding `{type_snake}.rs` (found in: {candidates})",
                         rel_path.display()
                     )));
@@ -58,7 +58,7 @@ pub fn check(
                     .iter()
                     .any(|n| n == suffix)
             {
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
+                violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::method_file_co_location::MethodFileCoLocation::CODE, format!(
                         "orphan method file `{file_stem}.rs` — no parent type found; rename to `{suffix}.rs` or `<type>_{suffix}.rs` with a `<type>.rs` defining the type",
                     )));
             }

@@ -21,7 +21,7 @@ pub fn check(
             match furthest_by_type.get(type_name) {
                 Some((furthest_group, furthest_label)) if group < *furthest_group => {
                     violations.push(RuleViolation::from_site(
-                        project.src_dir.join(rel_path),
+                        project.absolute_src_path(rel_path),
                         line,
                         0,
                         rules::impl_item_order::ImplItemOrder::CODE,

@@ -14,6 +14,17 @@ pub struct LeleSection {
     pub boundary: Vec<BoundaryEntry>,
     #[serde(default, rename = "config")]
     pub enforce_config: Option<toml::Value>,
+    #[serde(default)]
+    pub layout: LayoutSection,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+#[serde(deny_unknown_fields)]
+pub struct LayoutSection {
+    #[serde(default)]
+    pub roots: Vec<std::path::PathBuf>,
+    #[serde(default)]
+    pub methods_root: std::path::PathBuf,
 }
 
 #[derive(Deserialize)]

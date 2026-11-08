@@ -21,7 +21,7 @@ pub fn check_lift_to_ancestor(
         return Vec::new();
     }
     vec![RuleViolation::from_file(
-        project.src_dir.join(rel_path),
+        project.absolute_src_path(rel_path),
         rules::constants_placement::ConstantsPlacement::CODE,
         format!(
             "const `{name}` is used across top-level dirs but lives in `{}` — lift it to `src/{}`",

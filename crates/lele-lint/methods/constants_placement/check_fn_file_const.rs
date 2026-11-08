@@ -20,7 +20,7 @@ pub fn check_fn_file_const(name: &str, rel_path: &Path, project: &Project) -> Ve
         let sibling =
             rules::constants_placement::ConstantsPlacement::sibling_constants(rel_path, project);
         return vec![RuleViolation::from_file(
-            project.src_dir.join(rel_path),
+            project.absolute_src_path(rel_path),
             rules::constants_placement::ConstantsPlacement::CODE,
             format!(
                 "const `{name}` lives in fn-file `{}` — move it to `{}` (nearest constants.rs)",

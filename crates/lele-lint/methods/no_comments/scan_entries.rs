@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::common;
 use crate::rules;
 use crate::Entry;
@@ -7,7 +5,7 @@ use crate::EntryKind;
 use crate::RawCode;
 use crate::RuleViolation;
 
-pub fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
+pub fn scan_entries(entries: &[Entry]) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for entry in entries {
         if entry.kind != EntryKind::File {
@@ -34,7 +32,7 @@ pub fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {
                 }
             }
             violations.push(RuleViolation::from_site(
-                base.join(&entry.relative_path),
+                entry.absolute_path.clone(),
                 hit.line,
                 0,
                 rules::no_comments::NoComments::CODE,
@@ -64,7 +62,7 @@ mod tests {
             absolute_path: path,
             kind: EntryKind::File,
         };
-        let violations = scan_entries(&[entry], dir.path());
+        let violations = scan_entries(&[entry]);
         assert_eq!(violations.len(), 1);
     }
 }

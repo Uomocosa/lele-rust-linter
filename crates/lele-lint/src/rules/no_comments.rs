@@ -1,5 +1,4 @@
 use rule_examples_macro::rule_examples;
-use std::path::Path;
 
 use crate::Category;
 use crate::Entry;
@@ -45,7 +44,7 @@ impl NoComments {
 
 #[atomic_delegates]
 impl NoComments {
-    pub(crate) fn scan_entries(entries: &[Entry], base: &Path) -> Vec<RuleViolation> {}
+    pub(crate) fn scan_entries(entries: &[Entry]) -> Vec<RuleViolation> {}
 }
 
 // no test_usage necessary

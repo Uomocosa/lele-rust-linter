@@ -28,6 +28,8 @@ impl Config {
     pub fn resolve(explicit: Option<&Path>, project: &Project) -> Result<(Config, PathBuf), Error> {
     }
     pub fn load_at(path: &Path, fallback: &Path) -> Result<(Config, PathBuf), Error> {}
+    pub fn layout_roots(&self) -> Vec<PathBuf> {}
+    pub fn layout_methods_root(&self) -> PathBuf {}
 }
 
 // no test_usage necessary

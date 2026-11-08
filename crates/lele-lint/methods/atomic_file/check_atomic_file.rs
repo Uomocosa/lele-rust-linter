@@ -39,7 +39,7 @@ pub fn check_atomic_file(
             )
         };
         violations.push(RuleViolation::from_file(
-            project.src_dir.join(rel_path),
+            project.absolute_src_path(rel_path),
             rules::atomic_file::AtomicFile::CODE,
             message,
         ));

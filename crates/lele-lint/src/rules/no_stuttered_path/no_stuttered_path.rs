@@ -41,12 +41,17 @@ impl NoStutteredPath {
         rules.push(Box::new(NoStutteredPath));
     }
     pub(crate) fn root_module_stems(project: &Project) -> HashSet<String> {
-        project
-            .parsed_files
-            .keys()
-            .filter(|rel| rel.components().count() == 1)
-            .filter_map(|rel| Self::stem_name(rel))
-            .collect()
+        let mut stems = HashSet::new();
+        for rel in project.parsed_files.keys() {
+            let count = rel.components().count();
+            let is_extra_top = count == 2 && project.src_index_for_rel(rel) != 0;
+            if count == 1 || is_extra_top {
+                if let Some(stem) = Self::stem_name(rel) {
+                    stems.insert(stem);
+                }
+            }
+        }
+        stems
     }
     pub(crate) fn stem_name(rel_path: &Path) -> Option<String> {
         rel_path

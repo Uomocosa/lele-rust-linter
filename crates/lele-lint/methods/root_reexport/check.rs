@@ -30,7 +30,7 @@ pub fn check(_self: &rules::root_reexport::RootReexport, project: &Project) -> V
         for missing in
             rules::root_reexport::RootReexport::missing_reexports(stem, file, &reexported)
         {
-            violations.push(RuleViolation::from_site(project.src_dir.join(rel_path), missing.line, 0, rules::root_reexport::RootReexport::CODE, format!(
+            violations.push(RuleViolation::from_site(project.absolute_src_path(rel_path), missing.line, 0, rules::root_reexport::RootReexport::CODE, format!(
                     "public type `{}` in root module `{stem}` is not re-exported at the crate root — add `pub use {stem}::{};` to lib.rs",
                     missing.ty, missing.ty
                 )));

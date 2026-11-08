@@ -20,7 +20,7 @@ pub fn check(
         if rules::no_free_functions::NoFreeFunctions::is_exempt_file(rel_path, project) {
             continue;
         }
-        let absolute = project.src_dir.join(rel_path);
+        let absolute = project.absolute_src_path(rel_path);
         for item in &file.items {
             let syn::Item::Fn(func) = item else {
                 continue;

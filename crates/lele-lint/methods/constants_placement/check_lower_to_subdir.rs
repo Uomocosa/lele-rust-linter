@@ -20,7 +20,7 @@ pub fn check_lower_to_subdir(
     let target =
         rules::constants_placement::ConstantsPlacement::constants_target(project, &ancestor);
     vec![RuleViolation::from_file(
-        project.src_dir.join(rel_path),
+        project.absolute_src_path(rel_path),
         rules::constants_placement::ConstantsPlacement::CODE,
         format!(
             "const `{name}` lives at root but is only used under `{}` — lower it to `{}`",

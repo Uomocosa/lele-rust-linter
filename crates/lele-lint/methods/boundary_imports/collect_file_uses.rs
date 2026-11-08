@@ -5,10 +5,14 @@ use std::path::Path;
 pub fn collect_file_uses(project: &Project) -> Vec<rules::boundary_imports::FileUse> {
     let mut files = Vec::new();
     for (rel, parsed) in &project.parsed_files {
+        let absolute = project.absolute_src_path(rel);
+        let crate_rel = if project.src_index_for_rel(rel) == 0 {
+            Path::new("src").join(rel)
+        } else {
+            rel.clone()
+        };
         files.push(rules::boundary_imports::BoundaryImports::file_use(
-            project.src_dir.join(rel),
-            Path::new("src").join(rel),
-            parsed,
+            absolute, crate_rel, parsed,
         ));
     }
     if let Some(methods_dir) = &project.methods_dir {

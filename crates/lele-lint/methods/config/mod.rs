@@ -1,8 +1,12 @@
 mod dunder_paths;
+mod layout_methods_root;
+mod layout_roots;
 mod load_at;
 mod resolve;
 mod try_from_path;
 pub use dunder_paths::dunder_paths;
+pub use layout_methods_root::layout_methods_root;
+pub use layout_roots::layout_roots;
 pub use load_at::load_at;
 pub use resolve::resolve;
 pub use try_from_path::try_from_path;

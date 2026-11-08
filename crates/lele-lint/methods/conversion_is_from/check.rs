@@ -14,7 +14,7 @@ pub fn check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for (rel_path, file) in &project.parsed_files {
-        let absolute = project.src_dir.join(rel_path);
+        let absolute = project.absolute_src_path(rel_path);
         for item in &file.items {
             let syn::Item::Impl(impl_block) = item else {
                 continue;

@@ -24,6 +24,7 @@ pub struct Project {
     pub root: PathBuf,
     pub config_dir: PathBuf,
     pub src_dir: PathBuf,
+    pub extra_src_dirs: Vec<PathBuf>,
     pub entries: Vec<Entry>,
     pub module_info: ModuleInfoMap,
     pub parsed_files: HashMap<PathBuf, syn::File>,
@@ -57,6 +58,7 @@ impl Project {
     pub fn is_dunder_file_path(&self, rel_path: &Path) -> bool {}
     pub fn is_dunder_path(&self, rel_path: &Path) -> bool {}
     pub fn is_exempt_source_path(&self, rel_path: &Path) -> bool {}
+    pub fn absolute_src_path(&self, rel_path: &Path) -> PathBuf {}
 }
 
 #[rustfmt::skip]
@@ -73,7 +75,7 @@ impl Project {
     }
     pub fn absolute_path(&self, origin: Origin, rel_path: &Path) -> PathBuf {
         match origin {
-            Origin::Src => self.src_dir.join(rel_path),
+            Origin::Src => self.absolute_src_path(rel_path),
             Origin::Methods => self.methods_dir.clone().unwrap_or_else(|| self.root.join("methods")).join(rel_path),
             Origin::Examples => self.root.join("examples").join(rel_path),
         }
@@ -113,6 +115,7 @@ impl Project {
 impl Project {
     pub(crate) fn file_cfgs(map: &common::ModuleCfgMap, rel_path: &Path) -> Vec<String> {}
     pub(crate) fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {}
+    pub(crate) fn src_index_for_rel(&self, rel_path: &Path) -> usize {}
 }
 
 #[cfg(test)]

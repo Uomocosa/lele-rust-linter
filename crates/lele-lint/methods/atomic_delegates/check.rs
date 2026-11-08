@@ -67,7 +67,7 @@ pub fn check(
             if !methods_over_three.is_empty() && !is_trait_impl {
                 let names =
                     rules::atomic_delegates::AtomicDelegates::names_str(&methods_over_three);
-                violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
+                violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
                         "method(s) `{names}` have >3 statements — move each body to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block"
                     )));
                 continue;
@@ -103,7 +103,7 @@ pub fn check(
                         if FnBody(&method.block).is_delegate_call()
                             && !rules::atomic_delegates::AtomicDelegates::is_one_line_body(method)
                         {
-                            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
+                            violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
                                     "one-liner method `{}` spans several lines — put the body on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
@@ -138,7 +138,7 @@ pub fn check(
                         )
                     };
                     violations.push(RuleViolation::from_file(
-                        project.src_dir.join(rel_path),
+                        project.absolute_src_path(rel_path),
                         rules::atomic_delegates::AtomicDelegates::CODE,
                         message,
                     ));

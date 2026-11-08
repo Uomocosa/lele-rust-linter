@@ -25,19 +25,19 @@ pub fn check_fn_shells(
         }
         let ident = &method.sig.ident;
         if rules::delegate_macro::DelegateMacro::is_reserved(ident) {
-            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
+            violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                     "`{ident}` is a constructor and is delegated — define it in the struct file instead"
                 )));
         }
         let body_name = ImplBlock(impl_block).delegate_body_name(ident);
         if *ident != body_name {
-            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
+            violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                     "`{ident}` in a generic trait impl dispatches to `methods/{}/{body_name}.rs` — annotate the whole block with `#[atomic_delegates]` instead of `#[atomic_delegate]`",
                     primary.to_snake_case()
                 )));
         }
         if !seen.insert(format!("{primary}::{body_name}")) {
-            violations.push(RuleViolation::from_file(project.src_dir.join(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!("`{ident}` is declared twice for `{primary}` (duplicate `#[atomic_delegates]` shell) — merge into one block")));
+            violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!("`{ident}` is declared twice for `{primary}` (duplicate `#[atomic_delegates]` shell) — merge into one block")));
         }
     }
     violations

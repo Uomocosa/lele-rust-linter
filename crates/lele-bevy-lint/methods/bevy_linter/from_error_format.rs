@@ -15,6 +15,7 @@ pub fn from_error_format(error_format: ErrorFormat) -> BevyLinter {
     rules::bevy_plugin_scene::BevyPluginScene::register(&mut rules);
     rules::preview_routing::PreviewRouting::register(&mut rules);
     rules::preview_centered::PreviewCentered::register(&mut rules);
+    rules::no_serialized_entity::NoSerializedEntity::register(&mut rules);
     BevyLinter(Linter {
         rules,
         error_format,
@@ -29,6 +30,6 @@ mod tests {
     #[test]
     fn test_usage() {
         let linter = from_error_format(ErrorFormat::Clippy);
-        assert_eq!(linter.rules.len(), 8);
+        assert_eq!(linter.rules.len(), 9);
     }
 }

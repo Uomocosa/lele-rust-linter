@@ -138,4 +138,40 @@ mod tests {
             rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
         assert!(violations.is_empty());
     }
+
+    #[test]
+    fn test_usage_relationship_target_exempt() {
+        let s = parse(
+            "#[relationship_target(relationship = InRoom)] pub struct RoomMembers(pub Vec<Entity>);",
+        );
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_plain_entity_collection_is_violation() {
+        let s = parse("pub struct Members(pub Vec<Entity>);");
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
+    }
+
+    #[test]
+    fn test_usage_ecs_derive_disables_serde_exemption() {
+        let s = parse(
+            "#[derive(Resource, Serialize, Deserialize)] pub struct PeerIndex(pub std::collections::HashMap<String, u32>);",
+        );
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
+    }
+
+    #[test]
+    fn test_usage_component_derive_disables_serde_exemption() {
+        let s = parse("#[derive(Component, Serialize)] pub struct Members(pub Vec<Entity>);");
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
+    }
 }

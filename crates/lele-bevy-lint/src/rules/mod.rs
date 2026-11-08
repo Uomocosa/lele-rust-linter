@@ -4,5 +4,6 @@ pub(crate) mod bevy_plugin_scene;
 pub(crate) mod bevy_ui;
 pub(crate) mod bevy_ui_mp4;
 pub(crate) mod bevy_ui_restyle;
+pub(crate) mod no_serialized_entity;
 pub(crate) mod preview_centered;
 pub(crate) mod preview_routing;

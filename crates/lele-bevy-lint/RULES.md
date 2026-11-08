@@ -101,6 +101,68 @@ pub struct Query;
 pub fn tick_enemies(_q: Query) {}
 ```
 
+## Types
+
+- [LELEBEVY009 `no_serialized_entity`](#lelebevy009-no_serialized_entity): A struct or enum that derives `Serialize` or `Deserialize` must not contain `Entity` in any field type, including nested generics (`Vec<Entity>`, `Option<Entity>`, tuples, arrays).
+
+### LELEBEVY009 `no_serialized_entity`
+
+A struct or enum that derives `Serialize` or `Deserialize` must not contain `Entity` in any field type, including nested generics (`Vec<Entity>`, `Option<Entity>`, tuples, arrays).
+
+**Why:** An `Entity` id is only meaningful inside one running `World`; serialized it becomes a dangling number on load or on another peer.
+
+**Fix:** Send the stable domain id instead (e.g. a `PeerId` / `RoomName`) and map it to an `Entity` at runtime.
+
+**Bad** (reports LELEBEVY009):
+
+`src/net/snapshot.rs`
+
+```rust
+use serde::Deserialize;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct Snapshot {
+    pub owner: Entity,
+}
+
+#[derive(Deserialize)]
+pub struct RoomRoster {
+    pub members: Vec<Entity>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Delta {
+    Joined { owner: Option<Entity> },
+    Left,
+}
+```
+
+**Good:**
+
+`src/net/snapshot.rs`
+
+```rust
+use serde::Deserialize;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct Snapshot {
+    pub owner: PeerId,
+}
+
+#[derive(Deserialize)]
+pub struct RoomRoster {
+    pub members: Vec<PeerId>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Delta {
+    Joined { owner: Option<PeerId> },
+    Left,
+}
+```
+
 ## Tests
 
 - [LELEBEVY003 `bevy_ui`](#lelebevy003-bevy_ui): A file whose visual spawn is reachable from production must ship a `*_ui_png_preview` test whose `Scene::build` renders that spawn (or the file's `Plugin`) through `lele_bevy_preview::run(...)`.

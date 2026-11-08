@@ -1,6 +1,6 @@
 ---
 name: bevy-ui-preview
-description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY001/LELEBEVY002/LELEBEVY003/LELEBEVY004/LELEBEVY005/LELEBEVY006/LELEBEVY007/LELEBEVY008), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
+description: Use when a Bevy file spawns UI and needs a headless PNG/MP4 preview. Covers the lele_bevy_lint rules (LELEBEVY001/LELEBEVY002/LELEBEVY003/LELEBEVY004/LELEBEVY005/LELEBEVY006/LELEBEVY007/LELEBEVY008/LELEBEVY009), the lele_bevy_preview scene DSL and test template, the change gate, and how to find preview gaps with --ui-inventory.
 ---
 
 # Bevy UI previews
@@ -638,6 +638,65 @@ mod tests {
         };
         run(&scene, &Config::default()).expect("preview");
     }
+}
+```
+
+
+### LELEBEVY009 `no_serialized_entity`
+
+A struct or enum that derives `Serialize` or `Deserialize` must not contain `Entity` in any field type, including nested generics (`Vec<Entity>`, `Option<Entity>`, tuples, arrays).
+
+**Why:** An `Entity` id is only meaningful inside one running `World`; serialized it becomes a dangling number on load or on another peer.
+
+**Fix:** Send the stable domain id instead (e.g. a `PeerId` / `RoomName`) and map it to an `Entity` at runtime.
+
+**Bad** (reports LELEBEVY009):
+
+`src/net/snapshot.rs`
+
+```rust
+use serde::Deserialize;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct Snapshot {
+    pub owner: Entity,
+}
+
+#[derive(Deserialize)]
+pub struct RoomRoster {
+    pub members: Vec<Entity>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Delta {
+    Joined { owner: Option<Entity> },
+    Left,
+}
+```
+
+**Good:**
+
+`src/net/snapshot.rs`
+
+```rust
+use serde::Deserialize;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct Snapshot {
+    pub owner: PeerId,
+}
+
+#[derive(Deserialize)]
+pub struct RoomRoster {
+    pub members: Vec<PeerId>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum Delta {
+    Joined { owner: Option<PeerId> },
+    Left,
 }
 ```
 

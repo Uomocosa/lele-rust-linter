@@ -16,8 +16,19 @@ pub fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleV
     if struct_def
         .attrs
         .iter()
-        .any(|attr| ItemMarker(attr).derives_data_shape())
+        .any(|attr| ItemMarker(attr).is_named("relationship_target"))
     {
+        return Vec::new();
+    }
+    let is_data_shape = struct_def
+        .attrs
+        .iter()
+        .any(|attr| ItemMarker(attr).derives_data_shape());
+    let is_ecs = struct_def
+        .attrs
+        .iter()
+        .any(|attr| ItemMarker(attr).derives_any_of(&["Component", "Resource"]));
+    if is_data_shape && !is_ecs {
         return Vec::new();
     }
     let Some(collection) =

@@ -11,6 +11,7 @@ pub mod call_graph;
 pub mod expr_region;
 pub mod harness_call;
 pub mod macro_call;
+pub mod no_serialized_entity;
 pub mod plugin_impl;
 pub mod preview;
 pub mod preview_centered;

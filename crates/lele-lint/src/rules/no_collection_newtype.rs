@@ -18,7 +18,7 @@ impl NoCollectionNewtype {
         category: Category::Types,
         summary: "No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.",
         why: "The element is the concept; a collection wrapper hides the standard collection API behind a new name.",
-        fix: "Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`.",
+        fix: "Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource.",
         bad: rule_examples!("no_collection_newtype/bad"),
         good: rule_examples!("no_collection_newtype/good"),
     };
@@ -62,6 +62,7 @@ impl NoCollectionNewtype {
     ) -> Vec<RuleViolation> {
     }
     pub(crate) fn collection_name(ty: &syn::Type) -> Option<&'static str> {}
+    pub(crate) fn derives_resource(struct_def: &syn::ItemStruct) -> bool {}
     pub(crate) fn boxed_slice_element(segment: &syn::PathSegment) -> Option<&syn::Type> {}
     pub(crate) fn element_type(ty: &syn::Type) -> Option<&syn::Type> {}
     pub(crate) fn first_generic_type(segment: &syn::PathSegment) -> Option<&syn::Type> {}

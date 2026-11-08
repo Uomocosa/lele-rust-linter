@@ -3302,7 +3302,7 @@ No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(S
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
 
-**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`.
+**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource.
 
 **Bad** (reports LELE026):
 
@@ -3351,12 +3351,14 @@ pub mod lobby;
 pub mod basic;
 
 pub use basic::newtypes::Room;
+pub use basic::resources::PeerNames;
 ```
 
 `src/lobby/__basic__/mod.rs`
 
 ```rust
 pub mod newtypes;
+pub mod resources;
 ```
 
 `src/lobby/__basic__/newtypes.rs`
@@ -3366,6 +3368,15 @@ use derive_more::Deref;
 
 #[derive(Deref)]
 pub struct Room(pub String);
+```
+
+`src/lobby/__basic__/resources.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Resource, Deref)]
+pub struct PeerNames(pub Vec<String>);
 ```
 
 ### LELE036 `conversion_is_from`

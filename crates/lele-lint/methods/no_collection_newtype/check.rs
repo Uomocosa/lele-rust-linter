@@ -158,18 +158,50 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_ecs_derive_disables_serde_exemption() {
+    fn test_usage_resource_derive_exempts_collection() {
         let s = parse(
             "#[derive(Resource, Serialize, Deserialize)] pub struct PeerIndex(pub std::collections::HashMap<String, u32>);",
         );
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_component_derive_disables_serde_exemption() {
+        let s = parse("#[derive(Component, Serialize)] pub struct Members(pub Vec<Entity>);");
         let violations =
             rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);
     }
 
     #[test]
-    fn test_usage_component_derive_disables_serde_exemption() {
-        let s = parse("#[derive(Component, Serialize)] pub struct Members(pub Vec<Entity>);");
+    fn test_usage_resource_wrapping_vec_passes() {
+        let s = parse("#[derive(Resource)] pub struct PeerNames(pub Vec<String>);");
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_pathed_resource_wrapping_vec_passes() {
+        let s = parse("#[derive(bevy::prelude::Resource)] pub struct PeerNames(pub Vec<String>);");
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_component_wrapping_vec_is_violation() {
+        let s = parse("#[derive(Component)] pub struct Members(pub Vec<String>);");
+        let violations =
+            rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
+        assert_eq!(violations.len(), 1);
+    }
+
+    #[test]
+    fn test_usage_message_wrapping_vec_is_violation() {
+        let s = parse("#[derive(Message)] pub struct ChatLog(pub Vec<String>);");
         let violations =
             rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);

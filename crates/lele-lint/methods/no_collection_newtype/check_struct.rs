@@ -20,6 +20,9 @@ pub fn check_struct(struct_def: &syn::ItemStruct, file_path: &Path) -> Vec<RuleV
     {
         return Vec::new();
     }
+    if rules::no_collection_newtype::NoCollectionNewtype::derives_resource(struct_def) {
+        return Vec::new();
+    }
     let is_data_shape = struct_def
         .attrs
         .iter()

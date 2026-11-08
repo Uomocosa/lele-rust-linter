@@ -2,3 +2,4 @@
 pub mod basic;
 
 pub use basic::newtypes::Room;
+pub use basic::resources::PeerNames;

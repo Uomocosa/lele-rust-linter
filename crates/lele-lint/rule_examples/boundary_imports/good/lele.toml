@@ -2,5 +2,5 @@
 name = "session is pure"
 why = "no io"
 folders = ["src/session"]
-cannot_use = ["std::time"]
+cannot_use = ["std::time", "crate::ui"]
 require = "honest"

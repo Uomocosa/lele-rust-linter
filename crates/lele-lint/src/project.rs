@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -25,6 +26,7 @@ pub struct Project {
     pub config_dir: PathBuf,
     pub src_dir: PathBuf,
     pub extra_src_dirs: Vec<PathBuf>,
+    pub layout_roots: Vec<PathBuf>,
     pub entries: Vec<Entry>,
     pub module_info: ModuleInfoMap,
     pub parsed_files: HashMap<PathBuf, syn::File>,
@@ -59,12 +61,23 @@ impl Project {
     pub fn is_dunder_path(&self, rel_path: &Path) -> bool {}
     pub fn is_exempt_source_path(&self, rel_path: &Path) -> bool {}
     pub fn absolute_src_path(&self, rel_path: &Path) -> PathBuf {}
+    pub fn root_name_for_rel(&self, rel_path: &Path) -> String {}
+    pub fn collect_shell_roots(&self) -> BTreeMap<(String, String), BTreeSet<String>> {}
+    pub fn collect_type_roots(&self) -> BTreeMap<String, BTreeMap<String, PathBuf>> {}
+    pub fn split_methods_rel(&self, rel: &Path) -> (Option<String>, PathBuf) {}
 }
 
 #[rustfmt::skip]
 impl Project {
     pub fn get_parsed(&self, rel_path: &Path) -> Option<&syn::File> {
         self.parsed_files.get(rel_path)
+    }
+    pub fn is_multi_root(&self) -> bool { self.layout_roots.len() > 1 }
+    pub fn layout_root_names(&self) -> Vec<String> {
+        self.layout_roots.iter().map(|root| root.file_name().and_then(|name| name.to_str()).map_or_else(|| root.to_string_lossy().into_owned(), str::to_string)).collect()
+    }
+    pub fn methods_in_root(&self, type_snake: &str, root: &str) -> BTreeSet<String> {
+        self.collect_shell_roots().into_iter().filter_map(|((found_type, method), roots)| (found_type == type_snake && roots.iter().any(|name| name == root)).then_some(method)).collect()
     }
     pub fn config_base(&self) -> PathBuf {
         if self.config_dir.as_os_str().is_empty() {
@@ -143,5 +156,23 @@ mod tests {
             .collect();
         assert_eq!(origins.len(), 2);
         assert!(!origins.contains(&Origin::Examples));
+    }
+
+    #[test]
+    fn test_usage_multi_root_helpers() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = Project {
+            root: dir.path().to_path_buf(),
+            src_dir: dir.path().join("src"),
+            extra_src_dirs: vec![dir.path().join("ui")],
+            layout_roots: vec![PathBuf::from("src"), PathBuf::from("ui")],
+            ..Project::default()
+        };
+        assert!(project.is_multi_root());
+        assert_eq!(
+            project.layout_root_names(),
+            vec!["src".to_string(), "ui".to_string()]
+        );
+        assert!(!Project::default().is_multi_root());
     }
 }

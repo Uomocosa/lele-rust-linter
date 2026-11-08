@@ -2810,7 +2810,7 @@ A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
 name = "session is pure"
 why = "no io"
 folders = ["src/session"]
-cannot_use = ["std::time"]
+cannot_use = ["std::time", "crate::ui"]
 require = "honest"
 ```
 
@@ -2818,6 +2818,7 @@ require = "honest"
 
 ```rust
 pub mod session;
+pub mod ui;
 ```
 
 `src/session/mod.rs`
@@ -2832,12 +2833,35 @@ pub use session::Session;
 ```rust
 use derive_more::Deref;
 
+use crate::ui;
+
 #[derive(Deref)]
 pub struct Session(pub u64);
 
 #[rustfmt::skip]
 impl Session {
-    pub fn expiry(&self) -> u64 { std::time::SystemTime::now().elapsed().map_or(**self, |_| self.saturating_sub(1)) }
+    pub fn expiry(&self) -> u64 { let marker = ui::Ui(self.saturating_sub(0)).bump(); std::time::SystemTime::now().elapsed().map_or(marker, |_| self.saturating_sub(1)) }
+}
+```
+
+`src/ui/mod.rs`
+
+```rust
+mod ui;
+pub use ui::Ui;
+```
+
+`src/ui/ui.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Ui(pub u64);
+
+#[rustfmt::skip]
+impl Ui {
+    pub fn bump(&self) -> u64 { self.wrapping_add(1) }
 }
 ```
 
@@ -2850,7 +2874,7 @@ impl Session {
 name = "session is pure"
 why = "no io"
 folders = ["src/session"]
-cannot_use = ["std::time"]
+cannot_use = ["std::time", "crate::ui"]
 require = "honest"
 ```
 
@@ -2858,6 +2882,7 @@ require = "honest"
 
 ```rust
 pub mod session;
+pub mod ui;
 ```
 
 `src/session/mod.rs`
@@ -2887,6 +2912,37 @@ mod tests {
     #[test]
     fn test_usage() {
         assert_eq!(Session(3).expiry(), 2);
+    }
+}
+```
+
+`src/ui/mod.rs`
+
+```rust
+mod ui;
+pub use ui::Ui;
+```
+
+`src/ui/ui.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Ui(pub u64);
+
+#[rustfmt::skip]
+impl Ui {
+    pub fn bump(&self) -> u64 { self.wrapping_add(1) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Ui;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Ui(41).bump(), 42);
     }
 }
 ```

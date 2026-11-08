@@ -1,11 +1,9 @@
+use std::collections::BTreeMap;
 use std::path::Path;
+use std::path::PathBuf;
 
-use crate::common;
 use crate::rules;
-use crate::Origin;
-use crate::ParsedSource;
 use crate::Project;
-use crate::RawCode;
 use crate::RuleViolation;
 
 pub fn check(
@@ -14,125 +12,96 @@ pub fn check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     let declared = project.collect_declared();
+    let multi = project.is_multi_root();
+    let shell_roots = if multi {
+        project.collect_shell_roots()
+    } else {
+        BTreeMap::new()
+    };
 
     for (type_snake, declared_type) in &declared {
         for method in &declared_type.methods {
-            let rel = Path::new(type_snake).join(format!("{method}.rs"));
-            match project.methods_parsed_files.get(&rel) {
-                Some(file) => {
-                    if !rules::methods_layout::MethodsLayout::defines_pub_fn(file, method) {
-                        violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                            project,
-                            &rel,
-                            format!(
-                                "`methods/{type_snake}/{method}.rs` must define `pub fn {method}`"
-                            ),
-                        ));
-                    } else if rules::methods_layout::MethodsLayout::pub_fn_block(file, method).is_some_and(|block| block.stmts.len() <= 1)
-                    {
-                        violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                            project,
-                            &rel,
-                            format!(
-                                "`methods/{type_snake}/{method}.rs` body has ≤1 statement — inline `pub fn {method}` in `{type_snake}.rs` under `#[rustfmt::skip]`, then delete this file"
-                            ),
-                        ));
-                    }
-                    if !(ParsedSource {
-                        origin: Origin::Methods,
-                        relative_path: &rel,
-                        file,
+            let expected: Vec<PathBuf> = if multi {
+                shell_roots
+                    .get(&(type_snake.clone(), method.clone()))
+                    .map(|roots| {
+                        roots
+                            .iter()
+                            .map(|root| {
+                                Path::new(root)
+                                    .join(type_snake)
+                                    .join(format!("{method}.rs"))
+                            })
+                            .collect()
                     })
-                    .has_test_usage()
-                        && !rules::methods_layout::MethodsLayout::read_methods_file(project, &rel)
-                            .is_some_and(|text| RawCode(&text).ends_with_test_usage_opt_out())
-                    {
-                        violations.push(rules::methods_layout::MethodsLayout::file_violation(
+                    .unwrap_or_default()
+            } else {
+                vec![Path::new(type_snake).join(format!("{method}.rs"))]
+            };
+            for rel in &expected {
+                match project.methods_parsed_files.get(rel) {
+                    Some(file) => violations.extend(
+                        rules::methods_layout::MethodsLayout::check_body(
                             project,
-                            &rel,
-                            format!(
-                                "`methods/{type_snake}/{method}.rs` must carry its own `#[cfg(test)]` `test_usage`"
-                            ),
-                        ));
-                    }
+                            type_snake,
+                            method,
+                            rel,
+                            file,
+                        ),
+                    ),
+                    None => violations.push(rules::methods_layout::MethodsLayout::file_violation(
+                        project,
+                        rel,
+                        format!(
+                            "missing `methods/{}` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead",
+                            rel.display()
+                        ),
+                    )),
                 }
-                None => violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                    project,
-                    &rel,
-                    format!(
-                        "missing `methods/{type_snake}/{method}.rs` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead"
-                    ),
-                )),
             }
         }
 
-        let mod_rel = Path::new(type_snake).join("mod.rs");
-        let expected = declared_type.index_content();
-        if project.methods_parsed_files.contains_key(&mod_rel) {
-            if rules::methods_layout::MethodsLayout::read_methods_file(project, &mod_rel).as_deref()
-                != Some(expected.as_str())
-            {
-                violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                    project,
-                    &mod_rel,
-                    format!(
-                        "`methods/{type_snake}/mod.rs` is out of date — run `lele-lint --sync-methods`"
-                    ),
-                ));
-            }
+        if multi {
+            violations.extend(rules::methods_layout::MethodsLayout::check_type_indexes(
+                project,
+                &shell_roots,
+                type_snake,
+            ));
         } else {
-            violations.push(rules::methods_layout::MethodsLayout::file_violation(
+            violations.extend(rules::methods_layout::MethodsLayout::check_type_index(
                 project,
-                &mod_rel,
-                format!("missing `methods/{type_snake}/mod.rs` — run `lele-lint --sync-methods`"),
+                type_snake,
+                declared_type,
             ));
         }
     }
 
-    for rel in project.methods_parsed_files.keys() {
-        if rules::methods_layout::MethodsLayout::is_index_file(rel) {
-            continue;
-        }
-        let Some(parent) = rules::methods_layout::MethodsLayout::parent_dir(rel) else {
-            continue;
-        };
-        let Some(stem) = rules::methods_layout::MethodsLayout::file_stem(rel) else {
-            continue;
-        };
-        if !declared
-            .get(&parent)
-            .is_some_and(|declared_type| declared_type.methods.contains(&stem))
-        {
-            violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                project,
-                rel,
-                format!(
-                    "orphan method file `methods/{parent}/{stem}.rs` — no matching `{parent}::{stem}`"
-                ),
-            ));
-        }
-    }
+    violations.extend(rules::methods_layout::MethodsLayout::check_orphans(
+        project,
+        &declared,
+        &shell_roots,
+        multi,
+    ));
 
     if !declared.is_empty() {
-        let root_mod = Path::new("mod.rs");
-        let expected = common::DeclaredType::root_index_content(&declared);
-        if project.methods_parsed_files.contains_key(root_mod) {
-            if rules::methods_layout::MethodsLayout::read_methods_file(project, root_mod).as_deref()
-                != Some(expected.as_str())
-            {
-                violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                    project,
-                    root_mod,
-                    "`methods/mod.rs` is out of date — run `lele-lint --sync-methods`".to_string(),
-                ));
-            }
+        if multi {
+            violations.extend(rules::methods_layout::MethodsLayout::check_root_indexes(
+                project, &declared,
+            ));
         } else {
-            violations.push(rules::methods_layout::MethodsLayout::file_violation(
-                project,
-                root_mod,
-                "missing `methods/mod.rs` — run `lele-lint --sync-methods`".to_string(),
+            violations.extend(rules::methods_layout::MethodsLayout::check_root_index(
+                project, &declared,
             ));
         }
+    }
+
+    if multi {
+        violations.extend(rules::methods_layout::MethodsLayout::check_duplicates(
+            project,
+        ));
+        violations.extend(rules::methods_layout::MethodsLayout::check_root_collisions(
+            project,
+        ));
     }
 
     violations
@@ -225,7 +194,7 @@ mod tests {
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\n#[atomic_delegates]\nimpl Rule for Foo { fn check(&self) {} }\n",
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Rule for Foo { fn check(&self) {} }",
             )
             .unwrap(),
         );

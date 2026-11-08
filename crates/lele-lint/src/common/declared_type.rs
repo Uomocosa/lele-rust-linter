@@ -13,6 +13,7 @@ pub struct DeclaredType {
 impl DeclaredType {
     pub fn index_content(&self) -> String {}
     pub fn root_index_content(types: &BTreeMap<String, Self>) -> String {}
+    pub fn glue_index_content(root_names: &[String]) -> String {}
 }
 
 #[rustfmt::skip]

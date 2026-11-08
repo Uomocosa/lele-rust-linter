@@ -9,6 +9,7 @@ use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -42,16 +43,23 @@ impl BoundaryImports {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(BoundaryImports));
     }
-    pub(crate) fn src_stem_map(project: &Project) -> HashMap<String, PathBuf> {
-        project
-            .parsed_files
-            .keys()
-            .filter_map(|rel| {
-                rel.file_stem()
-                    .and_then(|stem| stem.to_str())
-                    .map(|stem| (stem.to_string(), rel.clone()))
-            })
-            .collect()
+    pub(crate) fn src_stem_map(project: &Project) -> HashMap<String, BTreeMap<String, PathBuf>> {
+        let mut map: HashMap<String, BTreeMap<String, PathBuf>> = HashMap::new();
+        for rel in project.parsed_files.keys() {
+            let Some(stem) = rel.file_stem().and_then(|stem| stem.to_str()) else {
+                continue;
+            };
+            let root = project.root_name_for_rel(rel);
+            let crate_rel = if project.src_index_for_rel(rel) == 0 {
+                Path::new("src").join(rel)
+            } else {
+                rel.clone()
+            };
+            map.entry(stem.to_string())
+                .or_default()
+                .insert(root, crate_rel);
+        }
+        map
     }
     pub(crate) fn is_local(path: &str) -> bool {
         ["crate", "self", "super"]
@@ -61,6 +69,20 @@ impl BoundaryImports {
     pub(crate) fn forbidden_hit(hit: &rules::boundary_imports::PathHit, cannot_use: &[String]) -> Option<String> {
         if cannot_use
             .iter()
+            .any(|forbidden| Self::matches_hit(forbidden, hit))
+        {
+            Some(hit.path.clone())
+        } else {
+            None
+        }
+    }
+    pub(crate) fn forbidden_crate_hit(
+        hit: &rules::boundary_imports::PathHit,
+        cannot_use: &[String],
+    ) -> Option<String> {
+        if cannot_use
+            .iter()
+            .filter(|entry| entry.starts_with("crate::"))
             .any(|forbidden| Self::matches_hit(forbidden, hit))
         {
             Some(hit.path.clone())
@@ -128,10 +150,11 @@ impl BoundaryImports {
 impl BoundaryImports {
     pub(crate) fn base_prefix(project: &Project, base: &Path) -> PathBuf {}
     pub(crate) fn file_in_boundary(
+        project: &Project,
         crate_rel: &Path,
         prefix: &Path,
         folders: &[PathBuf],
-        stem_map: &HashMap<String, PathBuf>,
+        stem_map: &HashMap<String, BTreeMap<String, PathBuf>>,
     ) -> bool {
     }
     pub(crate) fn validate_boundary(boundary: &BoundaryEntry, base: &Path) -> Vec<RuleViolation> {}
@@ -143,9 +166,17 @@ impl BoundaryImports {
     ) -> rules::boundary_imports::FileUse {
     }
     pub(crate) fn report_uses(
+        project: &Project,
         file: &rules::boundary_imports::FileUse,
         boundary: &BoundaryEntry,
     ) -> Vec<RuleViolation> {
+    }
+    pub(crate) fn current_module(project: &Project, crate_rel: &Path) -> Vec<String> {}
+    pub(crate) fn resolve_local_hit(
+        project: &Project,
+        crate_rel: &Path,
+        hit: &str,
+    ) -> Option<String> {
     }
     pub(crate) fn use_violation(
         file: &Path,

@@ -23,6 +23,7 @@ pub fn check(
         }
         for file in &files {
             if !rules::boundary_imports::BoundaryImports::file_in_boundary(
+                project,
                 &file.crate_rel,
                 &prefix,
                 &boundary.folders,
@@ -31,7 +32,7 @@ pub fn check(
                 continue;
             }
             violations.extend(rules::boundary_imports::BoundaryImports::report_uses(
-                file, boundary,
+                project, file, boundary,
             ));
         }
     }

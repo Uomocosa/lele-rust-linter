@@ -15,6 +15,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
     }
 
     let roots = config.layout_roots();
+    project.layout_roots.clone_from(&roots);
     for root_rel in &roots {
         let abs = project.root.join(root_rel);
         if !abs.is_dir() {

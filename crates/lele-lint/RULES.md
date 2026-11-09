@@ -4271,9 +4271,9 @@ as_conversions = "deny"
 
 `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
-**Why:** Tests may unwrap and index freely; production code may not.
+**Why:** Tests may unwrap and index freely; production code may not. The nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory is used, walking up to the filesystem root.
 
-**Fix:** Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in `clippy.toml`.
+**Fix:** Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in the nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory.
 
 **Bad** (reports LELE029):
 

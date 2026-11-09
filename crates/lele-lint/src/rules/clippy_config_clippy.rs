@@ -15,8 +15,8 @@ impl ClippyConfigClippy {
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Config,
         summary: "`clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.",
-        why: "Tests may unwrap and index freely; production code may not.",
-        fix: "Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in `clippy.toml`.",
+        why: "Tests may unwrap and index freely; production code may not. The nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory is used, walking up to the filesystem root.",
+        fix: "Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in the nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory.",
         bad: rule_examples!("clippy_config_clippy/bad"),
         good: rule_examples!("clippy_config_clippy/good"),
     };

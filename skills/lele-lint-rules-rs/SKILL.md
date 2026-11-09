@@ -141,5 +141,5 @@ A fix for one rule must not break another. Before saving, check the file against
 - **LELE028 `clippy_config_cargo`**: `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
   - Fix: Add the `[lints.clippy]` block shown by `lele-lint --explain LELE028` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.
 - **LELE029 `clippy_config_clippy`**: `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
-  - Fix: Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in `clippy.toml`.
+  - Fix: Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in the nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory.
 

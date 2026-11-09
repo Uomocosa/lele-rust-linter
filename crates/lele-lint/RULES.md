@@ -2954,7 +2954,7 @@ mod tests {
 - [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
 - [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
 - [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
-- [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
+- [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.
 - [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
 - [LELE039 `no_stringified_errors`](#lele039-no_stringified_errors): A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
 - [LELE040 `error_message_omits_source`](#lele040-error_message_omits_source): An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
@@ -3381,7 +3381,7 @@ pub struct PeerNames(pub Vec<String>);
 
 ### LELE036 `conversion_is_from`
 
-An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.
+An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.
 
 **Why:** A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.
 
@@ -3437,7 +3437,46 @@ mod tests {
 `src/lib.rs`
 
 ```rust
+pub mod duration;
 pub mod reading;
+```
+
+`src/duration/duration.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Duration(pub u64);
+
+impl Duration {
+    pub fn from_secs(secs: u64) -> Self {
+        Self(secs * 1000)
+    }
+
+    pub fn from_millis(millis: u64) -> Self {
+        Self(millis)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::duration;
+
+    #[test]
+    fn test_usage() {
+        let duration = duration::Duration::from_secs(1);
+        assert_eq!(*duration, 1000);
+    }
+}
+```
+
+`src/duration/mod.rs`
+
+```rust
+mod duration;
+
+pub use duration::Duration;
 ```
 
 `src/reading/mod.rs`

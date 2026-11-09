@@ -15,7 +15,7 @@ impl ConversionIsFrom {
     pub const CODE: &'static str = "LELE036";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
-        summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt.",
+        summary: "An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.",
         why: "A conversion has one standard name in Rust; `Reading::from(x)` and `x.into()` work everywhere, while `Reading::from_sensor(x)` has to be looked up.",
         fix: "Replace the one-argument builder with `impl From<A> for <Type>` (`impl TryFrom<A>` if it returns `Result`) and update callers to `Type::from(a)` or `a.into()`.",
         bad: rule_examples!("conversion_is_from/bad"),
@@ -58,6 +58,7 @@ impl ConversionIsFrom {
         self_name: &str,
     ) -> Option<&'static str> {
     }
+    pub(crate) fn single_argument_type(sig: &syn::Signature) -> Option<String> {}
 }
 
 // no test_usage necessary

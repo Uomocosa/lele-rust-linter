@@ -19,7 +19,7 @@ impl MethodFileCoLocation {
     pub const CODE: &'static str = "LELE003";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.",
+        summary: "A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).",
         why: "A method file that drifts away from its type is impossible to find from the type.",
         fix: "Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.",
         bad: rule_examples!("method_file_co_location/bad"),

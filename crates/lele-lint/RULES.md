@@ -12,9 +12,9 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELE001 `atomic_file`](#lele001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).
+- [LELE001 `atomic_file`](#lele001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
 - [LELE002 `snake_case_files`](#lele002-snake_case_files): File and folder names are snake_case.
-- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
+- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
 - [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
@@ -22,7 +22,7 @@ every **Good** example reports nothing at all.
 
 ### LELE001 `atomic_file`
 
-One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).
+One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
 
 **Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
 
@@ -185,7 +185,7 @@ pub use guest::Guest;
 
 ### LELE003 `method_file_co_location`
 
-A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
+A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
 
 **Why:** A method file that drifts away from its type is impossible to find from the type.
 

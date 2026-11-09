@@ -17,6 +17,9 @@ pub fn check(
     let known_stems: HashSet<String> = type_dirs.keys().cloned().collect();
 
     for (rel_path, file) in &project.parsed_files {
+        if rules::no_free_functions::NoFreeFunctions::is_exempt_file(rel_path, project) {
+            continue;
+        }
         let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
             continue;
         };
@@ -190,6 +193,36 @@ mod tests {
         ]);
         let violations = check(&MethodFileCoLocation, &project);
         assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_bevy_systems_file_passes() {
+        let project = orphan_project(&[
+            ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
+            (
+                "direct_dial/bevy_systems/libp2p_events_to_dial_inputs.rs",
+                "pub fn libp2p_events_to_dial_inputs() {}",
+            ),
+        ]);
+        let violations = check(&MethodFileCoLocation, &project);
+        assert!(
+            violations.is_empty(),
+            "expected no violations for bevy_systems file, got {violations:?}"
+        );
+    }
+
+    #[test]
+    fn test_usage_non_bevy_systems_misplaced_file_still_flagged() {
+        let project = orphan_project(&[
+            ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
+            (
+                "direct_dial/libp2p_events_to_dial_inputs.rs",
+                "pub fn libp2p_events_to_dial_inputs() {}",
+            ),
+        ]);
+        let violations = check(&MethodFileCoLocation, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("is not next to"));
     }
 
     #[test]

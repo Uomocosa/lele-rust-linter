@@ -44,11 +44,11 @@ A fix for one rule must not break another. Before saving, check the file against
 
 ## Layout: files and folders
 
-- **LELE001 `atomic_file`**: One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`).
+- **LELE001 `atomic_file`**: One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
   - Fix: Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
 - **LELE002 `snake_case_files`**: File and folder names are snake_case.
   - Fix: Rename the file or folder to snake_case and update the `mod` line that declares it.
-- **LELE003 `method_file_co_location`**: A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`.
+- **LELE003 `method_file_co_location`**: A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
   - Fix: Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
 - **LELE019 `constants_placement`**: A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
   - Fix: Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.

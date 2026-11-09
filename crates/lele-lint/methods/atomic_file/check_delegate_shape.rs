@@ -14,6 +14,9 @@ pub fn check_delegate_shape(
     known_stems: &HashSet<String>,
     declared: &BTreeMap<String, common::DeclaredType>,
 ) -> Vec<RuleViolation> {
+    if rules::no_free_functions::NoFreeFunctions::is_exempt_file(rel_path, project) {
+        return Vec::new();
+    }
     let Some(file_stem) = rel_path.file_stem().and_then(|s| s.to_str()) else {
         return Vec::new();
     };

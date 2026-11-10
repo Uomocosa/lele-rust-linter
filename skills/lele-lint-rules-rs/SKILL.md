@@ -44,11 +44,11 @@ A fix for one rule must not break another. Before saving, check the file against
 
 ## Layout: files and folders
 
-- **LELE001 `atomic_file`**: One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
+- **LELE001 `atomic_file`**: One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
   - Fix: Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
 - **LELE002 `snake_case_files`**: File and folder names are snake_case.
   - Fix: Rename the file or folder to snake_case and update the `mod` line that declares it.
-- **LELE003 `method_file_co_location`**: A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
+- **LELE003 `method_file_co_location`**: A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
   - Fix: Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
 - **LELE019 `constants_placement`**: A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
   - Fix: Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.
@@ -77,7 +77,7 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
 - **LELE032 `delegate_macro`**: Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
   - Fix: Split the empty-bodied shells by their `impl_item_order` group into one `#[atomic_delegates] impl <Type>` block per group (constructor shells, `pub` shells, `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
-- **LELE034 `no_free_functions`**: A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- **LELE034 `no_free_functions`**: A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
   - Fix: Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
 - **LELE035 `methods_are_delegates`**: A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
   - Fix: Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.

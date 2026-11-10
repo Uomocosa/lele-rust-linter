@@ -12,9 +12,9 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELE001 `atomic_file`](#lele001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
+- [LELE001 `atomic_file`](#lele001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
 - [LELE002 `snake_case_files`](#lele002-snake_case_files): File and folder names are snake_case.
-- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
+- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
 - [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
@@ -22,7 +22,7 @@ every **Good** example reports nothing at all.
 
 ### LELE001 `atomic_file`
 
-One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `bevy_systems/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
+One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
 
 **Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
 
@@ -185,7 +185,7 @@ pub use guest::Guest;
 
 ### LELE003 `method_file_co_location`
 
-A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `bevy_systems/` are exempt (a Bevy system file may start with a type's stem).
+A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
 
 **Why:** A method file that drifts away from its type is impossible to find from the type.
 
@@ -671,7 +671,7 @@ pub struct Item {
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
-- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 ### LELE004 `method_visibility`
@@ -1881,7 +1881,7 @@ mod tests {
 
 ### LELE034 `no_free_functions`
 
-A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 

@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn test_exemptions_and_entry_points() {
         let mut project = project_with(&[
-            ("game/bevy_systems/tick.rs", "pub fn tick() {}"),
+            ("game/__bevy_systems__/tick.rs", "pub fn tick() {}"),
             ("main.rs", "pub fn run() {}"),
             (
                 "run.rs",

@@ -11,7 +11,7 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if !project.is_in_dunder_dir(rel_path) {
+        if !project.is_in_dunder_dir(rel_path) || project.is_in_bevy_systems_dir(rel_path) {
             continue;
         }
         for item in &file.items {
@@ -62,6 +62,15 @@ mod tests {
     fn test_usage_allows_tests_outside_dunder() {
         let project = project(&[(
             "discovery/newtypes.rs",
+            "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+        )]);
+        assert!(check(&NoDunderTests, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_allows_tests_in_bevy_systems_dir() {
+        let project = project(&[(
+            "discovery/__bevy_systems__/poll_input.rs",
             "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
         )]);
         assert!(check(&NoDunderTests, &project).is_empty());

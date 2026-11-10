@@ -200,14 +200,14 @@ mod tests {
         let project = orphan_project(&[
             ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
             (
-                "direct_dial/bevy_systems/libp2p_events_to_dial_inputs.rs",
+                "direct_dial/__bevy_systems__/libp2p_events_to_dial_inputs.rs",
                 "pub fn libp2p_events_to_dial_inputs() {}",
             ),
         ]);
         let violations = check(&MethodFileCoLocation, &project);
         assert!(
             violations.is_empty(),
-            "expected no violations for bevy_systems file, got {violations:?}"
+            "expected no violations for __bevy_systems__ file, got {violations:?}"
         );
     }
 

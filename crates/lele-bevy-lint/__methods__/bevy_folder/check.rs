@@ -25,6 +25,20 @@ pub fn check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> Vec<R
             .components()
             .any(|c| c.as_os_str().to_str() == Some("bevy_systems"))
         {
+            violations.push(scan::BevyProject(project).violation(
+                source.origin,
+                source.relative_path,
+                1,
+                rules::bevy_folder::BevyFolder::CODE,
+                "Bevy systems live in `__bevy_systems__/` — rename `bevy_systems/` to `__bevy_systems__/` and mount it with `#[path = \"__bevy_systems__/mod.rs\"] pub mod bevy_systems;`".to_string(),
+            ));
+            continue;
+        }
+        if source
+            .relative_path
+            .components()
+            .any(|c| c.as_os_str().to_str() == Some("__bevy_systems__"))
+        {
             continue;
         }
 
@@ -54,7 +68,7 @@ pub fn check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> Vec<R
             violations.push(scan::BevyProject(project).violation(source.origin, source.relative_path, func.sig.fn_token.span().start().line,
                 rules::bevy_folder::BevyFolder::CODE,
                 format!(
-                    "pub fn `{}` is registered with `app.add_systems()` but lives outside bevy_systems/ — move it into the domain's bevy_systems/ folder",
+                    "pub fn `{}` is registered with `app.add_systems()` but lives outside `__bevy_systems__/` — move it into the domain's `__bevy_systems__/` folder",
                     func.sig.ident
                 ),
             ));
@@ -66,7 +80,25 @@ pub fn check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> Vec<R
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
+    use lele_lint::DunderPath;
+    use lele_lint::Project;
+
+    use super::check;
     use crate::rules;
+
+    fn project_with(sources: &[(&str, &str)]) -> Project {
+        let mut project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        for (path, code) in sources {
+            let file: syn::File = syn::parse_str(code).unwrap();
+            project.parsed_files.insert(PathBuf::from(path), file);
+        }
+        project
+    }
 
     #[test]
     fn test_usage() {
@@ -141,6 +173,46 @@ mod tests {
         assert_eq!(
             rules::bevy_folder::BevyFolder::registered_systems(&file).len(),
             0
+        );
+    }
+
+    #[test]
+    fn test_usage_reports_literal_bevy_systems_folder() {
+        let project = project_with(&[(
+            "enemy/bevy_systems/despawn.rs",
+            "pub struct Query;\n\npub fn despawn(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, despawn);\n}\n",
+        )]);
+        let violations = check(&rules::bevy_folder::BevyFolder, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(
+            violations[0]
+                .message
+                .contains("rename `bevy_systems/` to `__bevy_systems__/`")
+        );
+        assert_eq!(violations[0].code, rules::bevy_folder::BevyFolder::CODE);
+    }
+
+    #[test]
+    fn test_usage_systems_files_in_dunder_folder_pass() {
+        let project = project_with(&[(
+            "enemy/__bevy_systems__/despawn.rs",
+            "pub struct Query;\n\npub fn despawn(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, despawn);\n}\n",
+        )]);
+        assert!(check(&rules::bevy_folder::BevyFolder, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_registered_system_outside_folder_flagged() {
+        let project = project_with(&[(
+            "enemy/tick_enemies.rs",
+            "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, tick_enemies);\n}\n",
+        )]);
+        let violations = check(&rules::bevy_folder::BevyFolder, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(
+            violations[0]
+                .message
+                .contains("outside `__bevy_systems__/`")
         );
     }
 }

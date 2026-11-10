@@ -1,7 +1,7 @@
 use crate::Project;
 use std::path::Path;
 
-const EXEMPT_DIRS: [&str; 2] = ["bevy_systems", "tests"];
+const EXEMPT_DIRS: [&str; 2] = ["__bevy_systems__", "tests"];
 
 const EXEMPT_FILES: [&str; 5] = ["mod.rs", "lib.rs", "main.rs", "build.rs", "constants.rs"];
 

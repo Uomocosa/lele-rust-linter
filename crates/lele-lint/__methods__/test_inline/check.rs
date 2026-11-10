@@ -38,7 +38,7 @@ mod tests {
             Path::new("player/mod.rs")
         ));
         assert!(!rules::test_inline::TestInline::has_tests_component(
-            Path::new("bevy_systems")
+            Path::new("__bevy_systems__")
         ));
     }
 }

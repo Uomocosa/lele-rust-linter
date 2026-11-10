@@ -9,16 +9,21 @@ pub fn registers_ui(project: &scan::BevyProject, registered: &[Vec<String>]) -> 
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::registers_ui;
     use crate::scan;
+    use lele_lint::DunderPath;
     use lele_lint::Project;
-    use std::path::PathBuf;
 
     #[test]
     fn test_usage() {
-        let mut project = Project::default();
+        let mut project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
         project.parsed_files.insert(
-            PathBuf::from("hud/bevy_systems/spawn_hud.rs"),
+            PathBuf::from("hud/__bevy_systems__/spawn_hud.rs"),
             syn::parse_str("pub fn spawn_hud(s: &mut S) { s.spawn((Node,)); }").unwrap(),
         );
         let ui = vec![vec![

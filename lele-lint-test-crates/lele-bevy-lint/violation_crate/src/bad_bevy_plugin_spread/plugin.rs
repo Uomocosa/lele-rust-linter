@@ -1,4 +1,4 @@
-// A Plugin whose build spawns UI lives one level below it (in `bevy_systems/`),
+// A Plugin whose build spawns UI lives one level below it (in `__bevy_systems__/`),
 // so `dir_spawns_ui` is false; the system it registers still needs a scene
 // preview (LELEBEVY006).
 

@@ -14,7 +14,20 @@ pub fn file_spawns_ui(
     let mut rel_path = PathBuf::new();
     for module in modules {
         if module.as_str() != "crate" {
-            rel_path.push(module);
+            match project
+                .dunder_paths
+                .iter()
+                .find(|dunder| dunder.is_dunder_dir() && dunder.module_name() == *module)
+            {
+                Some(dunder) => {
+                    let disk_name = dunder
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or(module);
+                    rel_path.push(disk_name);
+                }
+                None => rel_path.push(module),
+            }
         }
     }
     rel_path.push(format!("{name}.rs"));
@@ -52,6 +65,38 @@ mod tests {
         assert!(!file_spawns_ui(
             scan::BevyProject(&project),
             &missing,
+            &BTreeSet::new()
+        ));
+    }
+
+    #[test]
+    fn test_usage_resolves_dunder_module_mounts() {
+        let mut project = Project {
+            dunder_paths: lele_lint::DunderPath::defaults(),
+            ..Project::default()
+        };
+        project.parsed_files.insert(
+            PathBuf::from("hud/__bevy_systems__/spawn_hud.rs"),
+            syn::parse_str("pub fn spawn_hud(s: &mut S) { s.spawn((Node,)); }").unwrap(),
+        );
+        let ui = [
+            "hud".to_string(),
+            "bevy_systems".to_string(),
+            "spawn_hud".to_string(),
+        ];
+        assert!(file_spawns_ui(
+            scan::BevyProject(&project),
+            &ui,
+            &BTreeSet::new()
+        ));
+        let unregistered = [
+            "hud".to_string(),
+            "bevy_systems".to_string(),
+            "tick_hud".to_string(),
+        ];
+        assert!(!file_spawns_ui(
+            scan::BevyProject(&project),
+            &unregistered,
             &BTreeSet::new()
         ));
     }

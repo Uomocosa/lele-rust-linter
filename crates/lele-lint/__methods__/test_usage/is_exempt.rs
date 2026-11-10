@@ -19,7 +19,7 @@ pub fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {
         return true;
     }
 
-    if project.is_dunder_path(rel_path) {
+    if project.is_dunder_path(rel_path) && !project.is_in_bevy_systems_dir(rel_path) {
         return true;
     }
 
@@ -34,4 +34,32 @@ pub fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {
         || rules::test_usage::TestUsage::is_atomic_delegate_only(file)
 }
 
-// no test_usage necessary
+#[cfg(test)]
+mod tests {
+    use super::is_exempt;
+    use crate::DunderPath;
+    use crate::Project;
+    use std::path::Path;
+
+    #[test]
+    fn test_usage() {
+        let project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        let plain: syn::File = syn::parse_str("pub fn poll_input(x: u32) {}").unwrap();
+        assert!(!is_exempt(Path::new("a.rs"), &plain, &project));
+        assert!(!is_exempt(
+            Path::new("player/__bevy_systems__/poll_input.rs"),
+            &plain,
+            &project
+        ));
+
+        let type_only: syn::File = syn::parse_str("pub struct Bump;").unwrap();
+        assert!(is_exempt(
+            Path::new("player/__basic__/enums.rs"),
+            &type_only,
+            &project
+        ));
+    }
+}

@@ -140,19 +140,20 @@ A domain never re-exports its `bevy_systems` items at the domain root; callers w
 
 **Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
 
-**Fix:** Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `bevy_systems/mod.rs`.
+**Fix:** Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `__bevy_systems__/mod.rs`.
 
 **Bad** (reports LELEBEVY001):
 
 `src/inventory/mod.rs`
 
 ```rust
+#[path = "__bevy_systems__/mod.rs"]
 pub mod bevy_systems;
 
 pub use bevy_systems::poll_inv;
 ```
 
-`src/inventory/bevy_systems/mod.rs`
+`src/inventory/__bevy_systems__/mod.rs`
 
 ```rust
 pub mod poll_inv;
@@ -164,10 +165,11 @@ pub use poll_inv::poll_inv;
 `src/inventory/mod.rs`
 
 ```rust
+#[path = "__bevy_systems__/mod.rs"]
 pub mod bevy_systems;
 ```
 
-`src/inventory/bevy_systems/mod.rs`
+`src/inventory/__bevy_systems__/mod.rs`
 
 ```rust
 pub mod poll_inv;
@@ -177,11 +179,11 @@ pub use poll_inv::poll_inv;
 
 ### LELEBEVY002 `bevy_folder`
 
-A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.
+A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `__bevy_systems__/` folder; a folder literally named `bevy_systems/` is reported for renaming.
 
-**Why:** Systems are the domain's Bevy edge; keeping them in one folder makes the plugin surface readable.
+**Why:** Systems are the domain's Bevy edge; keeping them in one dunder folder makes the plugin surface readable.
 
-**Fix:** Move the system into `<domain>/bevy_systems/<system>.rs`, re-export it from `bevy_systems/mod.rs` only, and register it as `<domain>::bevy_systems::<system>`.
+**Fix:** Move the system into `<domain>/__bevy_systems__/<system>.rs`, re-export it from `__bevy_systems__/mod.rs` only, and register it as `<domain>::bevy_systems::<system>`; a folder literally named `bevy_systems/` is renamed to `__bevy_systems__/` and mounted with `#[path = "__bevy_systems__/mod.rs"] pub mod bevy_systems;`.
 
 **Bad** (reports LELEBEVY002):
 
@@ -198,22 +200,36 @@ pub fn register_enemies() {
 }
 ```
 
+`src/enemy/bevy_systems/despawn.rs`
+
+```rust
+pub struct Query;
+
+pub fn despawn(_q: Query) {}
+
+pub fn register_despawn() {
+    let app = App;
+    app.add_systems(Update, despawn);
+}
+```
+
 **Good:**
 
 `src/enemy/mod.rs`
 
 ```rust
+#[path = "__bevy_systems__/mod.rs"]
 pub mod bevy_systems;
 ```
 
-`src/enemy/bevy_systems/mod.rs`
+`src/enemy/__bevy_systems__/mod.rs`
 
 ```rust
 pub mod tick_enemies;
 pub use tick_enemies::tick_enemies;
 ```
 
-`src/enemy/bevy_systems/tick_enemies.rs`
+`src/enemy/__bevy_systems__/tick_enemies.rs`
 
 ```rust
 pub struct Query;
@@ -357,7 +373,7 @@ A file with a system that restyles UI (`&mut` on a styling component) must ship 
 
 **Bad** (reports LELEBEVY005):
 
-`src/discovery/ui/bevy_systems/gate_create.rs`
+`src/discovery/ui/__bevy_systems__/gate_create.rs`
 
 ```rust
 pub fn build(app: &mut App) {
@@ -371,7 +387,7 @@ pub fn gate_create(button: Query<&mut BackgroundColor>) {
 
 **Good:**
 
-`src/discovery/ui/bevy_systems/gate_create.rs`
+`src/discovery/ui/__bevy_systems__/gate_create.rs`
 
 ```rust
 pub fn build(app: &mut App) {

@@ -18,8 +18,9 @@ mod tests {
     #[test]
     fn test_usage() {
         let defaults = dunder_paths(&Config::default());
-        assert_eq!(defaults.len(), 1);
+        assert_eq!(defaults.len(), 2);
         assert_eq!(defaults[0].module_name(), "basic");
+        assert_eq!(defaults[1].module_name(), "bevy_systems");
     }
 
     #[test]
@@ -27,8 +28,8 @@ mod tests {
         let section: LeleSection =
             toml::from_str("[lint]\ndunder_paths = [\"__prelude__.rs\"]\n").unwrap();
         let merged = dunder_paths(&Config(Some(section)));
-        assert_eq!(merged.len(), 2);
-        assert!(merged[1].is_dunder_file());
+        assert_eq!(merged.len(), 3);
+        assert!(merged[2].is_dunder_file());
     }
 
     #[test]

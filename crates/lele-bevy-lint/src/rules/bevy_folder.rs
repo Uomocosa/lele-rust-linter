@@ -17,9 +17,9 @@ impl BevyFolder {
     pub const CODE: &'static str = "LELEBEVY002";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `bevy_systems/` folder.",
-        why: "Systems are the domain's Bevy edge; keeping them in one folder makes the plugin surface readable.",
-        fix: "Move the system into `<domain>/bevy_systems/<system>.rs`, re-export it from `bevy_systems/mod.rs` only, and register it as `<domain>::bevy_systems::<system>`.",
+        summary: "A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `__bevy_systems__/` folder; a folder literally named `bevy_systems/` is reported for renaming.",
+        why: "Systems are the domain's Bevy edge; keeping them in one dunder folder makes the plugin surface readable.",
+        fix: "Move the system into `<domain>/__bevy_systems__/<system>.rs`, re-export it from `__bevy_systems__/mod.rs` only, and register it as `<domain>::bevy_systems::<system>`; a folder literally named `bevy_systems/` is renamed to `__bevy_systems__/` and mounted with `#[path = \"__bevy_systems__/mod.rs\"] pub mod bevy_systems;`.",
         bad: rule_examples!("bevy_folder/bad"),
         good: rule_examples!("bevy_folder/good"),
     };

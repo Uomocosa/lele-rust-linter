@@ -1,4 +1,5 @@
 mod player;
+#[path = "__bevy_systems__/mod.rs"]
 pub mod bevy_systems;
 
 #[path = "__basic__/mod.rs"]

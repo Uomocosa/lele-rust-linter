@@ -25,7 +25,9 @@ fn test_crate_path(name: &str) -> PathBuf {
 
 fn findings(name: &str) -> Result<BTreeSet<(String, String)>, Box<dyn std::error::Error>> {
     let root = test_crate_path(name);
-    let project = Project::try_from_start_dir_and_scan_folders(Some(&root), None)?;
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(&root), None)?;
+    let config = project.load_config().unwrap_or_default();
+    project.apply_layout(&config)?;
     Ok(BevyLinter::default()
         .rules
         .iter()

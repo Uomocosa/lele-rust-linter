@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::DunderKind;
 use crate::Error;
 
-const CODE_DUNDER_MODULES: [&str; 1] = ["bevy_systems"];
+const CODE_DUNDER_MODULES: [&str; 2] = ["bevy_systems", "traits"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Deref, Deserialize)]
 #[serde(try_from = "PathBuf")]
@@ -15,7 +15,7 @@ pub struct DunderPath(pub(crate) PathBuf);
 
 impl DunderPath {
     pub fn defaults() -> Vec<Self> {
-        ["__basic__", "__bevy_systems__"]
+        ["__basic__", "__bevy_systems__", "__traits__"]
             .into_iter()
             .filter_map(|name| Self::try_from(PathBuf::from(name)).ok())
             .collect()
@@ -70,14 +70,17 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_defaults_carry_the_systems_mount_name() {
+    fn test_usage_defaults_carry_the_code_dunder_mount_names() {
         let defaults = DunderPath::defaults();
-        assert_eq!(defaults.len(), 2);
+        assert_eq!(defaults.len(), 3);
         assert_eq!(defaults[0].module_name(), "basic");
         assert_eq!(defaults[1].module_name(), "bevy_systems");
+        assert_eq!(defaults[2].module_name(), "traits");
         assert_eq!(defaults[0].kind(), DunderKind::Container);
         assert_eq!(defaults[1].kind(), DunderKind::Code);
+        assert_eq!(defaults[2].kind(), DunderKind::Code);
         assert!(defaults[0].is_container());
         assert!(!defaults[1].is_container());
+        assert!(!defaults[2].is_container());
     }
 }

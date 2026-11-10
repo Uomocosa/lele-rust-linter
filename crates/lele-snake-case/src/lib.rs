@@ -1,3 +1,4 @@
 mod constants;
-mod to_lele_snake_case;
-pub use to_lele_snake_case::ToLeleSnakeCase;
+#[path = "__traits__/mod.rs"]
+pub mod traits;
+pub use traits::ToLeleSnakeCase;

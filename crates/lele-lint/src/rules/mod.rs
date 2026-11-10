@@ -38,3 +38,4 @@ pub(crate) mod single_field_newtype;
 pub(crate) mod snake_case_files;
 pub(crate) mod test_inline;
 pub(crate) mod test_usage;
+pub(crate) mod trait_placement;

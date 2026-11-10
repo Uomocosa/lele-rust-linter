@@ -19,6 +19,7 @@ every **Good** example reports nothing at all.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 - [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
+- [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 
 ### LELE001 `atomic_file`
 
@@ -658,6 +659,138 @@ pub mod structs;
 pub struct Item {
     pub name: String,
     pub price: u32,
+}
+```
+
+### LELE041 `trait_placement`
+
+Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
+
+**Why:** The `__traits__/` folder is the domain's implementable-role edge: the folder says what the files hold, so each trait keeps its atomic file, named after it, mounted and exported like a domain item.
+
+**Fix:** Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = "__traits__/mod.rs"] pub mod traits;` and re-export the trait from the owning module (`pub use traits::<Trait>;`); rename a `…Trait` trait to its bare name — the folder already says it is a trait.
+
+**Bad** (reports LELE041):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/customer_prefs.rs`
+
+```rust
+pub trait CustomerPrefsTrait {
+    fn prefs_path(&self) -> String;
+}
+```
+
+`src/stock/mod.rs`
+
+```rust
+pub mod customer_prefs;
+pub mod replicated_state;
+```
+
+`src/stock/replicated_state.rs`
+
+```rust
+pub trait ReplicatedState {
+    fn replica_id(&self) -> u64;
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__traits__/mod.rs"]
+pub mod traits;
+
+pub use traits::CustomerPrefs;
+pub use traits::ReplicatedState;
+```
+
+`src/stock/__traits__/customer_prefs.rs`
+
+```rust
+pub trait CustomerPrefs {
+    fn prefs_path(&self) -> String;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CustomerPrefs;
+
+    struct Demo {
+        suffix: String,
+        created_on: u64,
+    }
+
+    impl CustomerPrefs for Demo {
+        fn prefs_path(&self) -> String {
+            format!("prefs/{}-{}", self.suffix, self.created_on)
+        }
+    }
+
+    #[test]
+    fn test_usage() {
+        let demo = Demo {
+            suffix: "house".to_string(),
+            created_on: 4,
+        };
+        assert_eq!(demo.prefs_path(), "prefs/house-4");
+    }
+}
+```
+
+`src/stock/__traits__/mod.rs`
+
+```rust
+mod customer_prefs;
+mod replicated_state;
+pub use customer_prefs::CustomerPrefs;
+pub use replicated_state::ReplicatedState;
+```
+
+`src/stock/__traits__/replicated_state.rs`
+
+```rust
+pub trait ReplicatedState {
+    fn replica_id(&self) -> u64;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ReplicatedState;
+
+    struct Demo {
+        replica: u64,
+        owner: u32,
+    }
+
+    impl ReplicatedState for Demo {
+        fn replica_id(&self) -> u64 {
+            self.replica + u64::from(self.owner)
+        }
+    }
+
+    #[test]
+    fn test_usage() {
+        let demo = Demo {
+            replica: 6,
+            owner: 1,
+        };
+        assert_eq!(demo.replica_id(), 7);
+    }
 }
 ```
 

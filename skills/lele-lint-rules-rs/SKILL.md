@@ -58,6 +58,8 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Move every item that is not `mod`, `pub mod` or `pub use` out of `mod.rs` into its own atomic file, and re-export it from `mod.rs`.
 - **LELE038 `dunder_module_name`**: A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
   - Fix: Declare the folder as `#[path = "__basic__/mod.rs"] pub mod basic;` and write `basic::` in every path, never `__basic__`.
+- **LELE041 `trait_placement`**: Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
+  - Fix: Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = "__traits__/mod.rs"] pub mod traits;` and re-export the trait from the owning module (`pub use traits::<Trait>;`); rename a `…Trait` trait to its bare name — the folder already says it is a trait.
 
 ## Delegates: shells and `__methods__/`
 

@@ -1,5 +1,6 @@
-pub mod rule;
-pub use rule::Rule;
+#[path = "__traits__/mod.rs"]
+pub mod traits;
+pub use traits::Rule;
 mod common;
 pub mod common_args;
 pub mod rules;

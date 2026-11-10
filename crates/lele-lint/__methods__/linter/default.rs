@@ -45,6 +45,7 @@ pub fn default() -> Linter {
     rules::dunder_module_name::DunderModuleName::register(&mut rules);
     rules::no_stringified_errors::NoStringifiedErrors::register(&mut rules);
     rules::error_message_omits_source::ErrorMessageOmitsSource::register(&mut rules);
+    rules::trait_placement::TraitPlacement::register(&mut rules);
     Linter {
         rules,
         error_format: ErrorFormat::Clippy,

@@ -164,6 +164,25 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_relative_imports_disambiguate_same_named_types() {
+        let found = messages(&[
+            ("a/mod.rs", "pub mod config;\npub mod setup;\n"),
+            ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            ("b/mod.rs", "pub mod config;\n"),
+            ("b/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            (
+                "a/setup.rs",
+                "use super::config::Config;\n\nimpl Default for Config { fn default() -> Self { Self { enabled: false } } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Default for Config` must live in `a/config.rs`, the file that defines `Config`"
+        );
+    }
+
+    #[test]
     fn test_usage_flags_blanket_impl_outside_trait_file() {
         let found = messages(&[
             ("stock/mod.rs", "pub mod blanket;\n"),

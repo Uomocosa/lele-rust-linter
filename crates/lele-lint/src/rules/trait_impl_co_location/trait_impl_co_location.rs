@@ -17,9 +17,9 @@ impl TraitImplCoLocation {
     pub const CODE: &'static str = "LELE042";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file, and an unresolved ambiguity lists every defining file.",
+        summary: "Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file (relative `super::`/`self::` qualifiers resolve against the impl file's own module, and dunder-mounted modules match by their code name, `stock::traits` → `stock/__traits__/`), and an unresolved ambiguity lists every defining file.",
         why: "A type's behaviour is readable in one place: a trait impl sits next to the struct or enum it describes, and a crate trait's blanket or foreign-type impls sit next to the trait that owns them — the `<domain>/__traits__/<trait_snake>.rs` file.",
-        fix: "Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. When several files define a type of the same name, an impl is clean only in a file that defines it; the impl's own qualified path or a matching `use` import in its file selects the defining file, and an unresolved ambiguity lists every defining file. The trait side resolves the same way: when several `__traits__/` files define a trait of that name, the impl's own trait path (`impl crate::a::Foo for T`) or a `use` import of the trait name selects the defining file, and an unresolved ambiguity lists every defining `__traits__/` file. A type in `__basic__/` keeps no impls — move it to its own `<type>.rs` first and put the impl there. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.",
+        fix: "Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. When several files define a type of the same name, an impl is clean only in a file that defines it; the impl's own qualified path or a matching `use` import in its file selects the defining file — a relative (`super::`/`self::`) import is resolved against the impl file's own module and a `…::traits`/`…::basic` import matches the `__traits__/`/`__basic__/` files of that module — and an unresolved ambiguity lists every defining file. The trait side resolves the same way: when several `__traits__/` files define a trait of that name, the impl's own trait path (`impl crate::a::Foo for T`) or a `use` import of the trait name selects the defining file, and an unresolved ambiguity lists every defining `__traits__/` file. A type in `__basic__/` keeps no impls — move it to its own `<type>.rs` first and put the impl there. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.",
         bad: rule_examples!("trait_impl_co_location/bad"),
         good: rule_examples!("trait_impl_co_location/good"),
     };
@@ -102,11 +102,17 @@ impl TraitImplCoLocation {
         project: &Project,
     ) -> Vec<Vec<String>> {
     }
-    pub(crate) fn defining_module_path(qualifier: &[String]) -> Option<Vec<String>> {}
+    pub(crate) fn impl_file_module_path(rel_path: &Path) -> Vec<String> {}
+    pub(crate) fn defining_module_path(
+        qualifier: &[String],
+        anchor: &[String],
+    ) -> Option<Vec<String>> {
+    }
     pub(crate) fn import_module_hint(
         prefix: &[String],
         imported: &syn::Ident,
         type_name: &str,
+        anchor: &[String],
     ) -> Option<Vec<String>> {
     }
     pub(crate) fn candidate_defines_module_path(candidate: &Path, module_path: &[String]) -> bool {}

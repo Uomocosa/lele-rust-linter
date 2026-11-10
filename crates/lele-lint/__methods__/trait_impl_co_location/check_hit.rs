@@ -336,6 +336,52 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_super_import_selects_the_defining_file() {
+        let project = project_with_parsed(
+            "discovery/setup.rs",
+            "use super::config::Config;\n\nimpl Default for Config {}",
+        );
+        let mut type_definitions = BTreeMap::new();
+        let trait_definitions = BTreeMap::new();
+        insert_same_named_configs(&mut type_definitions);
+        let violations = check_hit(
+            Path::new("discovery/setup.rs"),
+            &trait_hit(3, "Default", "Config"),
+            &project,
+            &type_definitions,
+            &trait_definitions,
+        );
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`impl Default for Config` must live in `discovery/config.rs`, the file that defines `Config`"
+        );
+    }
+
+    #[test]
+    fn test_usage_dunder_trait_import_resolves_through_the_mount() {
+        let project = project_with_parsed(
+            "dial/setup.rs",
+            "use crate::stock::traits::Foo;\n\nimpl Foo for T {}",
+        );
+        let mut trait_definitions = BTreeMap::new();
+        insert(&mut trait_definitions, "a/__traits__/foo.rs", "Foo");
+        insert(&mut trait_definitions, "stock/__traits__/foo.rs", "Foo");
+        let violations = check_hit(
+            Path::new("dial/setup.rs"),
+            &blanket_hit(3, "Foo"),
+            &project,
+            &BTreeMap::new(),
+            &trait_definitions,
+        );
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`impl Foo for T` must live in `stock/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
     fn test_usage_same_named_types_resolved_through_the_named_self_path() {
         let project = project();
         let mut type_definitions = BTreeMap::new();

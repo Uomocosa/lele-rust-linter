@@ -1,30 +1,41 @@
 use std::path::Path;
 
 pub fn candidate_defines_module_path(candidate: &Path, module_path: &[String]) -> bool {
-    let mut parents = candidate.components().collect::<Vec<_>>();
-    parents.pop();
-    parents.retain(|component| {
-        !component
-            .as_os_str()
-            .to_str()
-            .is_some_and(|name| name.starts_with("__") && name.ends_with("__"))
-    });
-    if module_path.is_empty() {
-        return parents.is_empty();
+    let mut parent_components = candidate.components().collect::<Vec<_>>();
+    parent_components.pop();
+    let mut stripped_parents = Vec::new();
+    let mut mounted_parents = Vec::new();
+    for component in &parent_components {
+        let name = component.as_os_str().to_string_lossy().into_owned();
+        let module_name = name
+            .strip_prefix("__")
+            .and_then(|rest| rest.strip_suffix("__"))
+            .map_or_else(|| name.clone(), str::to_string);
+        let is_dunder_component = module_name != name;
+        if !is_dunder_component {
+            stripped_parents.push(name.clone());
+        }
+        mounted_parents.push(module_name);
     }
-    let parent_names = parents
-        .iter()
-        .map(|component| component.as_os_str().to_string_lossy().into_owned())
-        .collect::<Vec<String>>();
-    let mut chain_with_stem = parent_names.clone();
-    chain_with_stem.push(
-        candidate
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("")
-            .to_string(),
-    );
-    parent_names == module_path || chain_with_stem == module_path
+    if module_path.is_empty() {
+        return parent_components.is_empty();
+    }
+    let stem = candidate
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("")
+        .to_string();
+    let mut stripped_chain = stripped_parents.clone();
+    stripped_chain.push(stem.clone());
+    let mut mounted_chain = mounted_parents.clone();
+    mounted_chain.push(stem);
+    let chains = [
+        stripped_parents,
+        mounted_parents,
+        stripped_chain,
+        mounted_chain,
+    ];
+    chains.iter().any(|chain| chain.as_slice() == module_path)
 }
 
 #[cfg(test)]
@@ -52,6 +63,42 @@ mod tests {
         assert!(candidate_defines_module_path(
             std::path::Path::new("direct_dial/__basic__/resources.rs"),
             &module(&["direct_dial"]),
+        ));
+    }
+
+    #[test]
+    fn test_usage_dunder_mount_module_names_match_candidates() {
+        assert!(candidate_defines_module_path(
+            std::path::Path::new("stock/__traits__/clock.rs"),
+            &module(&["stock", "traits"]),
+        ));
+        assert!(candidate_defines_module_path(
+            std::path::Path::new("stock/__traits__/clock.rs"),
+            &module(&["stock", "traits", "clock"]),
+        ));
+        assert!(candidate_defines_module_path(
+            std::path::Path::new("stock/__basic__/structs.rs"),
+            &module(&["stock", "basic"]),
+        ));
+        assert!(!candidate_defines_module_path(
+            std::path::Path::new("stock/__traits__/clock.rs"),
+            &module(&["other", "traits"]),
+        ));
+    }
+
+    #[test]
+    fn test_usage_dunder_stripped_matching_is_unchanged() {
+        assert!(candidate_defines_module_path(
+            std::path::Path::new("direct_dial/__basic__/resources.rs"),
+            &module(&["direct_dial"]),
+        ));
+        assert!(candidate_defines_module_path(
+            std::path::Path::new("a/__traits__/foo.rs"),
+            &module(&["a"]),
+        ));
+        assert!(!candidate_defines_module_path(
+            std::path::Path::new("a/__traits__/foo.rs"),
+            &module(&["traits"]),
         ));
     }
 

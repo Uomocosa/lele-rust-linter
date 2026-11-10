@@ -9,16 +9,22 @@ pub fn module_hints(
     item_path: Option<&[String]>,
     project: &Project,
 ) -> Vec<Vec<String>> {
-    fn recursion(tree: &syn::UseTree, prefix: &[String], name: &str, hints: &mut Vec<Vec<String>>) {
+    fn recursion(
+        tree: &syn::UseTree,
+        prefix: &[String],
+        name: &str,
+        anchor: &[String],
+        hints: &mut Vec<Vec<String>>,
+    ) {
         match tree {
             syn::UseTree::Path(path) => {
                 let mut nested = prefix.to_vec();
                 nested.push(path.ident.to_string());
-                recursion(&path.tree, &nested, name, hints);
+                recursion(&path.tree, &nested, name, anchor, hints);
             }
             syn::UseTree::Group(group) => {
                 for tree in &group.items {
-                    recursion(tree, prefix, name, hints);
+                    recursion(tree, prefix, name, anchor, hints);
                 }
             }
             syn::UseTree::Name(use_name) => {
@@ -27,6 +33,7 @@ pub fn module_hints(
                         prefix,
                         &use_name.ident,
                         name,
+                        anchor,
                     )
                 {
                     hints.push(hint);
@@ -38,6 +45,7 @@ pub fn module_hints(
                         prefix,
                         &rename.ident,
                         name,
+                        anchor,
                     )
                 {
                     hints.push(hint);
@@ -47,6 +55,7 @@ pub fn module_hints(
                         prefix,
                         &rename.rename,
                         name,
+                        anchor,
                     )
                 {
                     hints.push(hint);
@@ -57,13 +66,17 @@ pub fn module_hints(
     }
 
     let mut hints = Vec::new();
+    let anchor =
+        rules::trait_impl_co_location::TraitImplCoLocation::impl_file_module_path(rel_path);
     if let Some(item_path) = item_path {
         if item_path.len() > 1 {
             let Some((_, qualifier)) = item_path.split_last() else {
                 return hints;
             };
             if let Some(hint) =
-                rules::trait_impl_co_location::TraitImplCoLocation::defining_module_path(qualifier)
+                rules::trait_impl_co_location::TraitImplCoLocation::defining_module_path(
+                    qualifier, &anchor,
+                )
             {
                 hints.push(hint);
             }
@@ -72,7 +85,7 @@ pub fn module_hints(
     if let Some(file) = project.get_parsed(rel_path) {
         for item in &file.items {
             if let syn::Item::Use(item_use) = item {
-                recursion(&item_use.tree, &[], name, &mut hints);
+                recursion(&item_use.tree, &[], name, &anchor, &mut hints);
             }
         }
     }
@@ -162,6 +175,24 @@ mod tests {
         assert_eq!(
             path_strings(&hints),
             vec![vec!["a".to_string()], vec!["b".to_string()]]
+        );
+    }
+
+    #[test]
+    fn test_usage_super_grouped_and_renamed_imports_hint_the_anchor_module() {
+        let project =
+            project_with("use super::x::{Foo as Bar, Item};\n\nimpl Default for Foo {}\n");
+        let hints = module_hints(Path::new("dial/setup.rs"), "Foo", None, &project);
+        assert_eq!(hints, vec![vec!["dial".to_string(), "x".to_string()]]);
+    }
+
+    #[test]
+    fn test_usage_super_imports_hint_the_anchor_relative_module() {
+        let project = project_with("use super::discovery::Config;\n\nimpl Default for Config {}\n");
+        let hints = module_hints(Path::new("dial/setup.rs"), "Config", None, &project);
+        assert_eq!(
+            hints,
+            vec![vec!["dial".to_string(), "discovery".to_string()]]
         );
     }
 

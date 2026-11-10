@@ -15,6 +15,10 @@ impl<'a> ExprRegion<'a> {
     pub fn count_states(&self) -> usize {}
     pub fn scene_literals(&self) -> Vec<syn::ExprStruct> {}
     pub fn registered_paths(&self) -> Vec<Vec<String>> {}
+}
+
+#[atomic_delegates]
+impl ExprRegion<'_> {
     pub(crate) fn local_names(expr: &syn::Expr) -> Vec<String> {}
 }
 

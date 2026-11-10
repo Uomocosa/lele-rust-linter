@@ -50,6 +50,10 @@ impl Project {
     ) -> Result<Self, Error> {
     }
     pub(crate) fn try_from_folders(base_path: &Path, folders: &[PathBuf]) -> Result<Self, Error> {}
+}
+
+#[atomic_delegates]
+impl Project {
     pub fn apply_layout(&mut self, config: &Config) -> Result<(), Error> {}
     pub fn load_config(&self) -> Result<Config, Error> {}
     pub fn find_cargo_root(start: &Path) -> Result<PathBuf, Error> {}

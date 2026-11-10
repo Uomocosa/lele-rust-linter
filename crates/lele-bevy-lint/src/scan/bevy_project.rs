@@ -32,6 +32,10 @@ impl BevyProject<'_> {
     ) -> RuleViolation {
     }
     pub fn ui_inventory(&self) -> String {}
+}
+
+#[atomic_delegates]
+impl BevyProject<'_> {
     pub(crate) fn file_spawns_ui(
         project: BevyProject,
         segments: &[String],

@@ -1,3 +1,5 @@
+use atomic_delegate_macros::atomic_delegates;
+
 pub struct Player {
     pub name: String,
     pub health: u32,
@@ -13,7 +15,16 @@ impl Default for Player {
 }
 
 impl Player {
+    pub fn new(name: String, health: u32) -> Self {
+        Self { name, health }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn from_save(name: String, health: u32) -> Self {}
     pub fn heal(&mut self, amount: u32) {}
+    pub fn rename(&mut self, name: String) {}
 }
 
 #[cfg(test)]
@@ -22,8 +33,10 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let mut player = player::Player::default();
+        let mut player = player::Player::new("ada".to_string(), 50);
         player.heal(5);
-        assert_eq!(player.health, 100);
+        assert_eq!(player.health, 55);
+        let restored = player::Player::from_save("eve".to_string(), 250);
+        assert_eq!(restored.health, 100);
     }
 }

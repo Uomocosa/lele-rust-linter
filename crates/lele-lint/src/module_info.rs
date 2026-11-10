@@ -17,6 +17,10 @@ pub struct ModuleInfo {
 #[atomic_delegates]
 impl ModuleInfo {
     pub fn build(entries: &[Entry]) -> ModuleInfoMap {}
+}
+
+#[atomic_delegates]
+impl ModuleInfo {
     pub(crate) fn parse_mod_rs(content: &str) -> (Vec<ModDecl>, Vec<Reexport>) {}
 }
 

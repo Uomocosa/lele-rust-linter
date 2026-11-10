@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use quote::ToTokens;
 use syn::spanned::Spanned;
 
 use crate::rules;
 use crate::ImplBlock;
 use crate::ImplItemGroup;
+use crate::ImplMethod;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
@@ -72,20 +72,7 @@ pub fn check(
                 let syn::ImplItem::Fn(method) = impl_item else {
                     continue;
                 };
-                let returns_self = method
-                    .sig
-                    .output
-                    .to_token_stream()
-                    .to_string()
-                    .split_whitespace()
-                    .any(|token| token == "Self");
-                let group = if method.sig.receiver().is_none() && returns_self {
-                    ImplItemGroup::Constructor
-                } else if matches!(method.vis, syn::Visibility::Public(_)) {
-                    ImplItemGroup::PubFn
-                } else {
-                    ImplItemGroup::CrateFn
-                };
+                let group = ImplMethod(method).order_group();
                 place(
                     &type_name,
                     group,

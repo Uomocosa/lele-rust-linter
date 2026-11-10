@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use crate::common;
 use crate::rules;
 use crate::ImplBlock;
+use crate::ImplItemGroup;
 use crate::ItemMarker;
 use crate::Project;
 use crate::RuleViolation;
@@ -20,15 +21,19 @@ pub fn check(
         let Some(primary) = common::SourceFile(file).primary_type_name(stem) else {
             continue;
         };
-        let main_blocks =
-            rules::delegate_macro::DelegateMacro::annotated_inherent_blocks(file, &primary, false);
-        let crate_blocks =
-            rules::delegate_macro::DelegateMacro::annotated_inherent_blocks(file, &primary, true);
-        if main_blocks > 1 || crate_blocks > 1 {
-            violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                    "type `{primary}` has {} `#[atomic_delegates]` impl blocks — merge into one block, plus at most one block holding only `pub(crate)` shells",
-                    main_blocks.saturating_add(crate_blocks)
-                )));
+        for group in [
+            ImplItemGroup::Constructor,
+            ImplItemGroup::PubFn,
+            ImplItemGroup::CrateFn,
+        ] {
+            let blocks = rules::delegate_macro::DelegateMacro::annotated_inherent_blocks(
+                file, &primary, group,
+            );
+            if blocks > 1 {
+                violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
+                        "type `{primary}` has {blocks} `#[atomic_delegates]` impl blocks with {group} shells — merge into one block per `impl_item_order` group",
+                    )));
+            }
         }
         let mut seen: HashSet<String> = HashSet::new();
         for item in &file.items {
@@ -89,6 +94,18 @@ pub fn check(
                 .iter()
                 .any(|attr| ItemMarker(attr).is_atomic_delegates())
             {
+                let groups = rules::delegate_macro::DelegateMacro::shell_order_groups(impl_block);
+                if groups.len() > 1 {
+                    let names = groups
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
+                            "the `#[atomic_delegates]` impl for `{primary}` holds {names} shells in one block — split into one block per `impl_item_order` group"
+                        )));
+                    continue;
+                }
                 violations.extend(
                     rules::delegate_macro::DelegateMacro::check_delegated_methods(
                         project, rel_path, &primary, impl_block, &mut seen,
@@ -228,12 +245,12 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_allows_one_extra_crate_only_block() {
+    fn test_usage_one_block_per_group_is_clean() {
         let mut project = Project::default();
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn run(&self) {} }\n#[atomic_delegates]\nimpl Foo { pub(crate) fn step(&self) {} }\n",
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn load() -> Self {} }\n#[atomic_delegates]\nimpl Foo { pub fn run(&self) {} }\n#[atomic_delegates]\nimpl Foo { pub(crate) fn step(&self) {} }\n",
             )
             .unwrap(),
         );
@@ -241,17 +258,37 @@ mod tests {
         assert!(!violations
             .iter()
             .any(|d| d.message.contains("merge into one block")));
+        assert!(!violations
+            .iter()
+            .any(|d| d.message.contains("one block per `impl_item_order` group")));
+    }
+
+    #[test]
+    fn test_usage_flags_mixed_group_block() {
+        let mut project = Project::default();
         project.parsed_files.insert(
             PathBuf::from("foo.rs"),
             syn::parse_str(
-                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub(crate) fn a(&self) {} }\n#[atomic_delegates]\nimpl Foo { pub(crate) fn b(&self) {} }\n",
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn load() -> Self {} pub fn stop(&self) {} }\n",
             )
             .unwrap(),
         );
         let violations = check(&DelegateMacro, &project);
-        assert!(violations
-            .iter()
-            .any(|d| d.message.contains("merge into one block")));
+        assert!(violations.iter().any(|d| d.message.contains(
+            "holds constructor, `pub` fn shells in one block — split into one block per `impl_item_order` group"
+        )));
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("foo.rs"),
+            syn::parse_str(
+                "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn stop(&self) {} pub(crate) fn step(&self) {} }\n",
+            )
+            .unwrap(),
+        );
+        let violations = check(&DelegateMacro, &project);
+        assert!(violations.iter().any(|d| d.message.contains(
+            "holds `pub` fn, `pub(crate)` fn shells in one block — split into one block per `impl_item_order` group"
+        )));
     }
 
     #[test]

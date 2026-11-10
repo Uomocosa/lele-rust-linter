@@ -670,7 +670,7 @@ pub struct Item {
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
-- [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
+- [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
 - [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
@@ -1530,11 +1530,11 @@ mod tests {
 
 ### LELE032 `delegate_macro`
 
-Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
+Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
 
-**Why:** The macro wires each shell to `__methods__/<type>/<method>.rs`; one block per type means one place to read the type's API. The optional `pub(crate)`-only block lets internal helpers sit after inline `pub` fns, as `impl_item_order` requires.
+**Why:** The macro wires each shell to `__methods__/<type>/<method>.rs`; one block per `impl_item_order` group lets hand-written impls sit between the type's shell blocks, in the order `impl_item_order` wants: constructors, then trait impls, then `pub` fns.
 
-**Fix:** Gather every empty-bodied shell of the type into one `#[atomic_delegates] impl <Type>` block (plus at most one block holding only `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
+**Fix:** Split the empty-bodied shells by their `impl_item_order` group into one `#[atomic_delegates] impl <Type>` block per group (constructor shells, `pub` shells, `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
 
 **Bad** (reports LELE032):
 
@@ -1553,6 +1553,32 @@ pub mod player;
 pub mod methods;
 ```
 
+`__methods__/player/from_save.rs`
+
+```rust
+use crate::player;
+
+pub fn from_save(name: String, health: u32) -> player::Player {
+    let capped = health.min(100);
+    player::Player {
+        name,
+        health: capped,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::from_save;
+
+    #[test]
+    fn test_usage() {
+        let player = from_save("ada".to_string(), 250);
+        assert_eq!(player.name, "ada");
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
 `__methods__/player/heal.rs`
 
 ```rust
@@ -1583,37 +1609,22 @@ mod tests {
 `__methods__/player/mod.rs`
 
 ```rust
+mod from_save;
 mod heal;
+mod rename;
+pub use from_save::from_save;
 pub use heal::heal;
+pub use rename::rename;
 ```
 
-`src/player/mod.rs`
+`__methods__/player/rename.rs`
 
 ```rust
-mod player;
+use crate::player;
 
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
+pub fn rename(player: &mut player::Player, name: String) {
+    let trimmed = name.trim().to_string();
+    player.name = trimmed;
 }
 
 #[cfg(test)]
@@ -1622,62 +1633,14 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-```
-
-**Good:**
-
-`__methods__/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-
-#[path = "../__methods__/mod.rs"]
-pub mod methods;
-```
-
-`__methods__/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
+        let mut player = player::Player {
             name: String::new(),
             health: 10,
         };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
+        rename(&mut player, "  ada  ".to_string());
+        assert_eq!(player.name, "ada");
     }
 }
-```
-
-`__methods__/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1707,9 +1670,17 @@ impl Default for Player {
     }
 }
 
+impl Player {
+    pub fn new(name: String, health: u32) -> Self {
+        Self { name, health }
+    }
+}
+
 #[atomic_delegates]
 impl Player {
+    pub fn from_save(name: String, health: u32) -> Self {}
     pub fn heal(&mut self, amount: u32) {}
+    pub fn rename(&mut self, name: String) {}
 }
 
 #[cfg(test)]
@@ -1718,9 +1689,192 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let mut player = player::Player::default();
+        let mut player = player::Player::new("ada".to_string(), 50);
         player.heal(5);
+        assert_eq!(player.health, 55);
+        let restored = player::Player::from_save("eve".to_string(), 250);
+        assert_eq!(restored.health, 100);
+    }
+}
+```
+
+**Good:**
+
+`__methods__/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../__methods__/mod.rs"]
+pub mod methods;
+```
+
+`__methods__/player/from_save.rs`
+
+```rust
+use crate::player;
+
+pub fn from_save(name: String, health: u32) -> player::Player {
+    let capped = health.min(100);
+    player::Player {
+        name,
+        health: capped,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::from_save;
+
+    #[test]
+    fn test_usage() {
+        let player = from_save("ada".to_string(), 250);
+        assert_eq!(player.name, "ada");
         assert_eq!(player.health, 100);
+    }
+}
+```
+
+`__methods__/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`__methods__/player/mod.rs`
+
+```rust
+mod from_save;
+mod heal;
+mod rename;
+pub use from_save::from_save;
+pub use heal::heal;
+pub use rename::rename;
+```
+
+`__methods__/player/rename.rs`
+
+```rust
+use crate::player;
+
+pub fn rename(player: &mut player::Player, name: String) {
+    let trimmed = name.trim().to_string();
+    player.name = trimmed;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player {
+            name: String::new(),
+            health: 10,
+        };
+        rename(&mut player, "  ada  ".to_string());
+        assert_eq!(player.name, "ada");
+    }
+}
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use std::fmt;
+
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+impl Player {
+    pub fn new(name: String, health: u32) -> Self {
+        Self { name, health }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn from_save(name: String, health: u32) -> Self {}
+}
+
+#[rustfmt::skip]
+impl fmt::Display for Player {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result { write!(formatter, "{} ({} hp)", self.name, self.health) }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+    pub fn rename(&mut self, name: String) {}
+}
+
+#[rustfmt::skip]
+impl Player {
+    pub fn banner(&self) -> String { format!("{} ({} hp)", self.name, self.health) }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::new("ada".to_string(), 50);
+        player.heal(5);
+        assert_eq!(player.health, 55);
+        player.rename("  bob  ".to_string());
+        assert_eq!(player.name, "bob");
+        let restored = player::Player::from_save("eve".to_string(), 250);
+        assert_eq!(restored.health, 100);
+        assert_eq!(restored.banner(), "eve (100 hp)");
     }
 }
 ```

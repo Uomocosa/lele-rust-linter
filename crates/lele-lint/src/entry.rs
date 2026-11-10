@@ -17,7 +17,15 @@ pub struct Entry {
 #[atomic_delegates]
 impl Entry {
     pub fn walk(walk_root: &Path, strip_base: &Path) -> Result<Vec<Self>, Error> {}
+}
+
+#[atomic_delegates]
+impl Entry {
     pub fn parse_all(entries: &[Self]) -> (HashMap<PathBuf, syn::File>, Vec<ParseFailure>) {}
+}
+
+#[atomic_delegates]
+impl Entry {
     pub(crate) fn keep_entry(entry: &walkdir::DirEntry) -> bool {}
 }
 

@@ -64,6 +64,10 @@ impl ScannedFile<'_> {
     }
     pub fn module_fns(&self) -> scan::ModuleFns<'_> {}
     pub fn plugin_registrations(&self, project: &Project) -> Vec<Vec<String>> {}
+}
+
+#[atomic_delegates]
+impl ScannedFile<'_> {
     pub(crate) fn styling_aliases(file: &syn::File) -> HashSet<String> {}
     pub(crate) fn self_calls(block: &syn::Block) -> Vec<String> {}
     pub(crate) fn called_sibling<'b>(

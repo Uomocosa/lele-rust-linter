@@ -12,6 +12,10 @@ pub enum HarnessCall {
 #[atomic_delegates]
 impl HarnessCall {
     pub fn from_fn_body(body: &syn::Block, is_run_imported: bool) -> Self {}
+}
+
+#[atomic_delegates]
+impl HarnessCall {
     pub(crate) fn is_harness_path(func: &syn::Expr, is_run_imported: bool) -> bool {}
 }
 

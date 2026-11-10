@@ -12,10 +12,16 @@ pub fn check(
 
     for source in project.content_sources() {
         let mut hits = Vec::new();
+        let mut reexports = Vec::new();
         {
             let mut visitor = rules::dunder_module_name::DunderNameVisitor {
                 dunders: &project.dunder_paths,
                 hits: &mut hits,
+                reexports: &mut reexports,
+                domain_prefix: rules::dunder_module_name::DunderModuleName::mount_prefix(
+                    source.relative_path,
+                    project,
+                ),
             };
             visitor.visit_file(source.file);
         }
@@ -26,6 +32,21 @@ pub fn check(
                 0,
                 rules::dunder_module_name::DunderModuleName::CODE,
                 hit.message,
+            ));
+        }
+        for hit in reexports {
+            if hit.mount == rules::dunder_module_name::DunderModuleName::BEVY_OWNED_MOUNT {
+                continue;
+            }
+            violations.push(RuleViolation::from_site(
+                project.absolute_path(source.origin, source.relative_path),
+                hit.line,
+                0,
+                rules::dunder_module_name::DunderModuleName::CODE,
+                rules::dunder_module_name::DunderModuleName::reexport_message(
+                    &hit.item,
+                    &hit.suggestion,
+                ),
             ));
         }
     }
@@ -59,7 +80,7 @@ mod tests {
     #[test]
     fn test_usage() {
         assert_eq!(
-            messages("#[path = \"__basic__/mod.rs\"]\npub mod basic;\n"),
+            messages("#[path = \"__basic__/mod.rs\"]\nmod basic;\n"),
             Vec::<String>::new()
         );
         let found = messages("#[path = \"__basic__/mod.rs\"]\npub mod __basic__;\n");
@@ -100,6 +121,75 @@ mod tests {
     fn test_usage_ignores_unconfigured_dunders() {
         assert_eq!(
             messages("pub mod __other__;\nuse crate::__other__;\n"),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_pub_basic_mount() {
+        let found = messages(
+            "#[path = \"__basic__/mod.rs\"]\npub mod basic;\n\npub use basic::structs::Item;\n",
+        );
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`pub mod basic;` must be private: write `mod basic;` and re-export each item flat (`pub use basic::enums::HelloKind;`)"
+        );
+    }
+
+    #[test]
+    fn test_usage_allows_private_basic_mount_with_flat_reexport() {
+        assert_eq!(
+            messages(
+                "#[path = \"__basic__/mod.rs\"]\nmod basic;\n\npub use basic::structs::Item;\n"
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_private_traits_mount() {
+        let found = messages("#[path = \"__traits__/mod.rs\"]\nmod traits;\n");
+        assert_eq!(found.len(), 1);
+        assert!(found[0].contains("declare `pub mod traits;`"));
+    }
+
+    #[test]
+    fn test_usage_flags_trait_reexports() {
+        let found = messages(
+            "#[path = \"__traits__/mod.rs\"]\npub mod traits;\n\npub use traits::Greetable;\n",
+        );
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "do not re-export `Greetable`: refer to it as `stock::traits::Greetable`"
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_pub_crate_trait_reexports() {
+        let found = messages(
+            "#[path = \"__traits__/mod.rs\"]\npub mod traits;\n\npub(crate) use traits::Greetable;\n",
+        );
+        assert_eq!(found.len(), 1);
+    }
+
+    #[test]
+    fn test_usage_ignores_private_trait_imports() {
+        assert_eq!(
+            messages(
+                "#[path = \"__traits__/mod.rs\"]\npub mod traits;\n\nuse traits::Greetable;\n"
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_leaves_bevy_systems_reexports_to_bevy_export() {
+        assert_eq!(
+            messages(
+                "#[path = \"__bevy_systems__/mod.rs\"]\npub mod bevy_systems;\n\npub use bevy_systems::poll_inv;\n",
+            ),
             Vec::<String>::new()
         );
     }

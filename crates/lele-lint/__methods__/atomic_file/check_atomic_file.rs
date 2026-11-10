@@ -1,7 +1,7 @@
 use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 use std::collections::HashSet;
 use std::path::Path;
 

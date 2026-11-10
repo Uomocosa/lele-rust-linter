@@ -1,4 +1,4 @@
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 
 use crate::common;
 

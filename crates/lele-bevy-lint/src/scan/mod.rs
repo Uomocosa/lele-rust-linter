@@ -1,5 +1,5 @@
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 pub use basic::enums::PreviewKind;
 pub use basic::structs::{FoundVisual, Restyle, Row};
 pub use basic::type_aliases::ModuleFns;
@@ -37,6 +37,8 @@ pub mod use_collector;
 pub mod use_finder;
 
 pub use app_method_call::AppMethodCall;
+pub use basic::constants::HARNESS_CRATE;
+pub use basic::constants::HARNESS_RUN;
 pub use bevy_project::BevyProject;
 pub(crate) use call_collector::CallCollector;
 pub use call_graph::CallGraph;

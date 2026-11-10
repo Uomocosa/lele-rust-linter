@@ -1,9 +1,9 @@
+use crate::traits::Rule;
 use crate::Category;
 use crate::Entry;
 use crate::ExampleFile;
 use crate::ModuleInfoMap;
 use crate::Project;
-use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;

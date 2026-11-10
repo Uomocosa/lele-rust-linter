@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use crate::traits::Rule;
 use crate::Linter;
 use crate::Location;
-use crate::Rule;
 use crate::RuleViolation;
 
 pub fn render_report(violations: &[RuleViolation], rules: &[Box<dyn Rule>], color: bool) -> String {

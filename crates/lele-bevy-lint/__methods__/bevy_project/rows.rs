@@ -1,6 +1,6 @@
 use crate::scan;
 
-pub fn rows(project: scan::BevyProject) -> Vec<scan::Row> {
+pub fn rows(project: &scan::BevyProject) -> Vec<scan::Row> {
     let extra = project.require_visuals();
     let mut rows: Vec<scan::Row> = project
         .sources()
@@ -12,7 +12,7 @@ pub fn rows(project: scan::BevyProject) -> Vec<scan::Row> {
             let relevant_plugin = scan::ScannedFile(file).defines_plugin()
                 && (project.dir_spawns_ui(source.origin, rel_path)
                     || project
-                        .registers_ui(&scan::ScannedFile(file).plugin_registrations(&project)));
+                        .registers_ui(&scan::ScannedFile(file).plugin_registrations(project)));
             if visuals.is_empty() && previews.is_empty() && !relevant_plugin {
                 return None;
             }
@@ -53,6 +53,6 @@ mod tests {
             PathBuf::from("ui/root.rs"),
             syn::parse_str("pub fn setup(s: &mut S) { s.spawn((Node,)); }").unwrap(),
         );
-        assert!(!rows(scan::BevyProject(&project)).is_empty());
+        assert!(!rows(&scan::BevyProject(&project)).is_empty());
     }
 }

@@ -13,7 +13,7 @@ use lele_lint::RuleViolation;
 use crate::VISUAL_IDENTS;
 use crate::scan;
 
-#[derive(Clone, Copy, Deref)]
+#[derive(Clone, Deref)]
 pub struct BevyProject<'a>(pub &'a Project);
 
 #[atomic_delegates]
@@ -37,13 +37,13 @@ impl BevyProject<'_> {
 #[atomic_delegates]
 impl BevyProject<'_> {
     pub(crate) fn file_spawns_ui(
-        project: BevyProject,
+        project: &BevyProject,
         segments: &[String],
         extra: &BTreeSet<String>,
     ) -> bool {
     }
     pub(crate) fn module_files(declaring: &Path, module: &syn::ItemMod) -> Vec<PathBuf> {}
-    pub(crate) fn rows(project: BevyProject) -> Vec<scan::Row> {}
+    pub(crate) fn rows(project: &BevyProject) -> Vec<scan::Row> {}
 }
 
 #[rustfmt::skip]

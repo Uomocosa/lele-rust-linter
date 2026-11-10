@@ -1,7 +1,7 @@
 use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 
-#[derive(Clone, Copy, Deref)]
+#[derive(Clone, Deref)]
 pub struct ScannedItem<'a>(pub &'a syn::Item);
 
 #[atomic_delegates]

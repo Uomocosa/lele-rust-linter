@@ -1,4 +1,4 @@
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use quote::format_ident;
@@ -321,7 +321,7 @@ impl DelegateShell {
 #[cfg(test)]
 mod tests {
     use super::{DelegateImpl, DelegateShell};
-    use lele_snake_case::ToLeleSnakeCase;
+    use lele_snake_case::traits::ToLeleSnakeCase;
     use quote::quote;
 
     #[test]

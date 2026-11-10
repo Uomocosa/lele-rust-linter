@@ -1,10 +1,14 @@
 use crate::rules;
+use crate::DunderKind;
 use crate::DunderPath;
+use crate::Visibility;
 use syn::visit::Visit;
 
 pub(crate) struct DunderNameVisitor<'a> {
     pub(crate) dunders: &'a [DunderPath],
     pub(crate) hits: &'a mut Vec<rules::dunder_module_name::DunderNameHit>,
+    pub(crate) reexports: &'a mut Vec<rules::dunder_module_name::ReexportHit>,
+    pub(crate) domain_prefix: Vec<String>,
 }
 
 #[rustfmt::skip]
@@ -34,7 +38,24 @@ impl<'ast> Visit<'ast> for DunderNameVisitor<'_> {
                 }
             }
         }
+        if let Some(message) = rules::dunder_module_name::DunderModuleName::mount_visibility_hit(
+            self.dunders,
+            &ident,
+            &item.vis,
+        ) {
+            self.hits.push(rules::dunder_module_name::DunderNameHit {
+                line: item.ident.span().start().line,
+                message,
+            });
+        }
         syn::visit::visit_item_mod(self, item);
+    }
+
+    fn visit_item_use(&mut self, item: &'ast syn::ItemUse) {
+        if Visibility(&item.vis).is_exposed() {
+            rules::dunder_module_name::DunderModuleName::collect_reexports(self, item);
+        }
+        syn::visit::visit_item_use(self, item);
     }
 
     fn visit_path(&mut self, path: &'ast syn::Path) {
@@ -69,6 +90,17 @@ impl DunderNameVisitor<'_> {
                 message: format!("`{name}` in a path — write `{}`", dunder.module_name()),
             });
         }
+    }
+
+    pub(crate) fn code_dunder_mount(&self, segments: &[String]) -> Option<String> {
+        let mount = segments.iter().find(|segment| {
+            self.dunders.iter().any(|dunder| {
+                dunder.is_dunder_dir()
+                    && dunder.kind() == DunderKind::Code
+                    && dunder.module_name() == segment.as_str()
+            })
+        });
+        mount.cloned()
     }
 }
 

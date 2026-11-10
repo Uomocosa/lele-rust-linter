@@ -1,4 +1,4 @@
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 
 pub use basic::newtypes::Meters;

@@ -1,5 +1,4 @@
-use crate::scan::basic::constants::HARNESS_CRATE;
-use crate::scan::basic::constants::HARNESS_RUN;
+use crate::scan;
 
 pub fn is_harness_path(func: &syn::Expr, is_run_imported: bool) -> bool {
     let syn::Expr::Path(path) = func else {
@@ -9,7 +8,7 @@ pub fn is_harness_path(func: &syn::Expr, is_run_imported: bool) -> bool {
     let Some(last) = segments.last() else {
         return false;
     };
-    if last.ident != HARNESS_RUN {
+    if last.ident != scan::HARNESS_RUN {
         return false;
     }
     if segments.len() == 1 {
@@ -17,7 +16,7 @@ pub fn is_harness_path(func: &syn::Expr, is_run_imported: bool) -> bool {
     }
     segments
         .iter()
-        .any(|segment| segment.ident == HARNESS_CRATE)
+        .any(|segment| segment.ident == scan::HARNESS_CRATE)
 }
 
 #[cfg(test)]

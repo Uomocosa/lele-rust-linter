@@ -1,14 +1,13 @@
-#[path = "__traits__/mod.rs"]
-pub mod traits;
-pub use traits::Rule;
 mod common;
 pub mod common_args;
 pub mod rules;
+#[path = "__traits__/mod.rs"]
+pub mod traits;
 pub use common_args::CommonArgs;
 pub mod config;
 pub use config::Config;
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 pub use basic::enums::Category;
 pub(crate) use basic::enums::DunderKind;
 pub use basic::enums::EntryKind;
@@ -44,7 +43,7 @@ pub use linter::Linter;
 pub mod module_info;
 pub use module_info::ModuleInfo;
 #[path = "../__methods__/mod.rs"]
-pub(crate) mod methods;
+mod methods;
 pub mod parsed_source;
 pub use parsed_source::ParsedSource;
 pub mod project;

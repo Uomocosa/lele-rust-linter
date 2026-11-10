@@ -1,5 +1,5 @@
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 pub use basic::constants::{INPUT_DRIVERS, STYLING_COMPONENTS, TIME_DRIVERS, VISUAL_IDENTS};
 pub mod bevy_linter;
 pub use bevy_linter::BevyLinter;
@@ -7,4 +7,4 @@ pub mod rules;
 pub mod scan;
 
 #[path = "../__methods__/mod.rs"]
-pub mod methods;
+mod methods;

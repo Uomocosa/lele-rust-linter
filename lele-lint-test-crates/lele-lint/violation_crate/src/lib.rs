@@ -14,6 +14,7 @@ pub mod bad_test_inline;
 pub mod bad_single_field;
 pub mod bad_modrs_purity;
 pub mod bad_crate_path;
+pub mod bad_dunder_mount;
 pub mod bad_orphan_method;
 pub mod bad_stutter;
 pub mod report;

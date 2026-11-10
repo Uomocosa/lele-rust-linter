@@ -1,13 +1,13 @@
+use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
 use crate::Project;
-use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use crate::Visibility;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 use rule_examples_macro::rule_examples;
 use std::path::Path;
 

@@ -1,5 +1,5 @@
+use crate::traits::Rule;
 use crate::Linter;
-use crate::Rule;
 
 pub fn retain_codes(linter: &mut Linter, codes: &[String]) -> Vec<String> {
     let matches =

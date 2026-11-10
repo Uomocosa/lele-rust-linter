@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
+use crate::traits::Rule;
 use crate::Category;
 use crate::Linter;
-use crate::Rule;
 
 const HEADER: &str = "---
 name: lele-lint-rules-rs

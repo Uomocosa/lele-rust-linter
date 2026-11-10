@@ -2,7 +2,7 @@ use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 use crate::Visibility;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 use std::path::Path;
 
 pub fn check_fn_file_purity(

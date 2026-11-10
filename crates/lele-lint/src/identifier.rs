@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use derive_more::Deref;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 
 #[derive(Clone, Copy, Deref)]
 pub struct Identifier<'a>(pub &'a str);

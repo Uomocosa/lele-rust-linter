@@ -1,5 +1,5 @@
+use crate::traits::Rule;
 use crate::Linter;
-use crate::Rule;
 use std::fmt::Write;
 
 pub fn render_rule(rule: &dyn Rule) -> String {

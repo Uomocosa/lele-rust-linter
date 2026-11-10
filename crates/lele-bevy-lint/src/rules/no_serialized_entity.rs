@@ -3,9 +3,9 @@ use lele_lint::Category;
 use lele_lint::ExampleFile;
 use lele_lint::ItemMarker;
 use lele_lint::Project;
-use lele_lint::Rule;
 use lele_lint::RuleDoc;
 use lele_lint::RuleViolation;
+use lele_lint::traits::Rule;
 use rule_examples_macro::rule_examples;
 
 pub struct NoSerializedEntity;

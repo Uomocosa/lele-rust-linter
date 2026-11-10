@@ -1,8 +1,8 @@
 use crate::common;
+use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
 use crate::Project;
-use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;

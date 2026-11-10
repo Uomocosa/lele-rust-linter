@@ -1,7 +1,7 @@
 use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 
-#[derive(Clone, Copy, Deref)]
+#[derive(Clone, Deref)]
 pub struct PluginImpl<'a>(pub &'a syn::ItemImpl);
 
 #[atomic_delegates]

@@ -1,6 +1,6 @@
 use lele_lint::ErrorFormat;
 use lele_lint::Linter;
-use lele_lint::Rule;
+use lele_lint::traits::Rule;
 
 use crate::bevy_linter::BevyLinter;
 use crate::rules;

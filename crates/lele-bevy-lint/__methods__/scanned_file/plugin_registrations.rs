@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use lele_lint::Project;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 
 use crate::scan;
 

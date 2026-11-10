@@ -1,8 +1,18 @@
 mod check;
+mod collect_reexports;
 mod default_path;
 mod dunder_in_path;
+mod dunder_reexport_hits;
+mod mount_prefix;
+mod mount_visibility_hit;
 mod path_attribute;
+mod reexport_suggestion;
 pub use check::check;
+pub use collect_reexports::collect_reexports;
 pub use default_path::default_path;
 pub use dunder_in_path::dunder_in_path;
+pub use dunder_reexport_hits::dunder_reexport_hits;
+pub use mount_prefix::mount_prefix;
+pub use mount_visibility_hit::mount_visibility_hit;
 pub use path_attribute::path_attribute;
+pub use reexport_suggestion::reexport_suggestion;

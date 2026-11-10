@@ -10,7 +10,7 @@ pub(crate) mod container_placement;
 pub(crate) mod conversion_is_from;
 pub(crate) mod delegate_macro;
 pub(crate) mod domain_import;
-pub(crate) mod dunder_module_name;
+pub mod dunder_module_name;
 pub(crate) mod error_message_omits_source;
 pub(crate) mod helpers_are_methods;
 pub(crate) mod impl_item_order;

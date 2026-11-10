@@ -1,10 +1,10 @@
 use crate::rules;
+use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
 use crate::ImplBlock;
 use crate::ItemMarker;
 use crate::Project;
-use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use crate::Visibility;

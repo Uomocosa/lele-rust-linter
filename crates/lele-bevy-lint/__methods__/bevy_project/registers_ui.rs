@@ -4,7 +4,7 @@ pub fn registers_ui(project: &scan::BevyProject, registered: &[Vec<String>]) -> 
     let extra = project.require_visuals();
     registered
         .iter()
-        .any(|segments| scan::BevyProject::file_spawns_ui(*project, segments, &extra))
+        .any(|segments| scan::BevyProject::file_spawns_ui(project, segments, &extra))
 }
 
 #[cfg(test)]

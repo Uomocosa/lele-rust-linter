@@ -12,7 +12,7 @@ use crate::scan;
 use crate::scan::basic::constants::HARNESS_CRATE;
 use crate::scan::basic::constants::HARNESS_RUN;
 
-#[derive(Clone, Copy, Deref)]
+#[derive(Clone, Deref)]
 pub struct ScannedFile<'a>(pub &'a syn::File);
 
 #[rustfmt::skip]

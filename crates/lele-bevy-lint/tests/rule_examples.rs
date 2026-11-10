@@ -6,7 +6,7 @@ use lele_bevy_lint::BevyLinter;
 use lele_lint::ExampleFile;
 use lele_lint::Location;
 use lele_lint::Project;
-use lele_lint::Rule;
+use lele_lint::traits::Rule;
 
 const DEFAULT_CARGO_TOML: &str = r#"[package]
 name = "example"

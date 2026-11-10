@@ -3,7 +3,7 @@ mod source_file;
 mod source_path;
 
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 
 pub(crate) use basic::enums::CommentKind;
 pub(crate) use basic::structs::CommentHit;

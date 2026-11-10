@@ -12,16 +12,16 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELEBEVY001 `bevy_export`](#lelebevy001-bevy_export): A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.
+- [LELEBEVY001 `bevy_export`](#lelebevy001-bevy_export): A domain never re-exports its `bevy_systems` items (any file, `lib.rs` included); callers write `domain::bevy_systems::system`.
 - [LELEBEVY002 `bevy_folder`](#lelebevy002-bevy_folder): A `pub fn` registered with `app.add_systems()` whose parameters read Bevy system types must live in the domain's `__bevy_systems__/` folder; a folder literally named `bevy_systems/` is reported for renaming.
 
 ### LELEBEVY001 `bevy_export`
 
-A domain never re-exports its `bevy_systems` items at the domain root; callers write `domain::bevy_systems::system`.
+A domain never re-exports its `bevy_systems` items (any file, `lib.rs` included); callers write `domain::bevy_systems::system`.
 
-**Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path.
+**Why:** Consumers reach systems as `domain::bevy_systems::system`, so the folder is always visible in the path. Detection is shared with lele-lint's `dunder_module_name` (which reports the `traits` mounts), so each re-export is reported once.
 
-**Fix:** Delete the `pub use bevy_systems::<system>;` lines from the domain's `mod.rs` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `__bevy_systems__/mod.rs`.
+**Fix:** Delete every `pub use`/`pub(crate) use` whose path goes through `bevy_systems` and make callers write `<domain>::bevy_systems::<system>`; keep the `pub use` inside `__bevy_systems__/mod.rs`.
 
 **Bad** (reports LELEBEVY001):
 

@@ -97,6 +97,31 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_allows_trait_mount_item_imports() {
+        let u: syn::ItemUse = parse_quote! { use crate::stock::traits::Greetable; };
+        assert!(
+            rules::domain_import::DomainImport::check_import(&u, &DunderPath::defaults()).is_none()
+        );
+    }
+
+    #[test]
+    fn test_usage_allows_cross_crate_trait_mount_imports() {
+        let u: syn::ItemUse = parse_quote! { use other_crate::greeting::traits::Greetable; };
+        assert!(
+            rules::domain_import::DomainImport::check_import(&u, &DunderPath::defaults()).is_none()
+        );
+    }
+
+    #[test]
+    fn test_usage_flat_basic_reexports_are_pub_use_exempt() {
+        let u: syn::ItemUse = parse_quote! { pub use basic::enums::HelloKind; };
+        assert!(rules::domain_import::DomainImport::is_pub_use(&u));
+        assert!(
+            rules::domain_import::DomainImport::check_import(&u, &DunderPath::defaults()).is_none()
+        );
+    }
+
+    #[test]
     fn test_usage_still_flags_direct_non_stutter_import() {
         let u: syn::ItemUse = parse_quote! { use crate::module_info::ModuleInfoMap; };
         assert!(

@@ -1,11 +1,11 @@
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 
+use crate::traits::Rule;
 use crate::ErrorFormat;
 use crate::ExampleFile;
 use crate::Location;
 use crate::Project;
-use crate::Rule;
 use crate::RuleViolation;
 use std::fmt::Write as _;
 use std::io::IsTerminal as _;

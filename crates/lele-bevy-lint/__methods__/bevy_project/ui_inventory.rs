@@ -9,7 +9,7 @@ pub fn ui_inventory(project: &scan::BevyProject) -> String {
         "{:<44} {:<26} {:<18} {:<16} {:<3} {:<3} {:<3}",
         "file", "markers", "visual", "anim driver", "png", "mp4", "scene"
     );
-    for row in &scan::BevyProject::rows(*project) {
+    for row in &scan::BevyProject::rows(project) {
         let _ = writeln!(
             out,
             "{:<44} {:<26} {:<18} {:<16} {:<3} {:<3} {:<3}",

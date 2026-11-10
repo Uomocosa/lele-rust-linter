@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::scan;
 
 pub fn file_spawns_ui(
-    project: scan::BevyProject,
+    project: &scan::BevyProject,
     segments: &[String],
     extra: &BTreeSet<String>,
 ) -> bool {
@@ -57,13 +57,13 @@ mod tests {
         );
         let ui = ["hud".to_string(), "spawn_hud".to_string()];
         assert!(file_spawns_ui(
-            scan::BevyProject(&project),
+            &scan::BevyProject(&project),
             &ui,
             &BTreeSet::new()
         ));
         let missing = ["hud".to_string(), "tick_hud".to_string()];
         assert!(!file_spawns_ui(
-            scan::BevyProject(&project),
+            &scan::BevyProject(&project),
             &missing,
             &BTreeSet::new()
         ));
@@ -85,7 +85,7 @@ mod tests {
             "spawn_hud".to_string(),
         ];
         assert!(file_spawns_ui(
-            scan::BevyProject(&project),
+            &scan::BevyProject(&project),
             &ui,
             &BTreeSet::new()
         ));
@@ -95,7 +95,7 @@ mod tests {
             "tick_hud".to_string(),
         ];
         assert!(!file_spawns_ui(
-            scan::BevyProject(&project),
+            &scan::BevyProject(&project),
             &unregistered,
             &BTreeSet::new()
         ));

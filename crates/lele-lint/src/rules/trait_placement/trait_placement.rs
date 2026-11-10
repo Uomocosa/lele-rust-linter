@@ -1,8 +1,8 @@
 use crate::rules;
+use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
 use crate::Project;
-use crate::Rule;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
@@ -18,8 +18,8 @@ impl TraitPlacement {
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.",
-        why: "The `__traits__/` folder is the domain's implementable-role edge: the folder says what the files hold, so each trait keeps its atomic file, named after it, mounted and exported like a domain item.",
-        fix: "Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = \"__traits__/mod.rs\"] pub mod traits;` and re-export the trait from the owning module (`pub use traits::<Trait>;`); rename a `…Trait` trait to its bare name — the folder already says it is a trait.",
+        why: "The `__traits__/` folder is the domain's implementable-role edge: the folder says what the files hold, so each trait keeps its atomic file, named after it, mounted `pub mod traits;` and reached as `domain::traits::<Trait>`.",
+        fix: "Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = \"__traits__/mod.rs\"] pub mod traits;` and refer to the trait as `domain::traits::<Trait>` — never re-export it (`pub use traits::X;` is a LELE038 error); rename a `…Trait` trait to its bare name — the folder already says it is a trait.",
         bad: rule_examples!("trait_placement/bad"),
         good: rule_examples!("trait_placement/good"),
     };

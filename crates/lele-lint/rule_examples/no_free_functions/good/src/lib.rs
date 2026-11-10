@@ -1,4 +1,4 @@
 pub mod player;
 
 #[path = "../__methods__/mod.rs"]
-pub mod methods;
+mod methods;

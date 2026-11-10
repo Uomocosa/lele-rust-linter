@@ -357,3 +357,7 @@ code = "LELE020"
 [[violations]]
 file = "src/report.rs"
 code = "LELE022"
+
+[[violations]]
+file = "src/bad_dunder_mount/mod.rs"
+code = "LELE038"

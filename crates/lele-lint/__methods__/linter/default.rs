@@ -1,7 +1,7 @@
 use crate::rules;
+use crate::traits::Rule;
 use crate::ErrorFormat;
 use crate::Linter;
-use crate::Rule;
 
 pub fn default() -> Linter {
     let mut rules: Vec<Box<dyn Rule>> = Vec::new();

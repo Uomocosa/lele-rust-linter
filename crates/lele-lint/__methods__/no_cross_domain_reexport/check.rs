@@ -96,4 +96,16 @@ mod tests {
             "player"
         );
     }
+
+    #[test]
+    fn test_usage_flat_basic_reexports_are_own_domain() {
+        assert_eq!(
+            rules::no_cross_domain_reexport::NoCrossDomainReexport::reexport_target_domain(&[
+                "basic".into(),
+                "enums".into(),
+                "HelloKind".into()
+            ]),
+            None
+        );
+    }
 }

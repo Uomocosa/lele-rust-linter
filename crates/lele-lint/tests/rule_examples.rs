@@ -2,11 +2,11 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::path::PathBuf;
 
+use lele_lint::traits::Rule;
 use lele_lint::ExampleFile;
 use lele_lint::Linter;
 use lele_lint::Location;
 use lele_lint::Project;
-use lele_lint::Rule;
 
 const DEFAULT_CARGO_TOML: &str = r#"[package]
 name = "example"

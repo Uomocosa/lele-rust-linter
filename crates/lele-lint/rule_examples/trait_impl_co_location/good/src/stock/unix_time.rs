@@ -7,7 +7,7 @@ pub struct UnixTime {
 }
 
 #[rustfmt::skip]
-impl stock::Clock for UnixTime {
+impl stock::traits::Clock for UnixTime {
     fn now(&self) -> u64 { self.seconds }
 }
 

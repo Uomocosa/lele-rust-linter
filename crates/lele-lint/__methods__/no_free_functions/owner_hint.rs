@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::Project;
-use lele_snake_case::ToLeleSnakeCase;
+use lele_snake_case::traits::ToLeleSnakeCase;
 
 const WRAPPERS: [&str; 4] = ["Result", "Option", "Vec", "Box"];
 

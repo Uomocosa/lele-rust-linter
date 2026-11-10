@@ -6,4 +6,10 @@ impl stock::Clock for UnixTime {
     }
 }
 
+impl stock::Clock for Dial {
+    fn now(&self) -> u64 {
+        u64::from(self.turns)
+    }
+}
+
 // no test_usage necessary

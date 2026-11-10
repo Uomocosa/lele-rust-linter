@@ -1,8 +1,12 @@
 mod check;
 mod check_hit;
+mod self_type_name;
 mod trait_definitions;
 mod type_definitions;
+mod type_graduate_target;
 pub use check::check;
 pub use check_hit::check_hit;
+pub use self_type_name::self_type_name;
 pub use trait_definitions::trait_definitions;
 pub use type_definitions::type_definitions;
+pub use type_graduate_target::type_graduate_target;

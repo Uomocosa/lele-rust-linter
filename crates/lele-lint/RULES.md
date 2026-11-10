@@ -20,7 +20,7 @@ every **Good** example reports nothing at all.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 - [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
-- [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
+- [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
 
 ### LELE001 `atomic_file`
 
@@ -797,11 +797,11 @@ mod tests {
 
 ### LELE042 `trait_impl_co_location`
 
-Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
+Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
 
 **Why:** A type's behaviour is readable in one place: a trait impl sits next to the struct or enum it describes, and a crate trait's blanket or foreign-type impls sit next to the trait that owns them — the `<domain>/__traits__/<trait_snake>.rs` file.
 
-**Fix:** Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.
+**Fix:** Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. A type in `__basic__/` keeps no impls — move it to its own `<type>.rs` first and put the impl there. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.
 
 **Bad** (reports LELE042):
 
@@ -822,6 +822,12 @@ impl stock::Clock for UnixTime {
     }
 }
 
+impl stock::Clock for Dial {
+    fn now(&self) -> u64 {
+        u64::from(self.turns)
+    }
+}
+
 // no test_usage necessary
 ```
 
@@ -830,9 +836,12 @@ impl stock::Clock for UnixTime {
 ```rust
 pub mod clock;
 pub mod unix_time;
+#[path = "__basic__/mod.rs"]
+pub mod basic;
 #[path = "__traits__/mod.rs"]
 pub mod traits;
 
+pub use basic::structs::Dial;
 pub use traits::Clock;
 ```
 
@@ -842,6 +851,21 @@ pub use traits::Clock;
 pub struct UnixTime {
     pub seconds: u64,
     pub nanos: u32,
+}
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Dial {
+    pub turns: u32,
+    pub steps: u32,
 }
 ```
 

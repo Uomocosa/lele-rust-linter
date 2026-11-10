@@ -168,17 +168,65 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_skips_unresolved_self_types() {
+    fn test_usage_unresolvable_type_with_local_trait_follows_the_trait() {
+        let found = messages(&[
+            ("stock/mod.rs", "pub mod unix_time;\n"),
+            (
+                "stock/__traits__/clock.rs",
+                "pub trait Clock { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "stock/unix_time.rs",
+                "pub struct UnixTime { pub seconds: u64, pub nanos: u32 }\n",
+            ),
+            (
+                "stock/holder.rs",
+                "use crate::stock;\n\nimpl stock::Clock for ForeignAlias { fn now(&self) -> u64 { 0 } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Clock for ForeignAlias` must live in `stock/__traits__/clock.rs`, the file that defines `Clock`"
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_impl_for_container_type() {
+        let found = messages(&[
+            ("stock/mod.rs", "pub mod clock;\n"),
+            (
+                "stock/__basic__/structs.rs",
+                "pub struct UnixTime { pub seconds: u64, pub nanos: u32 }\n",
+            ),
+            (
+                "stock/__traits__/clock.rs",
+                "pub trait Clock { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "stock/clock.rs",
+                "use crate::stock;\n\nimpl stock::Clock for UnixTime { fn now(&self) -> u64 { self.seconds } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Clock for UnixTime` lives outside `stock/__basic__/structs.rs`, which defines `UnixTime`: a type with an impl keeps its own file — move `UnixTime` to `stock/unix_time.rs` and put the impl there"
+        );
+    }
+
+    #[test]
+    fn test_usage_container_type_impl_in_same_file_stays_container_placements_call() {
         assert_eq!(
             messages(&[
-                ("stock/mod.rs", "pub mod unix_time;\n"),
+                ("stock/mod.rs", "pub mod clock;\n"),
+                (
+                    "stock/__basic__/structs.rs",
+                    "pub struct UnixTime { pub seconds: u64, pub nanos: u32 }\n\nimpl stock::Clock for UnixTime { fn now(&self) -> u64 { self.seconds } }\n",
+                ),
                 (
                     "stock/__traits__/clock.rs",
                     "pub trait Clock { fn now(&self) -> u64; }\n",
-                ),
-                (
-                    "stock/unix_time.rs",
-                    "pub struct UnixTime { pub seconds: u64 }\n\nimpl Clock for &UnixTime { fn now(&self) -> u64 { self.seconds } }\n",
                 ),
             ]),
             Vec::<String>::new()
@@ -186,21 +234,45 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_skips_type_in_basic_container() {
+    fn test_usage_reference_self_type_resolves_to_the_type() {
+        let found = messages(&[
+            ("stock/mod.rs", "pub mod unix_time;\n"),
+            (
+                "stock/unix_time.rs",
+                "pub struct UnixTime { pub seconds: u64, pub nanos: u32 }\n",
+            ),
+            (
+                "stock/__traits__/clock.rs",
+                "pub trait Clock { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "stock/holder.rs",
+                "use crate::stock;\n\nimpl stock::Clock for &UnixTime { fn now(&self) -> u64 { self.seconds } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Clock for UnixTime` must live in `stock/unix_time.rs`, the file that defines `UnixTime`"
+        );
+    }
+
+    #[test]
+    fn test_usage_skips_slice_and_tuple_self_types() {
         assert_eq!(
             messages(&[
-                ("stock/mod.rs", "pub mod clock;\n"),
+                ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
-                    "stock/__basic__/structs.rs",
-                    "pub struct UnixTime { pub seconds: u64 }\n",
+                    "stock/unix_time.rs",
+                    "pub struct UnixTime { pub seconds: u64, pub nanos: u32 }\n",
                 ),
                 (
                     "stock/__traits__/clock.rs",
                     "pub trait Clock { fn now(&self) -> u64; }\n",
                 ),
                 (
-                    "stock/clock.rs",
-                    "use crate::stock;\n\nimpl stock::Clock for UnixTime { fn now(&self) -> u64 { self.seconds } }\n",
+                    "stock/holder.rs",
+                    "use crate::stock;\n\nimpl stock::Clock for [UnixTime] { fn now(&self) -> u64 { 0 } }\nimpl stock::Clock for (UnixTime, UnixTime) { fn now(&self) -> u64 { 0 } }\n",
                 ),
             ]),
             Vec::<String>::new()

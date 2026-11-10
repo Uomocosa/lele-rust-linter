@@ -1,5 +1,4 @@
 use crate::rules;
-use crate::ImplBlock;
 use crate::ItemMarker;
 use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
@@ -20,7 +19,7 @@ impl<'ast> Visit<'ast> for ImplVisitor<'_> {
                     self.push(rules::trait_impl_co_location::ImplHit {
                         line: item.impl_token.span.start().line,
                         trait_name,
-                        type_name: ImplBlock(item).self_type_last(),
+                        type_name: rules::trait_impl_co_location::TraitImplCoLocation::self_type_name(item),
                         is_blanket: ImplVisitor::is_blanket_self(item),
                     });
                 }

@@ -19,8 +19,26 @@ pub fn check_hit(
             let Some(target) = files.iter().next() else {
                 return Vec::new();
             };
-            if project.is_in_dunder_dir(target) || target == rel_path {
+            if target == rel_path {
                 return Vec::new();
+            }
+            if project.is_in_dunder_dir(target) {
+                let graduate =
+                    rules::trait_impl_co_location::TraitImplCoLocation::type_graduate_target(
+                        target, type_name,
+                    );
+                return vec![RuleViolation::from_site(
+                    project.absolute_src_path(rel_path),
+                    hit.line,
+                    0,
+                    rules::trait_impl_co_location::TraitImplCoLocation::CODE,
+                    rules::trait_impl_co_location::TraitImplCoLocation::container_target_message(
+                        &hit.trait_name,
+                        type_name,
+                        target,
+                        &graduate,
+                    ),
+                )];
             }
             return vec![RuleViolation::from_site(
                 project.absolute_src_path(rel_path),
@@ -269,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_container_type_is_skipped_for_container_placement() {
+    fn test_usage_container_type_demands_graduation() {
         let project = project();
         let mut type_definitions = BTreeMap::new();
         let mut trait_definitions = BTreeMap::new();
@@ -281,7 +299,11 @@ mod tests {
             &type_definitions,
             &trait_definitions,
         );
-        assert!(violations.is_empty());
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`impl Clock for BasicOnly` lives outside `stock/__basic__/structs.rs`, which defines `BasicOnly`: a type with an impl keeps its own file — move `BasicOnly` to `stock/basic_only.rs` and put the impl there"
+        );
     }
 
     #[test]

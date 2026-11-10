@@ -21,6 +21,9 @@ test:
 lint:
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-lint
     cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-bevy-lint
+    cargo run --quiet -p lele-lint -- --config lele.toml crates/lele-snake-case
+    cargo run --quiet -p lele-lint -- --config lele.toml crates/atomic-delegate-macros
+    cargo run --quiet -p lele-lint -- --config lele.toml crates/rule-examples-macro
 
 # honesty half of every `require = "honest"` boundary (rustc MIR)
 taxonomy:

@@ -6,6 +6,21 @@ exclude = ["target", ".devenv", ".git", "lele-lint-test-crates"]
 
 [lele.lint]
 
+[[lele.lint.entry_points]]
+file = "crates/atomic-delegate-macros/src/lib.rs"
+fn = "atomic_delegates"
+reason = "proc-macro entry point"
+
+[[lele.lint.entry_points]]
+file = "crates/atomic-delegate-macros/src/lib.rs"
+fn = "atomic_delegate"
+reason = "proc-macro entry point"
+
+[[lele.lint.entry_points]]
+file = "crates/rule-examples-macro/src/lib.rs"
+fn = "rule_examples"
+reason = "proc-macro entry point"
+
 [[lele.boundary]]
 name       = "syntax analysis is pure"
 why        = "crates/lele-lint/src/common holds pure wrappers over syn ASTs and source paths; filesystem and process I/O live in Project::discover/walk_entries/parse_source_files."

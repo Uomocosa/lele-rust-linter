@@ -20,8 +20,11 @@ pub fn check_hit(
             if files.contains(rel_path) {
                 return Vec::new();
             }
-            let hints = rules::trait_impl_co_location::TraitImplCoLocation::type_module_hints(
-                rel_path, hit, project,
+            let hints = rules::trait_impl_co_location::TraitImplCoLocation::module_hints(
+                rel_path,
+                type_name,
+                hit.type_path.as_deref(),
+                project,
             );
             let narrowed = rules::trait_impl_co_location::TraitImplCoLocation::narrowed_candidates(
                 files, &hints,
@@ -79,26 +82,58 @@ pub fn check_hit(
             return Vec::new();
         }
     }
-    let Some(target) = trait_definitions
-        .get(&hit.trait_name)
-        .and_then(|files| files.iter().next())
-    else {
+    let Some(trait_files) = trait_definitions.get(&hit.trait_name) else {
         return Vec::new();
     };
-    if target == rel_path {
+    if trait_files.contains(rel_path) {
         return Vec::new();
     }
-    vec![RuleViolation::from_site(
-        project.absolute_src_path(rel_path),
-        hit.line,
-        0,
-        rules::trait_impl_co_location::TraitImplCoLocation::CODE,
-        rules::trait_impl_co_location::TraitImplCoLocation::trait_target_message(
-            &hit.trait_name,
-            type_name,
-            target,
-        ),
-    )]
+    let hints = rules::trait_impl_co_location::TraitImplCoLocation::module_hints(
+        rel_path,
+        &hit.trait_name,
+        hit.trait_path.as_deref(),
+        project,
+    );
+    let narrowed = rules::trait_impl_co_location::TraitImplCoLocation::narrowed_candidates(
+        trait_files,
+        &hints,
+    );
+    let trait_target: Option<&Path> = if trait_files.len() == 1 {
+        trait_files.iter().next().map(PathBuf::as_path)
+    } else {
+        match narrowed.as_slice() {
+            [single] => Some(single.as_path()),
+            _ => None,
+        }
+    };
+    match trait_target {
+        Some(target) => {
+            vec![RuleViolation::from_site(
+                project.absolute_src_path(rel_path),
+                hit.line,
+                0,
+                rules::trait_impl_co_location::TraitImplCoLocation::CODE,
+                rules::trait_impl_co_location::TraitImplCoLocation::trait_target_message(
+                    &hit.trait_name,
+                    type_name,
+                    target,
+                ),
+            )]
+        }
+        None if trait_files.len() > 1 => {
+            vec![RuleViolation::from_site(
+                project.absolute_src_path(rel_path),
+                hit.line,
+                0,
+                rules::trait_impl_co_location::TraitImplCoLocation::CODE,
+                rules::trait_impl_co_location::TraitImplCoLocation::ambiguous_target_message(
+                    &hit.trait_name,
+                    trait_files,
+                ),
+            )]
+        }
+        None => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -128,6 +163,7 @@ mod tests {
         rules::trait_impl_co_location::ImplHit {
             line,
             trait_name: trait_name.to_string(),
+            trait_path: Some(vec![trait_name.to_string()]),
             type_name: Some(type_name.to_string()),
             type_path: Some(vec![type_name.to_string()]),
             is_blanket: false,
@@ -142,9 +178,29 @@ mod tests {
         rules::trait_impl_co_location::ImplHit {
             line,
             trait_name: trait_name.to_string(),
+            trait_path: Some(vec![trait_name.to_string()]),
             type_name: Some(segments.last().unwrap_or(&"").to_string()),
             type_path: Some(segments.iter().map(|segment| segment.to_string()).collect()),
             is_blanket: false,
+        }
+    }
+
+    fn trait_qualified_hit(
+        line: usize,
+        trait_segments: &[&str],
+    ) -> rules::trait_impl_co_location::ImplHit {
+        rules::trait_impl_co_location::ImplHit {
+            line,
+            trait_name: trait_segments.last().unwrap_or(&"").to_string(),
+            trait_path: Some(
+                trait_segments
+                    .iter()
+                    .map(|segment| segment.to_string())
+                    .collect(),
+            ),
+            type_name: Some("T".to_string()),
+            type_path: Some(vec!["T".to_string()]),
+            is_blanket: true,
         }
     }
 
@@ -152,6 +208,7 @@ mod tests {
         rules::trait_impl_co_location::ImplHit {
             line,
             trait_name: trait_name.to_string(),
+            trait_path: Some(vec![trait_name.to_string()]),
             type_name: Some("T".to_string()),
             type_path: Some(vec!["T".to_string()]),
             is_blanket: true,
@@ -162,6 +219,7 @@ mod tests {
         rules::trait_impl_co_location::ImplHit {
             line,
             trait_name: trait_name.to_string(),
+            trait_path: Some(vec![trait_name.to_string()]),
             type_name: None,
             type_path: None,
             is_blanket: false,
@@ -374,6 +432,86 @@ mod tests {
             &trait_definitions,
         );
         assert!(violations.is_empty());
+    }
+
+    fn insert_same_named_traits(trait_definitions: &mut BTreeMap<String, BTreeSet<PathBuf>>) {
+        insert(trait_definitions, "a/__traits__/foo.rs", "Foo");
+        insert(trait_definitions, "b/__traits__/foo.rs", "Foo");
+    }
+
+    fn same_named_traits_project() -> BTreeMap<String, BTreeSet<PathBuf>> {
+        let mut trait_definitions = BTreeMap::new();
+        insert_same_named_traits(&mut trait_definitions);
+        trait_definitions
+    }
+
+    #[test]
+    fn test_usage_same_named_traits_blanket_impl_in_the_defining_trait_file_is_clean() {
+        let project = project();
+        let trait_definitions = same_named_traits_project();
+        let violations = check_hit(
+            Path::new("a/__traits__/foo.rs"),
+            &blanket_hit(3, "Foo"),
+            &project,
+            &BTreeMap::new(),
+            &trait_definitions,
+        );
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn test_usage_same_named_traits_resolved_through_the_qualified_trait_path() {
+        let project = project();
+        let trait_definitions = same_named_traits_project();
+        let violations = check_hit(
+            Path::new("dial/setup.rs"),
+            &trait_qualified_hit(3, &["crate", "a", "Foo"]),
+            &project,
+            &BTreeMap::new(),
+            &trait_definitions,
+        );
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`impl Foo for T` must live in `a/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
+    fn test_usage_same_named_traits_resolved_through_an_import() {
+        let project =
+            project_with_parsed("dial/setup.rs", "use crate::b::Foo;\n\nimpl Foo for T {}");
+        let trait_definitions = same_named_traits_project();
+        let violations = check_hit(
+            Path::new("dial/setup.rs"),
+            &blanket_hit(3, "Foo"),
+            &project,
+            &BTreeMap::new(),
+            &trait_definitions,
+        );
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`impl Foo for T` must live in `b/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
+    fn test_usage_ambiguous_same_named_traits_lists_every_defining_file() {
+        let project = project_with_parsed("dial/setup.rs", "use std::fmt;\n\nimpl Foo for T {}");
+        let trait_definitions = same_named_traits_project();
+        let violations = check_hit(
+            Path::new("dial/setup.rs"),
+            &blanket_hit(3, "Foo"),
+            &project,
+            &BTreeMap::new(),
+            &trait_definitions,
+        );
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].message,
+            "`Foo` is defined in several files (a/__traits__/foo.rs, b/__traits__/foo.rs): move the impl into the one that defines this `Foo`"
+        );
     }
 
     #[test]

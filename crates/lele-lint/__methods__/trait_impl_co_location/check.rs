@@ -184,6 +184,98 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_same_named_traits_blanket_impl_resolves_through_the_trait_path() {
+        let found = messages(&[
+            (
+                "a/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "b/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "dial/setup.rs",
+                "impl crate::a::Foo for T { fn now(&self) -> u64 { 0 } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Foo for T` must live in `a/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
+    fn test_usage_same_named_traits_local_trait_impl_resolves_through_the_trait_path() {
+        let found = messages(&[
+            (
+                "a/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "b/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "dial/setup.rs",
+                "impl crate::a::Foo for ForeignAlias { fn now(&self) -> u64 { 0 } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Foo for ForeignAlias` must live in `a/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
+    fn test_usage_same_named_traits_resolved_through_the_imported_trait() {
+        let found = messages(&[
+            (
+                "a/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "b/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "dial/setup.rs",
+                "use crate::b::Foo;\n\nimpl Foo for T { fn now(&self) -> u64 { 0 } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Foo for T` must live in `b/__traits__/foo.rs`, the file that defines `Foo`"
+        );
+    }
+
+    #[test]
+    fn test_usage_ambiguous_same_named_traits_lists_every_defining_file() {
+        let found = messages(&[
+            (
+                "a/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "b/__traits__/foo.rs",
+                "pub trait Foo { fn now(&self) -> u64; }\n",
+            ),
+            (
+                "dial/setup.rs",
+                "impl Foo for T { fn now(&self) -> u64 { 0 } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`Foo` is defined in several files (a/__traits__/foo.rs, b/__traits__/foo.rs): move the impl into the one that defines this `Foo`"
+        );
+    }
+
+    #[test]
     fn test_usage_allows_blanket_impl_in_trait_file() {
         assert_eq!(
             messages(&[

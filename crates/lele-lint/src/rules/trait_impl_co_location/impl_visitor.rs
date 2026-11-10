@@ -19,6 +19,7 @@ impl<'ast> Visit<'ast> for ImplVisitor<'_> {
                     self.push(rules::trait_impl_co_location::ImplHit {
                         line: item.impl_token.span.start().line,
                         trait_name,
+                        trait_path: rules::trait_impl_co_location::TraitImplCoLocation::impl_trait_path(item),
                         type_name: rules::trait_impl_co_location::TraitImplCoLocation::self_type_name(item),
                         type_path: rules::trait_impl_co_location::TraitImplCoLocation::impl_type_path(item),
                         is_blanket: ImplVisitor::is_blanket_self(item),

@@ -53,7 +53,8 @@ pub fn check(
                         project,
                         rel,
                         format!(
-                            "missing `methods/{}` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead",
+                            "missing `{}/{}` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead",
+                            project.methods_root_name(),
                             rel.display()
                         ),
                     )),
@@ -164,7 +165,7 @@ mod tests {
         let violations = check(&MethodsLayout, &project);
         let body = violations
             .iter()
-            .find(|d| d.message.contains("methods/widget/spin.rs"))
+            .find(|d| d.message.contains("__methods__/widget/spin.rs"))
             .expect("missing-body diagnostic");
         assert!(body.message.contains("pub fn spin"));
         assert!(body.message.contains("test_usage"));
@@ -229,7 +230,7 @@ mod tests {
         let violations = check(&MethodsLayout, &project);
         let body = violations
             .iter()
-            .find(|d| d.message.contains("methods/foo/check.rs"))
+            .find(|d| d.message.contains("__methods__/foo/check.rs"))
             .expect("missing-mirror diagnostic for trait shell method");
         assert!(body.message.contains("pub fn check"));
         assert!(body.message.contains("test_usage"));

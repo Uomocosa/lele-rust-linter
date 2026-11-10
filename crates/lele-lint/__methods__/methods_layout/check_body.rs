@@ -19,7 +19,11 @@ pub fn check_body(
         violations.push(rules::methods_layout::MethodsLayout::file_violation(
             project,
             rel,
-            format!("`methods/{}` must define `pub fn {method}`", rel.display()),
+            format!(
+                "`{}/{}` must define `pub fn {method}`",
+                project.methods_root_name(),
+                rel.display()
+            ),
         ));
     } else if rules::methods_layout::MethodsLayout::pub_fn_block(file, method)
         .is_some_and(|block| block.stmts.len() <= 1)
@@ -28,7 +32,8 @@ pub fn check_body(
             project,
             rel,
             format!(
-                "`methods/{}` body has ≤1 statement — inline `pub fn {method}` in `{type_snake}.rs` under `#[rustfmt::skip]`, then delete this file",
+                "`{}/{}` body has ≤1 statement — inline `pub fn {method}` in `{type_snake}.rs` under `#[rustfmt::skip]`, then delete this file",
+                project.methods_root_name(),
                 rel.display()
             ),
         ));
@@ -46,7 +51,8 @@ pub fn check_body(
             project,
             rel,
             format!(
-                "`methods/{}` must carry its own `#[cfg(test)]` `test_usage`",
+                "`{}/{}` must carry its own `#[cfg(test)]` `test_usage`",
+                project.methods_root_name(),
                 rel.display()
             ),
         ));

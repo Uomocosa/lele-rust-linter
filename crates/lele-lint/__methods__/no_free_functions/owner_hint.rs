@@ -1,9 +1,15 @@
-use lele_snake_case::ToLeleSnakeCase;
 use std::collections::BTreeSet;
+
+use crate::Project;
+use lele_snake_case::ToLeleSnakeCase;
 
 const WRAPPERS: [&str; 4] = ["Result", "Option", "Vec", "Box"];
 
-pub fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> String {
+pub fn owner_hint(
+    project: &Project,
+    sig: &syn::Signature,
+    local_types: &BTreeSet<String>,
+) -> String {
     fn recursion(ty: &syn::Type) -> Option<String> {
         match ty {
             syn::Type::Reference(reference) => recursion(&reference.elem),
@@ -60,7 +66,8 @@ pub fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> Strin
             "no candidate owner is a crate type, so wrap the first argument in a newtype (or bundle the arguments in a struct) and make it the owner of `{name}`"
         ),
         [(owner, source)] => format!(
-            "move it to `#[atomic_delegates] impl {owner}` ({source}; an associated fn when it takes or returns a collection of `{owner}`), body in `methods/{}/{name}.rs`",
+            "move it to `#[atomic_delegates] impl {owner}` ({source}; an associated fn when it takes or returns a collection of `{owner}`), body in `{}/{}/{name}.rs`",
+            project.methods_root_name(),
             owner.to_snake_case()
         ),
         candidates => format!(

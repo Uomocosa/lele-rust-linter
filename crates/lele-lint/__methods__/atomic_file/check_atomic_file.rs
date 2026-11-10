@@ -28,8 +28,10 @@ pub fn check_atomic_file(
         let kind = extra.kind.kind_str();
         let message = if kind == "fn" {
             format!(
-                "only one public item per file — make `pub fn {}` a method of the type it works on (first argument or return type), with its body in `methods/<type>/{}.rs`",
-                extra.name, extra.name
+                "only one public item per file — make `pub fn {}` a method of the type it works on (first argument or return type), with its body in `{}/<type>/{}.rs`",
+                extra.name,
+                project.methods_root_name(),
+                extra.name
             )
         } else {
             format!(

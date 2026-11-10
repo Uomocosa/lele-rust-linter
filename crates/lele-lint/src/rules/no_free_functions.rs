@@ -57,7 +57,12 @@ impl NoFreeFunctions {
 #[atomic_delegates]
 impl NoFreeFunctions {
     pub(crate) fn is_exempt_file(rel_path: &Path, project: &Project) -> bool {}
-    pub(crate) fn owner_hint(sig: &syn::Signature, local_types: &BTreeSet<String>) -> String {}
+    pub(crate) fn owner_hint(
+        project: &Project,
+        sig: &syn::Signature,
+        local_types: &BTreeSet<String>,
+    ) -> String {
+    }
 }
 
 // no test_usage necessary

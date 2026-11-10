@@ -44,7 +44,11 @@ pub fn check(
                 func.sig.fn_token.span().start().line,
                 0,
                 CODE,
-                rules::no_free_functions::NoFreeFunctions::owner_hint(&func.sig, &local_types),
+                rules::no_free_functions::NoFreeFunctions::owner_hint(
+                    project,
+                    &func.sig,
+                    &local_types,
+                ),
             ));
         }
     }
@@ -102,7 +106,7 @@ mod tests {
         let violations = check(&NoFreeFunctions, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("impl Player"));
-        assert!(violations[0].message.contains("methods/player/heal.rs"));
+        assert!(violations[0].message.contains("__methods__/player/heal.rs"));
     }
 
     #[test]

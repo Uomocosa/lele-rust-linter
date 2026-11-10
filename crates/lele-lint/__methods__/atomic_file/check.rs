@@ -212,7 +212,7 @@ mod tests {
         assert!(
             violations.iter().any(|d| d
                 .message
-                .contains("move it to `methods/project/discover.rs`")),
+                .contains("move it to `__methods__/project/discover.rs`")),
             "expected mislocated diagnostic, got {violations:?}"
         );
     }

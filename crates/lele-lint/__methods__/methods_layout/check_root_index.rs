@@ -10,6 +10,7 @@ pub fn check_root_index(
     project: &Project,
     declared: &BTreeMap<String, common::DeclaredType>,
 ) -> Vec<RuleViolation> {
+    let root = project.methods_root_name();
     let root_mod = Path::new("mod.rs");
     let expected = common::DeclaredType::root_index_content(declared);
     if project.methods_parsed_files.contains_key(root_mod) {
@@ -19,7 +20,7 @@ pub fn check_root_index(
             return vec![rules::methods_layout::MethodsLayout::file_violation(
                 project,
                 root_mod,
-                "`methods/mod.rs` is out of date — run `lele-lint --sync-methods`".to_string(),
+                format!("`{root}/mod.rs` is out of date — run `lele-lint --sync-methods`"),
             )];
         }
         return Vec::new();
@@ -27,7 +28,7 @@ pub fn check_root_index(
     vec![rules::methods_layout::MethodsLayout::file_violation(
         project,
         root_mod,
-        "missing `methods/mod.rs` — run `lele-lint --sync-methods`".to_string(),
+        format!("missing `{root}/mod.rs` — run `lele-lint --sync-methods`"),
     )]
 }
 
@@ -42,6 +43,8 @@ mod tests {
     fn test_usage() {
         let violations = check_root_index(&Project::default(), &BTreeMap::new());
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("missing `methods/mod.rs`"));
+        assert!(violations[0]
+            .message
+            .contains("missing `__methods__/mod.rs`"));
     }
 }

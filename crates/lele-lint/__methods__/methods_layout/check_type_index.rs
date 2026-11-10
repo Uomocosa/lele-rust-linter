@@ -10,6 +10,7 @@ pub fn check_type_index(
     type_snake: &str,
     declared_type: &common::DeclaredType,
 ) -> Vec<RuleViolation> {
+    let root = project.methods_root_name();
     let mod_rel = Path::new(type_snake).join("mod.rs");
     let expected = declared_type.index_content();
     if project.methods_parsed_files.contains_key(&mod_rel) {
@@ -20,7 +21,7 @@ pub fn check_type_index(
                 project,
                 &mod_rel,
                 format!(
-                    "`methods/{type_snake}/mod.rs` is out of date — run `lele-lint --sync-methods`"
+                    "`{root}/{type_snake}/mod.rs` is out of date — run `lele-lint --sync-methods`"
                 ),
             )];
         }
@@ -29,7 +30,7 @@ pub fn check_type_index(
     vec![rules::methods_layout::MethodsLayout::file_violation(
         project,
         &mod_rel,
-        format!("missing `methods/{type_snake}/mod.rs` — run `lele-lint --sync-methods`"),
+        format!("missing `{root}/{type_snake}/mod.rs` — run `lele-lint --sync-methods`"),
     )]
 }
 
@@ -53,7 +54,7 @@ mod tests {
         assert_eq!(violations.len(), 1);
         assert!(violations[0]
             .message
-            .contains("missing `methods/widget/mod.rs`"));
+            .contains("missing `__methods__/widget/mod.rs`"));
         let mut with_mod = Project::default();
         with_mod.methods_parsed_files.insert(
             PathBuf::from("widget/mod.rs"),

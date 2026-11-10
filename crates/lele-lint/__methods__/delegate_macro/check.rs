@@ -1,4 +1,3 @@
-use lele_snake_case::ToLeleSnakeCase;
 use std::collections::HashSet;
 
 use crate::common;
@@ -71,12 +70,12 @@ pub fn check(
                 if migratable.is_empty() {
                     continue;
                 }
-                let type_snake = primary.to_snake_case();
-                let mirrors = migratable
-                    .iter()
-                    .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                let mirrors = rules::delegate_macro::DelegateMacro::mirror_names(
+                    project,
+                    &primary,
+                    &migratable,
+                )
+                .join(", ");
                 violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
                         "trait impl for `{primary}` has unannotated shells — annotate each with `#[atomic_delegate({primary})]` or the whole block with `#[atomic_delegates]`; empty each shell body and move it to {mirrors} (one `pub fn` + `test_usage` per file)"
                     )));
@@ -125,12 +124,9 @@ pub fn check(
             if migratable.is_empty() {
                 continue;
             }
-            let type_snake = primary.to_snake_case();
-            let mirrors = migratable
-                .iter()
-                .map(|ident| format!("methods/{type_snake}/{ident}.rs"))
-                .collect::<Vec<_>>()
-                .join(", ");
+            let mirrors =
+                rules::delegate_macro::DelegateMacro::mirror_names(project, &primary, &migratable)
+                    .join(", ");
             let real = rules::delegate_macro::DelegateMacro::real_idents(impl_block);
             if real.is_empty() {
                 violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
@@ -197,7 +193,7 @@ mod tests {
         );
         let violations = check(&DelegateMacro, &project);
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("methods/foo/check.rs"));
+        assert!(violations[0].message.contains("__methods__/foo/check.rs"));
 
         let mut real = Project::default();
         real.parsed_files.insert(
@@ -241,7 +237,7 @@ mod tests {
         assert!(!messages.iter().any(|m| m.contains("duplicate")));
         assert!(messages
             .iter()
-            .any(|m| m.contains("methods/temperature/from_rankine.rs")));
+            .any(|m| m.contains("__methods__/temperature/from_rankine.rs")));
     }
 
     #[test]
@@ -392,7 +388,7 @@ mod tests {
         let violations = check(&DelegateMacro, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("split"));
-        assert!(violations[0].message.contains("methods/foo/run.rs"));
+        assert!(violations[0].message.contains("__methods__/foo/run.rs"));
     }
 
     #[test]
@@ -420,7 +416,7 @@ mod tests {
         );
         let violations = check(&DelegateMacro, &project);
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("methods/foo/check.rs"));
+        assert!(violations[0].message.contains("__methods__/foo/check.rs"));
     }
 
     #[test]
@@ -450,8 +446,8 @@ mod tests {
         );
         let violations = check(&DelegateMacro, &project);
         assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("methods/foo/run.rs"));
-        assert!(violations[0].message.contains("methods/foo/stop.rs"));
+        assert!(violations[0].message.contains("__methods__/foo/run.rs"));
+        assert!(violations[0].message.contains("__methods__/foo/stop.rs"));
     }
 }
 

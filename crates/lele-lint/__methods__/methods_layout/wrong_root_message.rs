@@ -10,12 +10,7 @@ pub fn wrong_root_message(
     type_snake: &str,
     expected: Option<&BTreeSet<String>>,
 ) -> String {
-    let label = project
-        .methods_dir
-        .as_ref()
-        .and_then(|dir| dir.file_name())
-        .and_then(|name| name.to_str())
-        .unwrap_or("__methods__");
+    let label = project.methods_root_name();
     let mut names: Vec<&String> = expected
         .map(|roots| roots.iter().collect())
         .unwrap_or_default();

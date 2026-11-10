@@ -12,6 +12,7 @@ pub fn check_type_indexes(
     shell_roots: &BTreeMap<(String, String), BTreeSet<String>>,
     type_snake: &str,
 ) -> Vec<RuleViolation> {
+    let label = project.methods_root_name();
     let mut violations = Vec::new();
     let mut roots: BTreeSet<&String> = BTreeSet::new();
     for ((found_type, _), names) in shell_roots {
@@ -34,7 +35,7 @@ pub fn check_type_indexes(
                     project,
                     &mod_rel,
                     format!(
-                        "`methods/{}` is out of date — run `lele-lint --sync-methods`",
+                        "`{label}/{}` is out of date — run `lele-lint --sync-methods`",
                         mod_rel.display()
                     ),
                 ));
@@ -44,7 +45,7 @@ pub fn check_type_indexes(
                 project,
                 &mod_rel,
                 format!(
-                    "missing `methods/{}` — run `lele-lint --sync-methods`",
+                    "missing `{label}/{}` — run `lele-lint --sync-methods`",
                     mod_rel.display()
                 ),
             ));
@@ -79,6 +80,6 @@ mod tests {
         assert_eq!(violations.len(), 1);
         assert!(violations[0]
             .message
-            .contains("missing `methods/src/widget/mod.rs`"));
+            .contains("missing `__methods__/src/widget/mod.rs`"));
     }
 }

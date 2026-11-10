@@ -32,7 +32,8 @@ pub fn check_fn_shells(
         let body_name = ImplBlock(impl_block).delegate_body_name(ident);
         if *ident != body_name {
             violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::delegate_macro::DelegateMacro::CODE, format!(
-                    "`{ident}` in a generic trait impl dispatches to `methods/{}/{body_name}.rs` — annotate the whole block with `#[atomic_delegates]` instead of `#[atomic_delegate]`",
+                    "`{ident}` in a generic trait impl dispatches to `{}/{}/{body_name}.rs` — annotate the whole block with `#[atomic_delegates]` instead of `#[atomic_delegate]`",
+                    project.methods_root_name(),
                     primary.to_snake_case()
                 )));
         }

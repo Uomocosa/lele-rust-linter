@@ -44,7 +44,8 @@ pub fn check_delegate_shape(
         .is_some_and(|entry| entry.methods.contains(rest));
     let message = if is_delegate {
         format!(
-            "delegate method file `{file_stem}.rs` for `{type_name}::{rest}` is in `src/` — move it to `methods/{type_snake}/{rest}.rs`"
+            "delegate method file `{file_stem}.rs` for `{type_name}::{rest}` is in `src/` — move it to `{}/{type_snake}/{rest}.rs`",
+            project.methods_root_name()
         )
     } else {
         format!(

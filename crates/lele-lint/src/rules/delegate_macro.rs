@@ -10,6 +10,7 @@ use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
+use lele_snake_case::ToLeleSnakeCase;
 use rule_examples_macro::rule_examples;
 use std::collections::HashSet;
 use std::path::Path;
@@ -44,6 +45,13 @@ impl Rule for DelegateMacro {
 impl DelegateMacro {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(DelegateMacro));
+    }
+    pub(crate) fn mirror_names(project: &Project, primary: &str, idents: &[&syn::Ident]) -> Vec<String> {
+        let root = project.methods_root_name();
+        idents
+            .iter()
+            .map(|ident| format!("{root}/{}/{ident}.rs", primary.to_snake_case()))
+            .collect()
     }
     pub(crate) fn annotated_inherent_blocks(file: &syn::File, primary: &str, group: ImplItemGroup) -> usize {
         file.items

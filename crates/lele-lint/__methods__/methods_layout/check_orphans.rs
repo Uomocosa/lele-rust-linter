@@ -60,7 +60,8 @@ pub fn check_orphans(
             project,
             rel,
             format!(
-                "orphan method file `methods/{}` — no matching `{parent}::{stem}`",
+                "orphan method file `{}/{}` — no matching `{parent}::{stem}`",
+                project.methods_root_name(),
                 inner.display()
             ),
         ));
@@ -100,7 +101,7 @@ mod tests {
         assert_eq!(violations.len(), 1);
         assert!(violations[0]
             .message
-            .contains("orphan method file `methods/ghost/haunt.rs`"));
+            .contains("orphan method file `__methods__/ghost/haunt.rs`"));
     }
 
     #[test]

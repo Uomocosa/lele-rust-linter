@@ -77,6 +77,14 @@ impl Project {
         self.parsed_files.get(rel_path)
     }
     pub fn is_multi_root(&self) -> bool { self.layout_roots.len() > 1 }
+    pub fn methods_root_name(&self) -> String {
+        self.methods_dir
+            .as_ref()
+            .and_then(|dir| dir.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or("__methods__")
+            .to_string()
+    }
     pub fn layout_root_names(&self) -> Vec<String> {
         self.layout_roots.iter().map(|root| root.file_name().and_then(|name| name.to_str()).map_or_else(|| root.to_string_lossy().into_owned(), str::to_string)).collect()
     }
@@ -177,6 +185,13 @@ mod tests {
             project.layout_root_names(),
             vec!["src".to_string(), "ui".to_string()]
         );
+        assert_eq!(project.methods_root_name(), "__methods__");
+        assert_eq!(Project::default().methods_root_name(), "__methods__");
+        let named = Project {
+            methods_dir: Some(dir.path().join("custom_methods")),
+            ..Project::default()
+        };
+        assert_eq!(named.methods_root_name(), "custom_methods");
         assert!(!Project::default().is_multi_root());
     }
 }

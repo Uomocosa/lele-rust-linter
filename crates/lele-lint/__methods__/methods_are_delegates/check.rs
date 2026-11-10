@@ -35,7 +35,10 @@ pub fn check(
                     item.sig.ident
                 )),
                 syn::Item::Impl(_) => Some(
-                    "`impl` block in a method file — move it to `src/`: impls live next to their type in `src/`, bodies in `methods/<type>/<method>.rs`".to_string(),
+                    format!(
+                        "`impl` block in a method file — move it to `src/`: impls live next to their type in `src/`, bodies in `{}/<type>/<method>.rs`",
+                        project.methods_root_name()
+                    ),
                 ),
                 syn::Item::Struct(syn::ItemStruct { ident, .. })
                 | syn::Item::Enum(syn::ItemEnum { ident, .. })

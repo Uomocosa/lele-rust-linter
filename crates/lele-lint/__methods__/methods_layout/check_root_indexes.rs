@@ -11,6 +11,7 @@ pub fn check_root_indexes(
     declared: &BTreeMap<String, common::DeclaredType>,
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
+    let label = project.methods_root_name();
     let root_names = project.layout_root_names();
     let glue = Path::new("mod.rs");
     let expected_glue = common::DeclaredType::glue_index_content(&root_names);
@@ -21,14 +22,14 @@ pub fn check_root_indexes(
             violations.push(rules::methods_layout::MethodsLayout::file_violation(
                 project,
                 glue,
-                "`methods/mod.rs` is out of date — run `lele-lint --sync-methods`".to_string(),
+                format!("`{label}/mod.rs` is out of date — run `lele-lint --sync-methods`"),
             ));
         }
     } else {
         violations.push(rules::methods_layout::MethodsLayout::file_violation(
             project,
             glue,
-            "missing `methods/mod.rs` — run `lele-lint --sync-methods`".to_string(),
+            format!("missing `{label}/mod.rs` — run `lele-lint --sync-methods`"),
         ));
     }
     for root in &root_names {
@@ -47,7 +48,7 @@ pub fn check_root_indexes(
                     project,
                     &mod_rel,
                     format!(
-                        "`methods/{}` is out of date — run `lele-lint --sync-methods`",
+                        "`{label}/{}` is out of date — run `lele-lint --sync-methods`",
                         mod_rel.display()
                     ),
                 ));
@@ -57,7 +58,7 @@ pub fn check_root_indexes(
                 project,
                 &mod_rel,
                 format!(
-                    "missing `methods/{}` — run `lele-lint --sync-methods`",
+                    "missing `{label}/{}` — run `lele-lint --sync-methods`",
                     mod_rel.display()
                 ),
             ));
@@ -84,12 +85,12 @@ mod tests {
         assert_eq!(violations.len(), 3);
         assert!(violations
             .iter()
-            .any(|d| d.message.contains("missing `methods/mod.rs`")));
+            .any(|d| d.message.contains("missing `__methods__/mod.rs`")));
         assert!(violations
             .iter()
-            .any(|d| d.message.contains("missing `methods/src/mod.rs`")));
+            .any(|d| d.message.contains("missing `__methods__/src/mod.rs`")));
         assert!(violations
             .iter()
-            .any(|d| d.message.contains("missing `methods/ui/mod.rs`")));
+            .any(|d| d.message.contains("missing `__methods__/ui/mod.rs`")));
     }
 }

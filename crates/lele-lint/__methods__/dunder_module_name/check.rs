@@ -22,6 +22,7 @@ pub fn check(
                     source.relative_path,
                     project,
                 ),
+                methods_mount_name: project.methods_mount_name(),
             };
             visitor.visit_file(source.file);
         }
@@ -66,6 +67,21 @@ mod tests {
     fn messages(src: &str) -> Vec<String> {
         let mut project = Project {
             dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
+        project
+            .parsed_files
+            .insert(PathBuf::from("stock/mod.rs"), syn::parse_str(src).unwrap());
+        check(&DunderModuleName, &project)
+            .into_iter()
+            .map(|violation| violation.message)
+            .collect()
+    }
+
+    fn messages_with_methods_root(methods_root: &str, src: &str) -> Vec<String> {
+        let mut project = Project {
+            dunder_paths: DunderPath::defaults(),
+            methods_dir: Some(PathBuf::from(methods_root)),
             ..Project::default()
         };
         project
@@ -191,6 +207,19 @@ mod tests {
                 "#[path = \"__bevy_systems__/mod.rs\"]\npub mod bevy_systems;\n\npub use bevy_systems::poll_inv;\n",
             ),
             Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_methods_mount_visibility_follows_the_configured_root() {
+        let found = messages_with_methods_root(
+            "bodies",
+            "#[path = \"../bodies/mod.rs\"]\npub mod bodies;\n\npub mod methods;\n",
+        );
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`pub mod bodies;` must be private: write `mod bodies;` — delegate bodies are reached through their type's methods"
         );
     }
 }

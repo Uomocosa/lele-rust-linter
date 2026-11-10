@@ -201,6 +201,58 @@ fn test_multi_root_layout_and_crate_local_boundary() -> Result<(), Box<dyn std::
 }
 
 #[test]
+fn test_custom_methods_root_mount_visibility_follows_config(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempfile::tempdir()?;
+    let root = dir.path();
+    std::fs::write(
+        root.join("Cargo.toml"),
+        "[package]\nname = \"custom_methods_root_probe\"\nversion = \"0.0.0\"\n",
+    )?;
+    std::fs::write(
+        root.join("lele.toml"),
+        "[lele.layout]\nmethods_root = \"bodies\"\n",
+    )?;
+    std::fs::create_dir_all(root.join("bodies"))?;
+    std::fs::create_dir_all(root.join("src"))?;
+    std::fs::write(
+        root.join("src").join("lib.rs"),
+        "#[path = \"../bodies/mod.rs\"]\npub mod bodies;\n\npub mod methods;\n",
+    )?;
+    std::fs::write(
+        root.join("bodies").join("mod.rs"),
+        "// no test_usage necessary\n",
+    )?;
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(root), None)?;
+    let config = project.load_config().unwrap_or_default();
+    project.apply_layout(&config)?;
+    let hits: Vec<(String, String)> = Linter::default()
+        .rules
+        .iter()
+        .flat_map(|rule| rule.check(&project))
+        .map(|violation| (violation.code.to_string(), violation.message))
+        .collect();
+    if !hits.iter().any(|(code, message)| {
+        code == "LELE038" && message.contains("`pub mod bodies;` must be private")
+    }) {
+        return Err(format!(
+            "expected LELE038 mount-visibility for `pub mod bodies;` under methods_root = \"bodies\", got {hits:#?}"
+        )
+        .into());
+    }
+    if hits
+        .iter()
+        .any(|(code, message)| code == "LELE038" && message.contains("`pub mod methods;`"))
+    {
+        return Err(format!(
+            "expected no LELE038 for `pub mod methods;` when methods_root = \"bodies\", got {hits:#?}"
+        )
+        .into());
+    }
+    Ok(())
+}
+
+#[test]
 fn test_layout_extra_roots_are_linted() -> Result<(), Box<dyn std::error::Error>> {
     let dir = tempfile::tempdir()?;
     let root = dir.path();

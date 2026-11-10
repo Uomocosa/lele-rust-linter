@@ -9,6 +9,7 @@ pub(crate) struct DunderNameVisitor<'a> {
     pub(crate) hits: &'a mut Vec<rules::dunder_module_name::DunderNameHit>,
     pub(crate) reexports: &'a mut Vec<rules::dunder_module_name::ReexportHit>,
     pub(crate) domain_prefix: Vec<String>,
+    pub(crate) methods_mount_name: String,
 }
 
 #[rustfmt::skip]
@@ -40,6 +41,7 @@ impl<'ast> Visit<'ast> for DunderNameVisitor<'_> {
         }
         if let Some(message) = rules::dunder_module_name::DunderModuleName::mount_visibility_hit(
             self.dunders,
+            &self.methods_mount_name,
             &ident,
             &item.vis,
         ) {

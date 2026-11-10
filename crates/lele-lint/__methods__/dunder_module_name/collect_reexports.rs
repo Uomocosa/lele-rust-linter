@@ -102,6 +102,7 @@ mod tests {
                 Path::new(rel_path),
                 &project,
             ),
+            methods_mount_name: project.methods_mount_name(),
         };
         collect_reexports(&mut visitor, item_use);
         reexports.iter().map(|hit| hit.suggestion.clone()).collect()
@@ -134,6 +135,7 @@ mod tests {
                 Path::new("guest.rs"),
                 &project,
             ),
+            methods_mount_name: project.methods_mount_name(),
         };
         visitor.visit_file(&file);
         assert_eq!(reexports.len(), 0);

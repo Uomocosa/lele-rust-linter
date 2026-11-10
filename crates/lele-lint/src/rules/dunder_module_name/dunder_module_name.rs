@@ -17,13 +17,12 @@ pub struct DunderModuleName;
 impl DunderModuleName {
     pub const NAME: &'static str = "dunder_module_name";
     pub const CODE: &'static str = "LELE038";
-    pub(crate) const PRIVATE_MOUNTS: [&'static str; 1] = ["methods"];
     pub(crate) const BEVY_OWNED_MOUNT: &'static str = "bevy_systems";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "A dunder folder or file (`__basic__/`) is declared `#[path = \"__basic__/mod.rs\"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic`/`methods` private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.",
+        summary: "A dunder folder or file (`__basic__/`) is declared `#[path = \"__basic__/mod.rs\"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.",
         why: "The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name. Every item keeps exactly one public path: container items are re-exported flat from the owning module, and trait/system items are reached as `domain::traits::Trait` / `domain::bevy_systems::system`.",
-        fix: "Declare the folder as `#[path = \"__basic__/mod.rs\"] mod basic;` (`basic`/`methods` private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).",
+        fix: "Declare the folder as `#[path = \"__basic__/mod.rs\"] mod basic;` (`basic` and the configured methods mount private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).",
         bad: rule_examples!("dunder_module_name/bad"),
         good: rule_examples!("dunder_module_name/good"),
     };
@@ -71,6 +70,7 @@ impl DunderModuleName {
     pub(crate) fn default_path(dunder: &DunderPath) -> String {}
     pub(crate) fn mount_visibility_hit(
         dunders: &[DunderPath],
+        methods_mount_name: &str,
         ident: &str,
         vis: &syn::Visibility,
     ) -> Option<String> {

@@ -17,6 +17,7 @@ pub fn dunder_reexport_hits(
         hits: &mut hits,
         reexports: &mut reexports,
         domain_prefix: rules::dunder_module_name::DunderModuleName::mount_prefix(rel_path, project),
+        methods_mount_name: project.methods_mount_name(),
     };
     visitor.visit_file(file);
     reexports

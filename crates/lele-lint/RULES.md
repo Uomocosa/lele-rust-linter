@@ -18,7 +18,7 @@ every **Good** example reports nothing at all.
 - [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
-- [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic`/`methods` private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
+- [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 - [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file (relative `super::`/`self::` qualifiers resolve against the impl file's own module, and dunder-mounted modules match by their code name, `stock::traits` → `stock/__traits__/`), and an unresolved ambiguity lists every defining file.
 
@@ -593,11 +593,11 @@ pub use guest::Guest;
 
 ### LELE038 `dunder_module_name`
 
-A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic`/`methods` private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
+A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
 
 **Why:** The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name. Every item keeps exactly one public path: container items are re-exported flat from the owning module, and trait/system items are reached as `domain::traits::Trait` / `domain::bevy_systems::system`.
 
-**Fix:** Declare the folder as `#[path = "__basic__/mod.rs"] mod basic;` (`basic`/`methods` private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).
+**Fix:** Declare the folder as `#[path = "__basic__/mod.rs"] mod basic;` (`basic` and the configured methods mount private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).
 
 **Bad** (reports LELE038):
 

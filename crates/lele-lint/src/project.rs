@@ -85,6 +85,13 @@ impl Project {
             .unwrap_or("__methods__")
             .to_string()
     }
+    pub fn methods_mount_name(&self) -> String {
+        let name = self.methods_root_name();
+        name.strip_prefix("__")
+            .and_then(|inner| inner.strip_suffix("__"))
+            .unwrap_or(&name)
+            .to_string()
+    }
     pub fn layout_root_names(&self) -> Vec<String> {
         self.layout_roots.iter().map(|root| root.file_name().and_then(|name| name.to_str()).map_or_else(|| root.to_string_lossy().into_owned(), str::to_string)).collect()
     }
@@ -192,6 +199,9 @@ mod tests {
             ..Project::default()
         };
         assert_eq!(named.methods_root_name(), "custom_methods");
+        assert_eq!(project.methods_mount_name(), "methods");
+        assert_eq!(Project::default().methods_mount_name(), "methods");
+        assert_eq!(named.methods_mount_name(), "custom_methods");
         assert!(!Project::default().is_multi_root());
     }
 }

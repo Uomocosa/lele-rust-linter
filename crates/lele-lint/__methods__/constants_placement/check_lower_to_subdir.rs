@@ -13,7 +13,8 @@ pub fn check_lower_to_subdir(
     if rel_path.components().count() != 1 {
         return Vec::new();
     }
-    let ancestor = rules::constants_placement::ConstantsPlacement::common_ancestor_dir(users);
+    let ancestor =
+        rules::constants_placement::ConstantsPlacement::common_ancestor_dir(users, project);
     if ancestor.as_os_str().is_empty() {
         return Vec::new();
     }

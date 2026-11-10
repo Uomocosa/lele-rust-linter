@@ -81,8 +81,9 @@ impl ConstantsPlacement {
     ) -> Vec<RuleViolation> {
     }
     pub(crate) fn constants_target(project: &Project, dir: &Path) -> PathBuf {}
-    pub(crate) fn common_ancestor_dir(users: &HashSet<PathBuf>) -> PathBuf {}
+    pub(crate) fn common_ancestor_dir(users: &HashSet<PathBuf>, project: &Project) -> PathBuf {}
     pub(crate) fn common_prefix(a: &Path, b: &Path) -> PathBuf {}
+    pub(crate) fn strip_trailing_code_dunders(dir: &Path, project: &Project) -> PathBuf {}
 }
 
 // no test_usage necessary

@@ -10,7 +10,8 @@ pub fn check_lift_to_ancestor(
     users: &HashSet<PathBuf>,
     project: &Project,
 ) -> Vec<RuleViolation> {
-    let ancestor = rules::constants_placement::ConstantsPlacement::common_ancestor_dir(users);
+    let ancestor =
+        rules::constants_placement::ConstantsPlacement::common_ancestor_dir(users, project);
     let def_dir = rules::constants_placement::ConstantsPlacement::parent_dir(rel_path);
     if !ancestor.is_empty() || def_dir.is_empty() {
         return Vec::new();

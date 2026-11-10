@@ -60,6 +60,8 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Declare the folder as `#[path = "__basic__/mod.rs"] pub mod basic;` and write `basic::` in every path, never `__basic__`.
 - **LELE041 `trait_placement`**: Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
   - Fix: Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = "__traits__/mod.rs"] pub mod traits;` and re-export the trait from the owning module (`pub use traits::<Trait>;`); rename a `…Trait` trait to its bare name — the folder already says it is a trait.
+- **LELE042 `trait_impl_co_location`**: Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
+  - Fix: Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.
 
 ## Delegates: shells and `__methods__/`
 

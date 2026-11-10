@@ -55,4 +55,5 @@ pub mod source_file;
 pub mod source_path;
 pub mod test_inline;
 pub mod test_usage;
+pub mod trait_impl_co_location;
 pub mod trait_placement;

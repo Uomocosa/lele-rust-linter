@@ -20,6 +20,7 @@ every **Good** example reports nothing at all.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 - [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
+- [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
 
 ### LELE001 `atomic_file`
 
@@ -792,6 +793,156 @@ mod tests {
         assert_eq!(demo.replica_id(), 7);
     }
 }
+```
+
+### LELE042 `trait_impl_co_location`
+
+Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.
+
+**Why:** A type's behaviour is readable in one place: a trait impl sits next to the struct or enum it describes, and a crate trait's blanket or foreign-type impls sit next to the trait that owns them — the `<domain>/__traits__/<trait_snake>.rs` file.
+
+**Fix:** Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.
+
+**Bad** (reports LELE042):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/clock.rs`
+
+```rust
+use crate::stock;
+
+impl stock::Clock for UnixTime {
+    fn now(&self) -> u64 {
+        self.seconds
+    }
+}
+
+// no test_usage necessary
+```
+
+`src/stock/mod.rs`
+
+```rust
+pub mod clock;
+pub mod unix_time;
+#[path = "__traits__/mod.rs"]
+pub mod traits;
+
+pub use traits::Clock;
+```
+
+`src/stock/unix_time.rs`
+
+```rust
+pub struct UnixTime {
+    pub seconds: u64,
+    pub nanos: u32,
+}
+```
+
+`src/stock/__traits__/clock.rs`
+
+```rust
+pub trait Clock {
+    fn now(&self) -> u64;
+}
+```
+
+`src/stock/__traits__/mod.rs`
+
+```rust
+mod clock;
+pub use clock::Clock;
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+pub mod unix_time;
+#[path = "__traits__/mod.rs"]
+pub mod traits;
+
+pub use traits::Clock;
+```
+
+`src/stock/unix_time.rs`
+
+```rust
+use crate::stock;
+use std::fmt;
+
+pub struct UnixTime {
+    pub seconds: u64,
+    pub nanos: u32,
+}
+
+#[rustfmt::skip]
+impl stock::Clock for UnixTime {
+    fn now(&self) -> u64 { self.seconds }
+}
+
+#[rustfmt::skip]
+impl fmt::Display for UnixTime {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result { write!(formatter, "{}s", self.seconds) }
+}
+```
+
+`src/stock/__traits__/clock.rs`
+
+```rust
+pub trait Clock {
+    fn now(&self) -> u64;
+}
+
+#[rustfmt::skip]
+impl<T> Clock for Vec<T> {
+    fn now(&self) -> u64 { u64::try_from(self.len()).unwrap_or(0) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Clock;
+
+    struct Demo {
+        seconds: u64,
+        ticks: u32,
+    }
+
+    impl Clock for Demo {
+        fn now(&self) -> u64 {
+            self.seconds + u64::from(self.ticks)
+        }
+    }
+
+    #[test]
+    fn test_usage() {
+        let demo = Demo {
+            seconds: 6,
+            ticks: 1,
+        };
+        assert_eq!(demo.now(), 7);
+    }
+}
+```
+
+`src/stock/__traits__/mod.rs`
+
+```rust
+mod clock;
+pub use clock::Clock;
 ```
 
 ## Delegates: shells and `__methods__/`

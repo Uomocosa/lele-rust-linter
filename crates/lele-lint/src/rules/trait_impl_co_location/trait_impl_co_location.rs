@@ -17,9 +17,9 @@ impl TraitImplCoLocation {
     pub const CODE: &'static str = "LELE042";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`.",
+        summary: "Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file, and an unresolved ambiguity lists every defining file.",
         why: "A type's behaviour is readable in one place: a trait impl sits next to the struct or enum it describes, and a crate trait's blanket or foreign-type impls sit next to the trait that owns them — the `<domain>/__traits__/<trait_snake>.rs` file.",
-        fix: "Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. A type in `__basic__/` keeps no impls — move it to its own `<type>.rs` first and put the impl there. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.",
+        fix: "Move the impl into the file the message names: `<type>.rs` for a crate type, the trait's own file for a blanket impl or a foreign type. When several files define a type of the same name, an impl is clean only in a file that defines it; the impl's own qualified path or a matching `use` import in its file selects the defining file, and an unresolved ambiguity lists every defining file. A type in `__basic__/` keeps no impls — move it to its own `<type>.rs` first and put the impl there. Foreign trait + foreign type pairs cannot happen (orphan rule); an unresolvable type (macro-generated) is skipped.",
         bad: rule_examples!("trait_impl_co_location/bad"),
         good: rule_examples!("trait_impl_co_location/good"),
     };
@@ -60,6 +60,17 @@ impl TraitImplCoLocation {
     ) -> String {
         format!("`impl {trait_name} for {type_name}` lives outside `{}`, which defines `{type_name}`: a type with an impl keeps its own file — move `{type_name}` to `{}` and put the impl there", target.display(), graduate.display())
     }
+    pub(crate) fn ambiguous_target_message(
+        type_name: &str,
+        candidates: &std::collections::BTreeSet<std::path::PathBuf>,
+    ) -> String {
+        let files = candidates
+            .iter()
+            .map(|candidate| candidate.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("`{type_name}` is defined in several files ({files}): move the impl into the one that defines this `{type_name}`")
+    }
 }
 
 #[atomic_delegates]
@@ -82,6 +93,26 @@ impl TraitImplCoLocation {
     }
     pub(crate) fn self_type_name(item: &syn::ItemImpl) -> Option<String> {}
     pub(crate) fn type_graduate_target(target: &Path, type_name: &str) -> std::path::PathBuf {}
+    pub(crate) fn impl_type_path(item: &syn::ItemImpl) -> Option<Vec<String>> {}
+    pub(crate) fn type_module_hints(
+        rel_path: &Path,
+        hit: &rules::trait_impl_co_location::ImplHit,
+        project: &Project,
+    ) -> Vec<Vec<String>> {
+    }
+    pub(crate) fn defining_module_path(qualifier: &[String]) -> Option<Vec<String>> {}
+    pub(crate) fn import_module_hint(
+        prefix: &[String],
+        imported: &syn::Ident,
+        type_name: &str,
+    ) -> Option<Vec<String>> {
+    }
+    pub(crate) fn candidate_defines_module_path(candidate: &Path, module_path: &[String]) -> bool {}
+    pub(crate) fn narrowed_candidates(
+        files: &std::collections::BTreeSet<std::path::PathBuf>,
+        hints: &[Vec<String>],
+    ) -> Vec<std::path::PathBuf> {
+    }
 }
 
 // no test_usage necessary

@@ -20,6 +20,7 @@ impl<'ast> Visit<'ast> for ImplVisitor<'_> {
                         line: item.impl_token.span.start().line,
                         trait_name,
                         type_name: rules::trait_impl_co_location::TraitImplCoLocation::self_type_name(item),
+                        type_path: rules::trait_impl_co_location::TraitImplCoLocation::impl_type_path(item),
                         is_blanket: ImplVisitor::is_blanket_self(item),
                     });
                 }

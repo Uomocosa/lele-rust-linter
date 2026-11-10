@@ -105,6 +105,65 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_same_named_types_impl_in_the_defining_file_is_clean() {
+        assert_eq!(
+            messages(&[
+                ("a/mod.rs", "pub mod config;\n"),
+                (
+                    "a/config.rs",
+                    "pub struct Config { pub enabled: bool }\n\nimpl Default for Config { fn default() -> Self { Self { enabled: false } } }\n",
+                ),
+                ("b/mod.rs", "pub mod resources;\n"),
+                (
+                    "b/__basic__/resources.rs",
+                    "pub struct Config { pub enabled: bool }\n",
+                ),
+            ]),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_same_named_types_resolved_through_the_imported_module() {
+        let found = messages(&[
+            ("a/mod.rs", "pub mod config;\n"),
+            ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            ("b/mod.rs", "pub mod config;\n"),
+            ("b/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            ("dial/mod.rs", "pub mod setup;\n"),
+            (
+                "dial/setup.rs",
+                "use crate::a::Config;\n\nimpl Default for Config { fn default() -> Self { Self { enabled: false } } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`impl Default for Config` must live in `a/config.rs`, the file that defines `Config`"
+        );
+    }
+
+    #[test]
+    fn test_usage_same_named_types_without_resolution_is_ambiguous() {
+        let found = messages(&[
+            ("a/mod.rs", "pub mod config;\n"),
+            ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            ("b/mod.rs", "pub mod config;\n"),
+            ("b/config.rs", "pub struct Config { pub enabled: bool }\n"),
+            ("dial/mod.rs", "pub mod setup;\n"),
+            (
+                "dial/setup.rs",
+                "impl Default for Config { fn default() -> Self { Self { enabled: false } } }\n",
+            ),
+        ]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "`Config` is defined in several files (a/config.rs, b/config.rs): move the impl into the one that defines this `Config`"
+        );
+    }
+
+    #[test]
     fn test_usage_flags_blanket_impl_outside_trait_file() {
         let found = messages(&[
             ("stock/mod.rs", "pub mod blanket;\n"),

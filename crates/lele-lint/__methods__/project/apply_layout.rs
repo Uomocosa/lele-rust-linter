@@ -79,9 +79,9 @@ mod tests {
         };
         apply_layout(&mut project, &Config::default()).unwrap();
         assert!(project.methods_dir.is_none());
-        std::fs::create_dir_all(dir.path().join("methods")).unwrap();
+        std::fs::create_dir_all(dir.path().join("__methods__")).unwrap();
         std::fs::write(
-            dir.path().join("methods").join("probe.rs"),
+            dir.path().join("__methods__").join("probe.rs"),
             "pub fn probe() {}\n",
         )
         .unwrap();
@@ -117,9 +117,9 @@ mod tests {
     fn test_usage_custom_methods_root_is_used() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("src")).unwrap();
-        std::fs::create_dir_all(dir.path().join("__methods__")).unwrap();
+        std::fs::create_dir_all(dir.path().join("custom_methods")).unwrap();
         std::fs::write(
-            dir.path().join("__methods__").join("probe.rs"),
+            dir.path().join("custom_methods").join("probe.rs"),
             "pub fn probe() {}\n",
         )
         .unwrap();
@@ -129,11 +129,11 @@ mod tests {
             ..Project::default()
         };
         let section: LeleSection =
-            toml::from_str("[layout]\nmethods_root = \"__methods__\"\n").unwrap();
+            toml::from_str("[layout]\nmethods_root = \"custom_methods\"\n").unwrap();
         apply_layout(&mut project, &Config(Some(section))).unwrap();
         assert!(project
             .methods_dir
-            .is_some_and(|dir| dir.ends_with("__methods__")));
+            .is_some_and(|dir| dir.ends_with("custom_methods")));
         assert!(project
             .methods_parsed_files
             .contains_key(&std::path::PathBuf::from("probe.rs")));

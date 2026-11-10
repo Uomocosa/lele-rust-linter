@@ -41,7 +41,7 @@ pub use item_marker::ItemMarker;
 pub use linter::Linter;
 pub mod module_info;
 pub use module_info::ModuleInfo;
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub(crate) mod methods;
 pub mod parsed_source;
 pub use parsed_source::ParsedSource;

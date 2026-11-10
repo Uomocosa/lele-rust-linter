@@ -4,10 +4,10 @@ use crate::Config;
 
 pub fn layout_methods_root(config: &Config) -> PathBuf {
     let Some(section) = config.as_ref() else {
-        return PathBuf::from("methods");
+        return PathBuf::from("__methods__");
     };
     if section.layout.methods_root.as_os_str().is_empty() {
-        return PathBuf::from("methods");
+        return PathBuf::from("__methods__");
     }
     section.layout.methods_root.clone()
 }
@@ -22,13 +22,13 @@ mod tests {
     fn test_usage() {
         assert_eq!(
             layout_methods_root(&Config::default()),
-            std::path::PathBuf::from("methods")
+            std::path::PathBuf::from("__methods__")
         );
         let section: LeleSection =
-            toml::from_str("[layout]\nmethods_root = \"__methods__\"\n").unwrap();
+            toml::from_str("[layout]\nmethods_root = \"custom_methods\"\n").unwrap();
         assert_eq!(
             layout_methods_root(&Config(Some(section))),
-            std::path::PathBuf::from("__methods__")
+            std::path::PathBuf::from("custom_methods")
         );
     }
 }

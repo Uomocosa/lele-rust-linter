@@ -3,5 +3,5 @@ pub mod player_id;
 pub use player_id::PlayerId;
 pub mod settings;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;

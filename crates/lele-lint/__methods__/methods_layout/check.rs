@@ -104,6 +104,8 @@ pub fn check(
         ));
     }
 
+    violations.extend(rules::methods_layout::MethodsLayout::check_stale_methods_folder(project));
+
     violations
 }
 
@@ -121,6 +123,32 @@ mod tests {
         let rule = rules::methods_layout::MethodsLayout;
         let project = Project::default();
         assert!(check(&rule, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_stale_methods_folder_reported() {
+        let dir = tempfile::tempdir().unwrap();
+        let methods_dir = dir.path().join("methods").join("widget");
+        std::fs::create_dir_all(&methods_dir).unwrap();
+        std::fs::write(methods_dir.join("spin.rs"), "pub fn spin() {}\n").unwrap();
+        let mut project = Project {
+            root: dir.path().to_path_buf(),
+            ..Project::default()
+        };
+        project.parsed_files.insert(
+            PathBuf::from("widget.rs"),
+            syn::parse_str(
+                "pub struct Widget;\n#[atomic_delegates]\nimpl Widget { pub fn spin(&self) {} }\n",
+            )
+            .unwrap(),
+        );
+        let violations = check(&MethodsLayout, &project);
+        assert!(
+            violations.iter().any(|d| d
+                .message
+                .contains("rename `methods/` to `__methods__/` and update the `#[path]` mount")),
+            "expected stale-folder diagnostic, got {violations:?}"
+        );
     }
 
     #[test]

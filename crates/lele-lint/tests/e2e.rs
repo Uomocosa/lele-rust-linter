@@ -58,6 +58,7 @@ fn expected(name: &str) -> Result<BTreeSet<(String, String)>, Box<dyn std::error
 #[case("violation_crate")]
 #[case("methods_crate")]
 #[case("methods_violation_crate")]
+#[case("stale_methods_crate")]
 fn test_crate_matches_expected(#[case] name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let found = findings(name)?;
     let wanted = expected(name)?;

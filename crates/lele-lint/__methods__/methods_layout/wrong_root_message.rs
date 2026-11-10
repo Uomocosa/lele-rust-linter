@@ -15,7 +15,7 @@ pub fn wrong_root_message(
         .as_ref()
         .and_then(|dir| dir.file_name())
         .and_then(|name| name.to_str())
-        .unwrap_or("methods");
+        .unwrap_or("__methods__");
     let mut names: Vec<&String> = expected
         .map(|roots| roots.iter().collect())
         .unwrap_or_default();

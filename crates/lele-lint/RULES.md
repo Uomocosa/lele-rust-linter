@@ -246,7 +246,7 @@ impl Default for Player {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -257,11 +257,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -288,7 +288,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -661,7 +661,7 @@ pub struct Item {
 }
 ```
 
-## Delegates: methods and `methods/`
+## Delegates: shells and `__methods__/`
 
 - [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
 - [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
@@ -669,10 +669,10 @@ pub struct Item {
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
-- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).
+- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
-- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
-- [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
+- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 ### LELE004 `method_visibility`
 
@@ -729,7 +729,7 @@ pub fn rename(player: &mut player::Player, name: String) {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -740,11 +740,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -771,7 +771,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -829,7 +829,7 @@ No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of
 
 **Why:** `src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.
 
-**Fix:** Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `methods/<type>/<fn>.rs`.
+**Fix:** Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `__methods__/<type>/<fn>.rs`.
 
 **Bad** (reports LELE008):
 
@@ -906,9 +906,9 @@ mod tests {
 
 Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
 
-**Why:** Longer methods belong in `methods/<type>/<method>.rs`; short ones stay readable as one line each.
+**Why:** Longer methods belong in `__methods__/<type>/<method>.rs`; short ones stay readable as one line each.
 
-**Fix:** Move each method longer than 3 statements to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
+**Fix:** Move each method longer than 3 statements to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
 
 **Bad** (reports LELE017):
 
@@ -1138,7 +1138,7 @@ mod tests {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod tree;
@@ -1149,18 +1149,18 @@ pub mod tree;
 ```rust
 pub mod tree;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/tree/mod.rs`
+`__methods__/tree/mod.rs`
 
 ```rust
 mod total;
 pub use total::total;
 ```
 
-`methods/tree/total.rs`
+`__methods__/tree/total.rs`
 
 ```rust
 use crate::tree;
@@ -1330,13 +1330,19 @@ mod tests {
 
 ### LELE030 `methods_layout`
 
-Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).
+Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
 
-**Why:** `methods/` hides bodies until you need them; the type file stays a short list of what the type can do.
+**Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do.
 
-**Fix:** Create `methods/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `methods/` `mod.rs` indexes.
+**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
 
 **Bad** (reports LELE030):
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
 
 `src/lib.rs`
 
@@ -1345,6 +1351,40 @@ pub mod player;
 
 #[path = "../methods/mod.rs"]
 pub mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    let healed = player.health.saturating_add(amount);
+    player.health = healed.min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
 ```
 
 `src/player/mod.rs`
@@ -1394,7 +1434,7 @@ mod tests {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1405,11 +1445,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1436,7 +1476,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -1492,13 +1532,13 @@ mod tests {
 
 Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
 
-**Why:** The macro wires each shell to `methods/<type>/<method>.rs`; one block per type means one place to read the type's API. The optional `pub(crate)`-only block lets internal helpers sit after inline `pub` fns, as `impl_item_order` requires.
+**Why:** The macro wires each shell to `__methods__/<type>/<method>.rs`; one block per type means one place to read the type's API. The optional `pub(crate)`-only block lets internal helpers sit after inline `pub` fns, as `impl_item_order` requires.
 
 **Fix:** Gather every empty-bodied shell of the type into one `#[atomic_delegates] impl <Type>` block (plus at most one block holding only `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
 
 **Bad** (reports LELE032):
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1509,11 +1549,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1540,7 +1580,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -1591,7 +1631,7 @@ mod tests {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1602,11 +1642,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1633,7 +1673,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -1687,11 +1727,11 @@ mod tests {
 
 ### LELE034 `no_free_functions`
 
-A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
-**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `methods/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
+**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
 
 **Bad** (reports LELE034):
 
@@ -1745,7 +1785,7 @@ pub struct Player {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1756,11 +1796,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1787,7 +1827,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -1841,15 +1881,15 @@ mod tests {
 
 ### LELE035 `methods_are_delegates`
 
-A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
+A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
-**Why:** `methods/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.
+**Why:** `__methods__/` holds bodies of the functions `src/` declares and nothing else; a helper or type there is machinery nobody finds from the type, so it becomes a `pub(crate)` method or type in `src/`.
 
 **Fix:** Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.
 
 **Bad** (reports LELE035):
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1860,11 +1900,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1895,7 +1935,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -1949,7 +1989,7 @@ mod tests {
 
 **Good:**
 
-`methods/mod.rs`
+`__methods__/mod.rs`
 
 ```rust
 pub mod player;
@@ -1960,11 +2000,11 @@ pub mod player;
 ```rust
 pub mod player;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 ```
 
-`methods/player/heal.rs`
+`__methods__/player/heal.rs`
 
 ```rust
 use crate::player;
@@ -1991,7 +2031,7 @@ mod tests {
 }
 ```
 
-`methods/player/mod.rs`
+`__methods__/player/mod.rs`
 
 ```rust
 mod heal;
@@ -4034,7 +4074,7 @@ pub use guest::Guest;
 ## Style
 
 - [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
-- [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
+- [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
 ### LELE024 `no_allow_attributes`
 
@@ -4125,7 +4165,7 @@ pub use guest::Guest;
 
 ### LELE031 `no_comments`
 
-No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
+No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
 **Why:** Names, signatures and the usage test carry the meaning; comments drift from the code they describe. A constant's name cannot say why its value holds, so `constants.rs` may keep `///` history notes recording where a value came from and what was measured.
 

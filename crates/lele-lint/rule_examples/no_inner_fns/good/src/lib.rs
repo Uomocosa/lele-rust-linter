@@ -1,4 +1,4 @@
 pub mod tree;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;

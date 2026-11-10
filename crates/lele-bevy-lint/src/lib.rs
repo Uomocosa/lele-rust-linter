@@ -6,5 +6,5 @@ pub use bevy_linter::BevyLinter;
 pub mod rules;
 pub mod scan;
 
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;

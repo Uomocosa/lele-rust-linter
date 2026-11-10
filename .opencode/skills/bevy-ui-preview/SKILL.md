@@ -416,7 +416,7 @@ mod tests {
 
 ### LELEBEVY006 `bevy_plugin_scene`
 
-A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
+A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `__methods__/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 
 **Why:** A plugin is the assembly point for a whole screen; its scene preview proves the assembled screen renders.
 

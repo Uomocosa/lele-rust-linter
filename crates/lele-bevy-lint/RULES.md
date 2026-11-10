@@ -168,7 +168,7 @@ pub enum Delta {
 - [LELEBEVY003 `bevy_ui`](#lelebevy003-bevy_ui): A file whose visual spawn is reachable from production must ship a `*_ui_png_preview` test whose `Scene::build` renders that spawn (or the file's `Plugin`) through `lele_bevy_preview::run(...)`.
 - [LELEBEVY004 `bevy_ui_mp4`](#lelebevy004-bevy_ui_mp4): A file that spawns UI reachable from production and drives it over time (`Time`, `Timer`, animation) must ship a `*_ui_mp4_preview` test whose `Scene` has a `Timeline`.
 - [LELEBEVY005 `bevy_ui_restyle`](#lelebevy005-bevy_ui_restyle): A file with a system that restyles UI (`&mut` on a styling component) must ship a preview that renders that system: a `*_ui_png_preview` with at least two `State`s when it is driven by input or state, or a `*_ui_mp4_preview` when it is driven by time.
-- [LELEBEVY006 `bevy_plugin_scene`](#lelebevy006-bevy_plugin_scene): A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
+- [LELEBEVY006 `bevy_plugin_scene`](#lelebevy006-bevy_plugin_scene): A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `__methods__/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 - [LELEBEVY007 `preview_routing`](#lelebevy007-preview_routing): Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.
 - [LELEBEVY008 `preview_centered`](#lelebevy008-preview_centered): A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.
 
@@ -363,7 +363,7 @@ mod tests {
 
 ### LELEBEVY006 `bevy_plugin_scene`
 
-A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `methods/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
+A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `__methods__/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 
 **Why:** A plugin is the assembly point for a whole screen; its scene preview proves the assembled screen renders.
 

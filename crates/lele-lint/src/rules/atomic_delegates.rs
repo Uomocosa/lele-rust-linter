@@ -16,8 +16,8 @@ impl AtomicDelegates {
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.",
-        why: "Longer methods belong in `methods/<type>/<method>.rs`; short ones stay readable as one line each.",
-        fix: "Move each method longer than 3 statements to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.",
+        why: "Longer methods belong in `__methods__/<type>/<method>.rs`; short ones stay readable as one line each.",
+        fix: "Move each method longer than 3 statements to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.",
         bad: rule_examples!("atomic_delegates/bad"),
         good: rule_examples!("atomic_delegates/good"),
     };

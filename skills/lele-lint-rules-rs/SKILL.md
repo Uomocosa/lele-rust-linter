@@ -40,7 +40,7 @@ A fix for one rule must not break another. Before saving, check the file against
   no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
 - Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).
 - A data type with no `impl` goes in the domain's `__basic__/` (LELE020).
-- A method body over 3 statements lives in `methods/<type>/<method>.rs` (LELE017, LELE030).
+- A method body over 3 statements lives in `__methods__/<type>/<method>.rs` (LELE017, LELE030).
 
 ## Layout: files and folders
 
@@ -59,27 +59,27 @@ A fix for one rule must not break another. Before saving, check the file against
 - **LELE038 `dunder_module_name`**: A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] pub mod basic;` and named `basic` everywhere in code.
   - Fix: Declare the folder as `#[path = "__basic__/mod.rs"] pub mod basic;` and write `basic::` in every path, never `__basic__`.
 
-## Delegates: methods and `methods/`
+## Delegates: shells and `__methods__/`
 
 - **LELE004 `method_visibility`**: A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
   - Fix: Change `pub mod <method_file>;` to `mod <method_file>;` and remove any `pub use` of it; callers use the type's method instead.
 - **LELE008 `helpers_are_methods`**: No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-  - Fix: Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `methods/<type>/<fn>.rs`.
+  - Fix: Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `__methods__/<type>/<fn>.rs`.
 - **LELE017 `atomic_delegates`**: Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
-  - Fix: Move each method longer than 3 statements to `methods/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
+  - Fix: Move each method longer than 3 statements to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
 - **LELE018 `constructor_no_skip`**: `impl Default` and real constructors are never `#[rustfmt::skip]`.
   - Fix: Move `impl Default` and real constructors out of the `#[rustfmt::skip]` block into an impl block without the attribute.
 - **LELE021 `no_inner_fns`**: No `fn` inside a function body, except a tree walk's inner `fn recursion`.
   - Fix: Lift the inner `fn` out of the body into a `pub(crate)` method or associated fn of the type that owns the outer function; only a tree walk's `fn recursion` may stay inside.
 - **LELE027 `impl_item_order`**: A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
   - Fix: Reorder the type's impl blocks and items: `impl Default`, constructors and `From`/`TryFrom`/`FromStr`, other trait impls, `pub` fns, then `pub(crate)` fns.
-- **LELE030 `methods_layout`**: Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).
-  - Fix: Create `methods/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `methods/` `mod.rs` indexes.
+- **LELE030 `methods_layout`**: Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
+  - Fix: Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
 - **LELE032 `delegate_macro`**: Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per type, plus at most one more holding only `pub(crate)` shells; `new` is never delegated.
   - Fix: Gather every empty-bodied shell of the type into one `#[atomic_delegates] impl <Type>` block (plus at most one block holding only `pub(crate)` shells), keep hand-written methods in a plain block, and never delegate `new`.
-- **LELE034 `no_free_functions`**: A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `methods/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
-  - Fix: Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `methods/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
-- **LELE035 `methods_are_delegates`**: A `methods/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
+- **LELE034 `no_free_functions`**: A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `bevy_systems/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+  - Fix: Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
+- **LELE035 `methods_are_delegates`**: A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
   - Fix: Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.
 
 ## Imports and re-exports
@@ -133,7 +133,7 @@ A fix for one rule must not break another. Before saving, check the file against
 
 - **LELE024 `no_allow_attributes`**: No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
   - Fix: Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.
-- **LELE031 `no_comments`**: No comments in `src/` or `methods/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
+- **LELE031 `no_comments`**: No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
   - Fix: Delete the comment and move its meaning into names, types or the `test_usage` test; in a file named exactly `constants.rs` keep `///` history notes and delete `//` and `/* */`.
 
 ## Crate config

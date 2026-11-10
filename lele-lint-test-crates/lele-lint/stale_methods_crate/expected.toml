@@ -1,0 +1,19 @@
+[[violations]]
+file = "methods"
+code = "LELE030"
+
+[[violations]]
+file = "click_counter/increment.rs"
+code = "LELE030"
+
+[[violations]]
+file = "click_counter/add.rs"
+code = "LELE030"
+
+[[violations]]
+file = "click_counter/mod.rs"
+code = "LELE030"
+
+[[violations]]
+file = "mod.rs"
+code = "LELE030"

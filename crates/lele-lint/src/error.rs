@@ -12,7 +12,7 @@ pub enum Error {
     #[error("scan folder not found or not a directory: {}", .0.display())]
     NoScanFolder(std::path::PathBuf),
 
-    #[error("methods layout requested but no `methods/` directory was found")]
+    #[error("methods layout requested but no `__methods__/` directory was found")]
     NoMethodsDir,
 
     #[error("filesystem error")]

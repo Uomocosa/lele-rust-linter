@@ -47,7 +47,7 @@ A fix for one rule must not break another. Before saving, check the file against
   no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
 - Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).
 - A data type with no `impl` goes in the domain's `__basic__/` (LELE020).
-- A method body over 3 statements lives in `methods/<type>/<method>.rs` (LELE017, LELE030).
+- A method body over 3 statements lives in `__methods__/<type>/<method>.rs` (LELE017, LELE030).
 
 ";
 

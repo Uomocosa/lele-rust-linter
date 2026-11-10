@@ -29,7 +29,7 @@ pub enum Origin {
 pub enum Category {
     #[display("Layout: files and folders")]
     Layout,
-    #[display("Delegates: methods and `methods/`")]
+    #[display("Delegates: shells and `__methods__/`")]
     Delegates,
     #[display("Imports and re-exports")]
     Imports,

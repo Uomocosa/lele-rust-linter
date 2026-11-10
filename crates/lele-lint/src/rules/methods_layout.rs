@@ -19,9 +19,9 @@ impl MethodsLayout {
     pub const CODE: &'static str = "LELE030";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
-        summary: "Every `#[atomic_delegates]` shell has a body at `methods/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`).",
-        why: "`methods/` hides bodies until you need them; the type file stays a short list of what the type can do.",
-        fix: "Create `methods/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `methods/` `mod.rs` indexes.",
+        summary: "Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.",
+        why: "The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do.",
+        fix: "Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = \"../__methods__/mod.rs\"]`.",
         bad: rule_examples!("methods_layout/bad"),
         good: rule_examples!("methods_layout/good"),
     };
@@ -128,6 +128,7 @@ impl MethodsLayout {
     }
     pub(crate) fn check_duplicates(project: &Project) -> Vec<RuleViolation> {}
     pub(crate) fn check_root_collisions(project: &Project) -> Vec<RuleViolation> {}
+    pub(crate) fn check_stale_methods_folder(project: &Project) -> Vec<RuleViolation> {}
 }
 
 // no test_usage necessary

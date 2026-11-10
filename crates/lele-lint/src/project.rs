@@ -89,7 +89,7 @@ impl Project {
     pub fn absolute_path(&self, origin: Origin, rel_path: &Path) -> PathBuf {
         match origin {
             Origin::Src => self.absolute_src_path(rel_path),
-            Origin::Methods => self.methods_dir.clone().unwrap_or_else(|| self.root.join("methods")).join(rel_path),
+            Origin::Methods => self.methods_dir.clone().unwrap_or_else(|| self.root.join("__methods__")).join(rel_path),
             Origin::Examples => self.root.join("examples").join(rel_path),
         }
     }

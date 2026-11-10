@@ -108,9 +108,6 @@ impl Project {
     pub fn dunder_dir(&self) -> Option<String> {
         self.dunder_paths.iter().find(|dunder| dunder.is_dunder_dir()).and_then(|dunder| dunder.file_name()).and_then(|name| name.to_str()).map(String::from)
     }
-    pub fn is_in_bevy_systems_dir(&self, rel_path: &Path) -> bool {
-        rel_path.components().any(|component| self.dunder_paths.iter().any(|dunder| dunder.is_bevy_systems_dir() && dunder.file_name() == Some(component.as_os_str())))
-    }
     pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {
         self.sources()
             .filter(|source| !matches!(source.origin, Origin::Examples))
@@ -148,10 +145,8 @@ impl Project {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
     use std::path::PathBuf;
 
-    use crate::DunderPath;
     use crate::Origin;
     use crate::Project;
 
@@ -173,17 +168,6 @@ mod tests {
             .collect();
         assert_eq!(origins.len(), 2);
         assert!(!origins.contains(&Origin::Examples));
-    }
-
-    #[test]
-    fn test_usage_is_in_bevy_systems_dir() {
-        let project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        assert!(project.is_in_bevy_systems_dir(Path::new("player/__bevy_systems__/poll_input.rs")));
-        assert!(!project.is_in_bevy_systems_dir(Path::new("player/bevy_systems/poll_input.rs")));
-        assert!(!project.is_in_bevy_systems_dir(Path::new("player/__basic__/enums.rs")));
     }
 
     #[test]

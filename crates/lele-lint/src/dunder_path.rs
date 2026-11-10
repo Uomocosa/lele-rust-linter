@@ -4,7 +4,10 @@ use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use serde::Deserialize;
 
+use crate::DunderKind;
 use crate::Error;
+
+const CODE_DUNDER_MODULES: [&str; 1] = ["bevy_systems"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Deref, Deserialize)]
 #[serde(try_from = "PathBuf")]
@@ -36,8 +39,13 @@ impl DunderPath {
     }
     pub fn is_dunder_dir(&self) -> bool { self.extension().is_none() }
     pub fn is_dunder_file(&self) -> bool { self.extension().is_some() }
-    pub fn is_bevy_systems_dir(&self) -> bool {
-        self.is_dunder_dir() && self.module_name() == "bevy_systems"
+    pub fn is_container(&self) -> bool { self.kind() == DunderKind::Container }
+    pub(crate) fn kind(&self) -> DunderKind {
+        if CODE_DUNDER_MODULES.contains(&self.module_name()) {
+            DunderKind::Code
+        } else {
+            DunderKind::Container
+        }
     }
 }
 
@@ -46,6 +54,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::DunderPath;
+    use crate::DunderKind;
 
     #[test]
     fn test_usage() {
@@ -66,7 +75,9 @@ mod tests {
         assert_eq!(defaults.len(), 2);
         assert_eq!(defaults[0].module_name(), "basic");
         assert_eq!(defaults[1].module_name(), "bevy_systems");
-        assert!(defaults[1].is_bevy_systems_dir());
-        assert!(!defaults[0].is_bevy_systems_dir());
+        assert_eq!(defaults[0].kind(), DunderKind::Container);
+        assert_eq!(defaults[1].kind(), DunderKind::Code);
+        assert!(defaults[0].is_container());
+        assert!(!defaults[1].is_container());
     }
 }

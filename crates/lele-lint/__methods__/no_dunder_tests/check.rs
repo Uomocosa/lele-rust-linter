@@ -11,7 +11,7 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        if !project.is_in_dunder_dir(rel_path) || project.is_in_bevy_systems_dir(rel_path) {
+        if !project.is_in_dunder_dir(rel_path) {
             continue;
         }
         for item in &file.items {

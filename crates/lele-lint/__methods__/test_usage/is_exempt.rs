@@ -19,7 +19,7 @@ pub fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {
         return true;
     }
 
-    if project.is_dunder_path(rel_path) && !project.is_in_bevy_systems_dir(rel_path) {
+    if project.is_dunder_path(rel_path) {
         return true;
     }
 

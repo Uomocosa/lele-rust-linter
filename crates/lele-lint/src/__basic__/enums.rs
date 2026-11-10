@@ -56,3 +56,9 @@ pub(crate) enum ImplItemGroup {
     #[display("`pub(crate)` fn")]
     CrateFn,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DunderKind {
+    Container,
+    Code,
+}

@@ -246,6 +246,25 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_bevy_systems_file_stays_fully_checked() {
+        let project = Project {
+            dunder_paths: DunderPath::defaults(),
+            root: PathBuf::from("."),
+            src_dir: PathBuf::from("src"),
+            parsed_files: std::collections::HashMap::from([(
+                PathBuf::from("direct_dial/__bevy_systems__/poll_input.rs"),
+                syn::parse_str("pub fn poll_input() {}\npub fn poll_input_more() {}\n").unwrap(),
+            )]),
+            ..Project::default()
+        };
+        let violations = check(&AtomicFile, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0]
+            .message
+            .contains("only one public item per file"));
+    }
+
+    #[test]
     fn test_usage_non_bevy_systems_lookalike_still_flagged() {
         let project = shape_project(&[
             ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),

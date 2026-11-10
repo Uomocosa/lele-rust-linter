@@ -9,6 +9,7 @@ pub use config::Config;
 #[path = "__basic__/mod.rs"]
 pub mod basic;
 pub use basic::enums::Category;
+pub(crate) use basic::enums::DunderKind;
 pub use basic::enums::EntryKind;
 pub(crate) use basic::enums::ImplItemGroup;
 pub use basic::enums::Location;

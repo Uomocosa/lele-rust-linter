@@ -7,7 +7,7 @@ pub fn is_in_dunder_dir(project: &Project, rel_path: &Path) -> bool {
     let dirs: Vec<&DunderPath> = project
         .dunder_paths
         .iter()
-        .filter(|dunder| dunder.is_dunder_dir())
+        .filter(|dunder| dunder.is_dunder_dir() && dunder.is_container())
         .collect();
     rel_path.components().any(|component| {
         dirs.iter()
@@ -31,6 +31,10 @@ mod tests {
         assert!(is_in_dunder_dir(
             &project,
             Path::new("player/__basic__/enums.rs")
+        ));
+        assert!(!is_in_dunder_dir(
+            &project,
+            Path::new("player/__bevy_systems__/poll_input.rs")
         ));
         assert!(!is_in_dunder_dir(&project, Path::new("player/player.rs")));
     }

@@ -7,13 +7,11 @@ pub struct ImplBlock<'a>(pub &'a syn::ItemImpl);
 #[atomic_delegates]
 impl ImplBlock<'_> {
     pub fn delegate_body_name(self, method: &syn::Ident) -> String {}
+    pub fn is_default_impl(self) -> bool {}
 }
 
 #[rustfmt::skip]
 impl ImplBlock<'_> {
-    pub fn is_default_impl(&self) -> bool {
-        self.trait_.as_ref().is_some_and(|(_, trait_path, _)| trait_path.segments.last().is_some_and(|s| s.ident == "Default"))
-    }
     pub fn self_type_last(&self) -> Option<String> {
         match &*self.self_ty {
             syn::Type::Path(tp) => tp.path.segments.last().map(|s| s.ident.to_string()),

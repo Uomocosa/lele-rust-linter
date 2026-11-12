@@ -28,15 +28,13 @@ impl TryFrom<PathBuf> for DunderPath {
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {}
 }
 
+#[atomic_delegates]
+impl DunderPath {
+    pub fn module_name(&self) -> &str {}
+}
+
 #[rustfmt::skip]
 impl DunderPath {
-    pub fn module_name(&self) -> &str {
-        self.file_stem()
-            .and_then(|stem| stem.to_str())
-            .and_then(|stem| stem.strip_prefix("__"))
-            .and_then(|rest| rest.strip_suffix("__"))
-            .unwrap_or_default()
-    }
     pub fn is_dunder_dir(&self) -> bool { self.extension().is_none() }
     pub fn is_dunder_file(&self) -> bool { self.extension().is_some() }
     pub fn is_container(&self) -> bool { self.kind() == DunderKind::Container }

@@ -4,11 +4,9 @@ use atomic_delegate_macros::atomic_delegates;
 use crate::traits::Rule;
 use crate::ErrorFormat;
 use crate::ExampleFile;
-use crate::Location;
 use crate::Project;
 use crate::RuleViolation;
 use std::fmt::Write as _;
-use std::io::IsTerminal as _;
 use std::io::Write;
 
 pub struct Linter {
@@ -44,41 +42,23 @@ impl Linter {
     ) -> String {
     }
     pub fn render_summary(violations: &[RuleViolation], color: bool) -> String {}
+    pub fn explain(&self, code_or_name: &str) -> Option<String> {}
+}
+
+#[atomic_delegates]
+impl Linter {
+    pub(crate) fn use_color() -> bool {}
+    pub(crate) fn print_github(d: &RuleViolation, w: &mut impl Write) {}
 }
 
 #[rustfmt::skip]
 impl Linter {
-    pub fn explain(&self, code_or_name: &str) -> Option<String> {
-        self.rules
-            .iter()
-            .find(|c| c.code().eq_ignore_ascii_case(code_or_name) || c.name() == code_or_name)
-            .map(|c| Self::render_rule(c.as_ref()))
-    }
-    pub(crate) fn use_color() -> bool {
-        std::env::var_os("CLICOLOR_FORCE").is_some_and(|value| value != "0")
-            || (std::env::var_os("NO_COLOR").is_none() && std::io::stderr().is_terminal())
-    }
     pub(crate) fn paint(color: bool, style: &str, text: &str) -> String {
         if color { format!("\x1b[{style}m{text}\x1b[0m") } else { text.to_owned() }
     }
-    pub(crate) fn print_github(d: &RuleViolation, w: &mut impl Write) {
-        let _ = match d.location {
-            Location::File => writeln!(
-                w,
-                "::error file={file},line=1,title={code}::{message}",
-                file = d.file.display(),
-                code = d.code,
-                message = d.message
-            ),
-            Location::Site { line, col } => writeln!(
-                w,
-                "::error file={file},line={line},col={col},title={code}::{message}",
-                file = d.file.display(),
-                code = d.code,
-                message = d.message
-            ),
-        };
-    }
+}
+
+impl Linter {
     pub(crate) fn render_files(files: &[ExampleFile]) -> String {
         let mut out = String::new();
         for file in files {

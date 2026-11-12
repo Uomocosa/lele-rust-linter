@@ -10,15 +10,18 @@ impl ItemMarker<'_> {
     pub fn is_cfg_test(self) -> bool {}
     pub fn is_rustfmt_skip(self) -> bool {}
     pub fn derives_any_of(self, names: &[&str]) -> bool {}
+    pub fn is_named(self, name: &str) -> bool {}
+    pub fn derives_data_shape(self) -> bool {}
 }
 
 #[rustfmt::skip]
 impl ItemMarker<'_> {
-    pub fn is_named(&self, name: &str) -> bool { self.path().segments.last().is_some_and(|segment| segment.ident == name) }
     pub fn is_atomic_delegates(&self) -> bool { self.is_named("atomic_delegates") }
     pub fn is_atomic_delegate(&self) -> bool { self.is_named("atomic_delegate") }
     pub fn is_test(&self) -> bool { self.is_named("test") }
-    pub fn derives_data_shape(&self) -> bool { self.derives_any_of(&["Serialize", "Deserialize", "Parser", "Args", "Subcommand", "ValueEnum"]) }
+}
+
+impl ItemMarker<'_> {
     pub(crate) fn all_contains_test(meta: &ParseNestedMeta) -> syn::Result<()> {
         let mut found = false;
         let _ = meta.parse_nested_meta(|inner| {

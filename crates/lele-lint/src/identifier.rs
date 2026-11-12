@@ -1,27 +1,30 @@
 use std::collections::HashSet;
 
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use lele_snake_case::traits::ToLeleSnakeCase;
 
 #[derive(Clone, Copy, Deref)]
 pub struct Identifier<'a>(pub &'a str);
 
+#[atomic_delegates]
+impl Identifier<'_> {
+    pub fn to_pascal_case(&self) -> String {}
+}
+
 #[rustfmt::skip]
-impl<'a> Identifier<'a> {
-    pub fn to_pascal_case(&self) -> String {
-        self.split('_')
-            .map(|word| {
-                let mut chars = word.chars();
-                chars.next().map_or_else(String::new, |first| first.to_ascii_uppercase().to_string() + &chars.as_str().to_lowercase())
-            })
-            .collect()
-    }
+impl Identifier<'_> {
     pub fn is_stuttered_in(&self, module: &str) -> bool {
         self.chars().next().is_some_and(|c| c.is_uppercase()) && self.to_snake_case() == module
     }
+}
+
+impl<'a> Identifier<'a> {
     pub fn longest_type_prefix(&self, known: &HashSet<String>) -> Option<&'a str> {
         let stem: &'a str = **self;
-        stem.match_indices('_').rev().find_map(|(pos, _)| stem.get(..pos).filter(|prefix| known.contains(*prefix)))
+        stem.match_indices('_')
+            .rev()
+            .find_map(|(pos, _)| stem.get(..pos).filter(|prefix| known.contains(*prefix)))
     }
 }
 

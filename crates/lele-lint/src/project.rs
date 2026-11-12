@@ -71,6 +71,11 @@ impl Project {
     pub fn collect_shell_roots(&self) -> BTreeMap<(String, String), BTreeSet<String>> {}
     pub fn collect_type_roots(&self) -> BTreeMap<String, BTreeMap<String, PathBuf>> {}
     pub fn split_methods_rel(&self, rel: &Path) -> (Option<String>, PathBuf) {}
+    pub fn methods_root_name(&self) -> String {}
+    pub fn layout_root_names(&self) -> Vec<String> {}
+    pub fn methods_in_root(&self, type_snake: &str, root: &str) -> BTreeSet<String> {}
+    pub fn dunder_dir(&self) -> Option<String> {}
+    pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {}
 }
 
 #[rustfmt::skip]
@@ -79,27 +84,6 @@ impl Project {
         self.parsed_files.get(rel_path)
     }
     pub fn is_multi_root(&self) -> bool { self.layout_roots.len() > 1 }
-    pub fn methods_root_name(&self) -> String {
-        self.methods_dir
-            .as_ref()
-            .and_then(|dir| dir.file_name())
-            .and_then(|name| name.to_str())
-            .unwrap_or("__methods__")
-            .to_string()
-    }
-    pub fn methods_mount_name(&self) -> String {
-        let name = self.methods_root_name();
-        name.strip_prefix("__")
-            .and_then(|inner| inner.strip_suffix("__"))
-            .unwrap_or(&name)
-            .to_string()
-    }
-    pub fn layout_root_names(&self) -> Vec<String> {
-        self.layout_roots.iter().map(|root| root.file_name().and_then(|name| name.to_str()).map_or_else(|| root.to_string_lossy().into_owned(), str::to_string)).collect()
-    }
-    pub fn methods_in_root(&self, type_snake: &str, root: &str) -> BTreeSet<String> {
-        self.collect_shell_roots().into_iter().filter_map(|((found_type, method), roots)| (found_type == type_snake && roots.iter().any(|name| name == root)).then_some(method)).collect()
-    }
     pub fn config_base(&self) -> PathBuf {
         if self.config_dir.as_os_str().is_empty() {
             self.root.clone()
@@ -114,12 +98,15 @@ impl Project {
             Origin::Examples => self.root.join("examples").join(rel_path),
         }
     }
-    pub fn dunder_dir(&self) -> Option<String> {
-        self.dunder_paths.iter().find(|dunder| dunder.is_dunder_dir()).and_then(|dunder| dunder.file_name()).and_then(|name| name.to_str()).map(String::from)
-    }
-    pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {
-        self.sources()
-            .filter(|source| !matches!(source.origin, Origin::Examples))
+}
+
+impl Project {
+    pub fn methods_mount_name(&self) -> String {
+        let name = self.methods_root_name();
+        name.strip_prefix("__")
+            .and_then(|inner| inner.strip_suffix("__"))
+            .unwrap_or(&name)
+            .to_string()
     }
     pub(crate) fn module_cfgs(module_info: &ModuleInfoMap) -> common::ModuleCfgMap {
         let mut map = common::ModuleCfgMap::new();

@@ -2,7 +2,6 @@ use std::path::Path;
 
 use atomic_delegate_macros::atomic_delegates;
 
-use crate::ItemMarker;
 use crate::Origin;
 use crate::RuleViolation;
 
@@ -20,19 +19,7 @@ impl ParsedSource<'_> {
         check: impl Fn(&syn::ItemStruct, &Path) -> Vec<RuleViolation>,
     ) -> Vec<RuleViolation> {
     }
-}
-
-#[rustfmt::skip]
-impl ParsedSource<'_> {
-    pub fn has_test_usage(&self) -> bool {
-        self.file.items.iter().any(|item| {
-            let syn::Item::Mod(module) = item else { return false };
-            module.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test())
-                && module.content.as_ref().is_some_and(|(_, items)| {
-                    items.iter().any(|inner| matches!(inner, syn::Item::Fn(func) if func.sig.ident == "test_usage"))
-                })
-        })
-    }
+    pub fn has_test_usage(&self) -> bool {}
 }
 
 #[cfg(test)]

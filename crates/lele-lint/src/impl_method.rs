@@ -1,23 +1,27 @@
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 
 use quote::ToTokens;
 
-use crate::FnBody;
 use crate::ImplItemGroup;
 
 #[derive(Clone, Copy, Deref)]
 pub struct ImplMethod<'a>(pub &'a syn::ImplItemFn);
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl ImplMethod<'_> {
-    pub fn is_real_constructor(&self) -> bool {
-        self.sig.receiver().is_none()
-            && self.sig.output.to_token_stream().to_string().split_whitespace().any(|token| token == "Self")
-            && !FnBody(&self.block).is_delegate_call()
-            && !FnBody(&self.block).is_methods_dispatch()
-    }
+    pub fn is_real_constructor(self) -> bool {}
+}
+
+impl ImplMethod<'_> {
     pub(crate) fn order_group(self) -> ImplItemGroup {
-        let returns_self = self.sig.output.to_token_stream().to_string().split_whitespace().any(|token| token == "Self");
+        let returns_self = self
+            .sig
+            .output
+            .to_token_stream()
+            .to_string()
+            .split_whitespace()
+            .any(|token| token == "Self");
         if self.sig.receiver().is_none() && returns_self {
             ImplItemGroup::Constructor
         } else if matches!(self.vis, syn::Visibility::Public(_)) {

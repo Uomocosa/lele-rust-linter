@@ -12,13 +12,9 @@ impl RawCode<'_> {
     pub fn ends_with_test_usage_opt_out(&self) -> bool {}
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl RawCode<'_> {
-    pub(crate) fn line_of(source: &str, offset: usize) -> usize {
-        source
-            .get(..offset)
-            .map_or(1, |prefix| prefix.matches('\n').count().saturating_add(1))
-    }
+    pub(crate) fn line_of(source: &str, offset: usize) -> usize {}
 }
 
 #[cfg(test)]

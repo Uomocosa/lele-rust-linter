@@ -1,6 +1,10 @@
 mod derives_any_of;
+mod derives_data_shape;
 mod is_cfg_test;
+mod is_named;
 mod is_rustfmt_skip;
 pub use derives_any_of::derives_any_of;
+pub use derives_data_shape::derives_data_shape;
 pub use is_cfg_test::is_cfg_test;
+pub use is_named::is_named;
 pub use is_rustfmt_skip::is_rustfmt_skip;

@@ -3487,7 +3487,7 @@ No positional field access (`.0`, `.1`).
 
 **Why:** A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.
 
-**Fix:** Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields.
+**Fix:** Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields; destructure a plain tuple instead (`let (a, b) = pair;`).
 
 **Bad** (reports LELE010):
 

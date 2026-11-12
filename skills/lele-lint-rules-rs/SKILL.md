@@ -106,7 +106,7 @@ A fix for one rule must not break another. Before saving, check the file against
 ## Types
 
 - **LELE010 `no_positional`**: No positional field access (`.0`, `.1`).
-  - Fix: Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields.
+  - Fix: Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields; destructure a plain tuple instead (`let (a, b) = pair;`).
 - **LELE012 `no_stuttered_type`**: A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
   - Fix: Drop the folder name from the type name (`freenet::FreenetClient` → `freenet::Client`) and update every use.
 - **LELE014 `no_trivial_accessors`**: No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).

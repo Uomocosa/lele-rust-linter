@@ -36,7 +36,7 @@ pub fn scan_entries(entries: &[Entry]) -> Vec<RuleViolation> {
                 hit.line,
                 0,
                 rules::no_comments::NoComments::CODE,
-                "comment in `src/`/`methods/` — delete it and put its meaning in names, types or the test"
+                "comment in `src/`/`__methods__/` — delete it and put its meaning in names, types or the test"
                     .to_string(),
             ));
         }

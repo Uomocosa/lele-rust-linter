@@ -14,7 +14,7 @@ impl<'ast> Visit<'ast> for PositionalVisitor {
             self.violations.push(RuleViolation::from_file(
                 self.file_path.clone(),
                 rules::no_positional::NoPositional::CODE,
-                "positional field access — deref a single-field newtype (`*value`) or use named fields".to_string(),
+                "positional field access — deref a single-field newtype (`*value`) or use named fields; destructure a plain tuple instead (`let (a, b) = pair;`)".to_string(),
             ));
         }
         syn::visit::visit_expr_field(self, node);

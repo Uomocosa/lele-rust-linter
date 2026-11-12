@@ -435,6 +435,34 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_plain_path_call_body_is_not_a_delegate() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("resubscribe_gate.rs"),
+            syn::parse_str(
+                "pub struct ResubscribeGate;\n#[rustfmt::skip]\nimpl ResubscribeGate {\n    pub fn answered(&mut self) -> u32 { std::mem::take(&mut self.unanswered) }\n}\n",
+            )
+            .unwrap(),
+        );
+        assert!(check(&DelegateMacro, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_module_call_with_receiver_in_plain_impl_is_flagged() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("player.rs"),
+            syn::parse_str(
+                "pub struct Player;\n#[rustfmt::skip]\nimpl Player {\n    pub fn heal(&mut self, amount: u32) { player_heal::heal(self, amount) }\n}\n",
+            )
+            .unwrap(),
+        );
+        let violations = check(&DelegateMacro, &project);
+        assert_eq!(violations.len(), 1, "{violations:?}");
+        assert!(violations[0].message.contains("__methods__/player/heal.rs"));
+    }
+
+    #[test]
     fn test_usage_message_names_mirror_files() {
         let mut project = Project::default();
         project.parsed_files.insert(

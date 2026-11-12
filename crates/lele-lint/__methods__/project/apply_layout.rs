@@ -11,6 +11,9 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
             .clippy_allow_whitelist
             .clone_from(&section.lint.clippy_allow_whitelist);
         project.entry_points.clone_from(&section.lint.entry_points);
+        project
+            .collection_wrappers
+            .clone_from(&section.lint.collection_wrappers);
         project.boundaries.clone_from(&section.boundary);
     }
 

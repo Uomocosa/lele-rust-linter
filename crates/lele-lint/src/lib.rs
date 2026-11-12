@@ -16,8 +16,9 @@ pub use basic::enums::Location;
 pub use basic::enums::Origin;
 pub use basic::enums::Requirement;
 pub use basic::structs::{
-    AllowWhitelistEntry, BoundaryEntry, EntryPoint, ExampleFile, LayoutSection, LeleSection,
-    LeleToml, LeleTomlLintSections, ModDecl, ParseFailure, Reexport, RuleDoc, ScannedDir,
+    AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
+    LayoutSection, LeleSection, LeleToml, LeleTomlLintSections, ModDecl, ParseFailure, Reexport,
+    RuleDoc, ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub mod dunder_path;

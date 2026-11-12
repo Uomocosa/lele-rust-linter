@@ -1,0 +1,6 @@
+[lele.lint]
+
+[[lele.lint.collection_wrappers]]
+type = "Deck"
+file = "src/lobby/deck.rs"
+reason = "at most 52 cards"

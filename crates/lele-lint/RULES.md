@@ -3475,7 +3475,7 @@ mod tests {
 - [LELE012 `no_stuttered_type`](#lele012-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
 - [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
 - [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
-- [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
+- [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.lint.collection_wrappers]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
 - [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. `async fn`, `const fn` and fns whose argument is generic (`impl Trait` or a type parameter) cannot be written as a trait impl and are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.
 - [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
 - [LELE039 `no_stringified_errors`](#lele039-no_stringified_errors): A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
@@ -3820,11 +3820,11 @@ pub struct Meters(pub u32);
 
 ### LELE026 `no_collection_newtype`
 
-No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`.
+No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.lint.collection_wrappers]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
 
-**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource.
+**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource. Keep a wrapper only when the collection has a rule every holder must respect (size cap, ordering, uniqueness) — `Deck(Vec<Card>)` with at most 52 cards is one, `Rooms(Vec<Room>)` with nothing to enforce is not. Then ask the user to list it in `[[lele.lint.collection_wrappers]]` (the entry is the user's decision, never yours), give it a private field, `#[derive(Deref)]` without `DerefMut`, and check the invariant in `TryFrom` or its methods; inside them reach the collection with `let Self(cards) = self;`.
 
 **Bad** (reports LELE026):
 
@@ -3860,10 +3860,48 @@ pub struct Rooms(pub Vec<String>);
 
 **Good:**
 
+`lele.toml`
+
+```toml
+[lele.lint]
+
+[[lele.lint.collection_wrappers]]
+type = "Deck"
+file = "src/lobby/deck.rs"
+reason = "at most 52 cards"
+```
+
 `src/lib.rs`
 
 ```rust
 pub mod lobby;
+```
+
+`src/lobby/deck.rs`
+
+```rust
+use crate::lobby;
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Deck(Vec<lobby::Card>);
+
+impl TryFrom<Vec<lobby::Card>> for Deck {
+    type Error = Vec<lobby::Card>;
+    fn try_from(cards: Vec<lobby::Card>) -> Result<Self, Self::Error> {
+        if cards.len() > 52 { Err(cards) } else { Ok(Self(cards)) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Deck;
+
+    #[test]
+    fn test_usage() {
+        assert!(Deck::try_from(Vec::new()).is_ok());
+    }
+}
 ```
 
 `src/lobby/mod.rs`
@@ -3872,8 +3910,12 @@ pub mod lobby;
 #[path = "__basic__/mod.rs"]
 mod basic;
 
+mod deck;
+
 pub use basic::newtypes::Room;
 pub use basic::resources::PeerNames;
+pub use basic::structs::Card;
+pub use deck::Deck;
 ```
 
 `src/lobby/__basic__/mod.rs`
@@ -3881,6 +3923,7 @@ pub use basic::resources::PeerNames;
 ```rust
 pub mod newtypes;
 pub mod resources;
+pub mod structs;
 ```
 
 `src/lobby/__basic__/newtypes.rs`
@@ -3899,6 +3942,15 @@ use derive_more::Deref;
 
 #[derive(Resource, Deref)]
 pub struct PeerNames(pub Vec<String>);
+```
+
+`src/lobby/__basic__/structs.rs`
+
+```rust
+pub struct Card {
+    pub rank: u8,
+    pub suit: u8,
+}
 ```
 
 ### LELE036 `conversion_is_from`

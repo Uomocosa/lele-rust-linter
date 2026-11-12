@@ -54,6 +54,17 @@ pub struct LeleTomlLintSections {
     pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
     #[serde(default)]
     pub entry_points: Vec<EntryPoint>,
+    #[serde(default)]
+    pub collection_wrappers: Vec<CollectionWrapperEntry>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct CollectionWrapperEntry {
+    #[serde(rename = "type")]
+    pub type_name: String,
+    pub file: std::path::PathBuf,
+    pub reason: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

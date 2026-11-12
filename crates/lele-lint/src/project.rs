@@ -9,6 +9,7 @@ use atomic_delegate_macros::atomic_delegates;
 use crate::common;
 use crate::AllowWhitelistEntry;
 use crate::BoundaryEntry;
+use crate::CollectionWrapperEntry;
 use crate::Config;
 use crate::DunderPath;
 use crate::Entry;
@@ -33,6 +34,7 @@ pub struct Project {
     pub dunder_paths: Vec<DunderPath>,
     pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
     pub entry_points: Vec<EntryPoint>,
+    pub collection_wrappers: Vec<CollectionWrapperEntry>,
     pub methods_dir: Option<PathBuf>,
     pub methods_entries: Vec<Entry>,
     pub methods_parsed_files: HashMap<PathBuf, syn::File>,

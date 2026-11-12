@@ -39,6 +39,7 @@ pub fn check(
                 let sig = &method.sig;
                 if sig.receiver().is_some()
                     || sig.ident == "new"
+                    || rules::conversion_is_from::ConversionIsFrom::is_exempt_from_conversion(sig)
                     || rules::conversion_is_from::ConversionIsFrom::takes_self_typed_argument(
                         sig, &self_name,
                     )
@@ -85,6 +86,7 @@ pub fn check(
                 let sig = &method.sig;
                 if sig.receiver().is_some()
                     || sig.ident == "new"
+                    || rules::conversion_is_from::ConversionIsFrom::is_exempt_from_conversion(sig)
                     || rules::conversion_is_from::ConversionIsFrom::takes_self_typed_argument(
                         sig, &self_name,
                     )
@@ -163,6 +165,50 @@ mod tests {
         assert_eq!(messages.len(), 2, "{messages:?}");
         assert!(messages[0].contains("impl From<& str> for Reading"));
         assert!(messages[1].contains("impl TryFrom<u64> for Reading"));
+    }
+
+    #[test]
+    fn test_usage_async_const_and_generic_builders_are_exempt() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("session.rs"),
+            syn::parse_str(
+                "pub struct Session;
+                impl Session {
+                    pub async fn connect(url: &str) -> std::io::Result<Self> {}
+                    pub const fn sized(size: usize) -> Self {}
+                    pub fn named(name: impl Into<String>) -> Self {}
+                    pub fn tagged<T: Into<String>>(tag: T) -> Self {}
+                }",
+            )
+            .unwrap(),
+        );
+        let violations = check(&ConversionIsFrom, &project);
+        assert!(violations.is_empty(), "{violations:?}");
+    }
+
+    #[test]
+    fn test_usage_plain_builder_with_primitive_argument_advises_newtype() {
+        let mut project = Project::default();
+        project.parsed_files.insert(
+            PathBuf::from("deck.rs"),
+            syn::parse_str(
+                "pub struct Deck;
+                impl Deck {
+                    pub fn sized(size: usize) -> Self {}
+                }",
+            )
+            .unwrap(),
+        );
+        let messages: Vec<String> = check(&ConversionIsFrom, &project)
+            .into_iter()
+            .map(|v| v.message)
+            .collect();
+        assert_eq!(messages.len(), 1, "{messages:?}");
+        assert!(
+            messages[0].contains("name the argument first"),
+            "{messages:?}"
+        );
     }
 
     #[test]

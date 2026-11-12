@@ -1,8 +1,10 @@
 mod advice;
 mod check;
 mod constructed_shape;
+mod has_generic_argument;
 mod single_argument_type;
 pub use advice::advice;
 pub use check::check;
 pub use constructed_shape::constructed_shape;
+pub use has_generic_argument::has_generic_argument;
 pub use single_argument_type::single_argument_type;

@@ -3,10 +3,10 @@ pub struct Reading {
     pub celsius: i32,
 }
 
-impl From<&str> for Reading {
-    fn from(sensor: &str) -> Self {
+impl From<reading::SensorName> for Reading {
+    fn from(sensor: reading::SensorName) -> Self {
         Self {
-            sensor: sensor.to_string(),
+            sensor: (*sensor).clone(),
             celsius: 21,
         }
     }
@@ -18,7 +18,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let reading = reading::Reading::from("kitchen");
+        let reading = reading::Reading::from(reading::SensorName("kitchen".to_string()));
         assert_eq!(reading.celsius, 21);
     }
 }

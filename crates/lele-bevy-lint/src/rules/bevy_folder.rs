@@ -39,16 +39,25 @@ impl BevyFolder {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(Self));
     }
-    pub(crate) fn is_bevy_system_param(arg: &syn::FnArg) -> bool {
-        let syn::FnArg::Typed(pat_type) = arg else { return false; };
-        Self::last_path_ident(&pat_type.ty).is_some_and(|ident| SYSTEM_PARAM_NAMES.contains(&ident.as_str()))
-    }
     pub(crate) fn last_path_ident(ty: &syn::Type) -> Option<String> {
         match ty { syn::Type::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()), syn::Type::Reference(r) => Self::last_path_ident(&r.elem), _ => None, }
     }
+}
+
+impl BevyFolder {
+    pub(crate) fn is_bevy_system_param(arg: &syn::FnArg) -> bool {
+        let syn::FnArg::Typed(pat_type) = arg else {
+            return false;
+        };
+        Self::last_path_ident(&pat_type.ty)
+            .is_some_and(|ident| SYSTEM_PARAM_NAMES.contains(&ident.as_str()))
+    }
     pub(crate) fn registered_systems(file: &syn::File) -> Vec<String> {
         let mut found = Vec::new();
-        { let mut collector = scan::RegisteredCollector(&mut found); collector.visit_file(file); }
+        {
+            let mut collector = scan::RegisteredCollector(&mut found);
+            collector.visit_file(file);
+        }
         found
     }
 }

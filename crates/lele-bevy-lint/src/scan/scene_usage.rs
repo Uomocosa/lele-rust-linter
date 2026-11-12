@@ -14,16 +14,20 @@ impl SceneUsage {
     pub fn from_fn_body(body: &syn::Block, module_fns: &scan::ModuleFns) -> Self {}
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
+impl SceneUsage {
+    pub(crate) fn field<'a>(literal: &'a syn::ExprStruct, name: &str) -> Option<&'a syn::Expr> {}
+}
+
 impl SceneUsage {
     pub(crate) fn kind_name(expr: &syn::Expr) -> Option<String> {
         let syn::Expr::Path(path) = expr else {
             return None;
         };
-        path.path.segments.last().map(|segment| segment.ident.to_string())
-    }
-    pub(crate) fn field<'a>(literal: &'a syn::ExprStruct, name: &str) -> Option<&'a syn::Expr> {
-        literal.fields.iter().find(|value| matches!(&value.member, syn::Member::Named(ident) if ident == name)).map(|value| &value.expr)
+        path.path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string())
     }
 }
 

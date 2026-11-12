@@ -23,7 +23,6 @@ impl From<&Project> for CallGraph {
     }
 }
 
-#[rustfmt::skip]
 impl CallGraph {
     #[must_use]
     pub fn reaches_production(&self, owner: &str) -> bool {
@@ -33,7 +32,9 @@ impl CallGraph {
         let targets = BTreeSet::from([owner.to_string()]);
         self.reachable(&self.entry_roots(), &targets)
     }
+}
 
+impl CallGraph {
     pub(crate) fn entry_roots(&self) -> Vec<String> {
         let mut roots = vec!["main".to_string(), "build".to_string(), "setup".to_string()];
         roots.extend(self.systems.iter().cloned());
@@ -52,35 +53,13 @@ impl CallGraph {
             }
         }
     }
-
-    pub(crate) fn visit_item(&mut self, item: &syn::Item) {
-        match item {
-            syn::Item::Fn(func) => {
-                self.record_call(&func.sig.ident.to_string(), &func.block);
-            }
-            syn::Item::Impl(impl_block) => {
-                for item in &impl_block.items {
-                    if let syn::ImplItem::Fn(method) = item {
-                        self.record_call(&method.sig.ident.to_string(), &method.block);
-                    }
-                }
-            }
-            syn::Item::Mod(module) => {
-                if let Some((_, inner)) = &module.content {
-                    for item in inner {
-                        self.visit_item(item);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
 }
 
 #[atomic_delegates]
 impl CallGraph {
     pub(crate) fn reachable(&self, roots: &[String], targets: &BTreeSet<String>) -> bool {}
     pub(crate) fn record_call(&mut self, name: &str, block: &syn::Block) {}
+    pub(crate) fn visit_item(&mut self, item: &syn::Item) {}
 }
 
 #[cfg(test)]

@@ -269,8 +269,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -975,7 +977,7 @@ pub use clock::Clock;
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
-- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
+- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
 - [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
@@ -1056,8 +1058,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -1636,11 +1640,11 @@ mod tests {
 
 ### LELE030 `methods_layout`
 
-Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>`, 2+ statements and its own `test_usage` (or a final `// no test_usage necessary`); a leftover crate-root `methods/` body folder is reported for renaming.
+Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 
-**Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do.
+**Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do. A single statement spanning several lines is a real body and may stay in its delegate file.
 
-**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument), at least 2 statements and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
+**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument) and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. If the body is a single one-line statement, do not create the file: write the method inline in a `#[rustfmt::skip] impl` block, then delete the file. Never pad a body or change a signature to keep a delegate file. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
 
 **Bad** (reports LELE030):
 
@@ -1665,8 +1669,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -1761,8 +1767,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -1865,10 +1873,9 @@ mod methods;
 use crate::player;
 
 pub fn from_save(name: String, health: u32) -> player::Player {
-    let capped = health.min(100);
     player::Player {
         name,
-        health: capped,
+        health: health.min(100),
     }
 }
 
@@ -1891,8 +1898,10 @@ mod tests {
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -1929,8 +1938,10 @@ pub use rename::rename;
 use crate::player;
 
 pub fn rename(player: &mut player::Player, name: String) {
-    let trimmed = name.trim().to_string();
-    player.name = trimmed;
+    if name.trim().is_empty() {
+        return;
+    }
+    player.name = name.trim().to_string();
 }
 
 #[cfg(test)]
@@ -2027,10 +2038,9 @@ mod methods;
 use crate::player;
 
 pub fn from_save(name: String, health: u32) -> player::Player {
-    let capped = health.min(100);
     player::Player {
         name,
-        health: capped,
+        health: health.min(100),
     }
 }
 
@@ -2053,8 +2063,10 @@ mod tests {
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -2091,8 +2103,10 @@ pub use rename::rename;
 use crate::player;
 
 pub fn rename(player: &mut player::Player, name: String) {
-    let trimmed = name.trim().to_string();
-    player.name = trimmed;
+    if name.trim().is_empty() {
+        return;
+    }
+    player.name = name.trim().to_string();
 }
 
 #[cfg(test)]
@@ -2207,8 +2221,10 @@ pub mod player;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -2266,8 +2282,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]
@@ -2370,8 +2388,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = capped(healed);
+    if player.health == 0 {
+        return;
+    }
+    player.health = capped(player.health.saturating_add(amount));
 }
 
 fn capped(health: u32) -> u32 {
@@ -2470,8 +2490,10 @@ mod methods;
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = player::Player::capped(healed);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player::Player::capped(player.health.saturating_add(amount));
 }
 
 #[cfg(test)]

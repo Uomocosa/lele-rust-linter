@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::rules;
+use crate::FnBody;
 use crate::Origin;
 use crate::ParsedSource;
 use crate::Project;
@@ -26,13 +27,13 @@ pub fn check_body(
             ),
         ));
     } else if rules::methods_layout::MethodsLayout::pub_fn_block(file, method)
-        .is_some_and(|block| block.stmts.len() <= 1)
+        .is_some_and(|block| FnBody(block).is_one_liner())
     {
         violations.push(rules::methods_layout::MethodsLayout::file_violation(
             project,
             rel,
             format!(
-                "`{}/{}` body has ≤1 statement — inline `pub fn {method}` in `{type_snake}.rs` under `#[rustfmt::skip]`, then delete this file",
+                "`{}/{}` body is a one-liner — inline `pub fn {method}` in `{type_snake}.rs` under `#[rustfmt::skip]`, then delete this file; never pad the body or change its signature to keep the file",
                 project.methods_root_name(),
                 rel.display()
             ),
@@ -97,5 +98,29 @@ mod tests {
         assert!(violations
             .iter()
             .any(|d| d.message.contains("must define `pub fn spin`")));
+        let one_line: syn::File =
+            syn::parse_str("pub fn spin(w: &mut Widget) { w.spin_once() }\n").unwrap();
+        assert!(check_body(
+            &project,
+            "widget",
+            "spin",
+            Path::new("widget/spin.rs"),
+            &one_line
+        )
+        .iter()
+        .any(|d| d.message.contains("body is a one-liner")));
+        let multi_line: syn::File = syn::parse_str(
+            "pub fn spin(w: &mut Widget) {\n    match w.count {\n        0 => {}\n        _ => {}\n    }\n}\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
+        )
+        .unwrap();
+        assert!(!check_body(
+            &project,
+            "widget",
+            "spin",
+            Path::new("widget/spin.rs"),
+            &multi_line
+        )
+        .iter()
+        .any(|d| d.message.contains("body is a one-liner")));
     }
 }

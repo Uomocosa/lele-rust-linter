@@ -1,10 +1,9 @@
 use crate::player;
 
 pub fn from_save(name: String, health: u32) -> player::Player {
-    let capped = health.min(100);
     player::Player {
         name,
-        health: capped,
+        health: health.min(100),
     }
 }
 

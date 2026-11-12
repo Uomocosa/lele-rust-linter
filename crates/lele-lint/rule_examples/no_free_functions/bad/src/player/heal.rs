@@ -1,8 +1,10 @@
 use crate::player;
 
 pub fn heal(player: &mut player::Player, amount: u32) {
-    let healed = player.health.saturating_add(amount);
-    player.health = healed.min(100);
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
 }
 
 #[cfg(test)]

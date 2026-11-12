@@ -1,8 +1,10 @@
 use crate::player;
 
 pub fn rename(player: &mut player::Player, name: String) {
-    let trimmed = name.trim().to_string();
-    player.name = trimmed;
+    if name.trim().is_empty() {
+        return;
+    }
+    player.name = name.trim().to_string();
 }
 
 #[cfg(test)]

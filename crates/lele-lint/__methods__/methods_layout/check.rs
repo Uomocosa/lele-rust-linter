@@ -53,7 +53,7 @@ pub fn check(
                         project,
                         rel,
                         format!(
-                            "missing `{}/{}` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument), at least 2 statements and a `test_usage` test; a one-statement body stays inline in `{type_snake}.rs` instead",
+                            "missing `{}/{}` for `{type_snake}::{method}` — create it with `pub fn {method}` (receiver as first argument) and a `test_usage` test; a one-liner body is inlined in `{type_snake}.rs` instead, never padded",
                             project.methods_root_name(),
                             rel.display()
                         ),
@@ -189,7 +189,7 @@ mod tests {
         assert!(
             violations
                 .iter()
-                .any(|d| d.message.contains("body has ≤1 statement")),
+                .any(|d| d.message.contains("body is a one-liner")),
             "expected inline diagnostic, got {violations:?}"
         );
     }
@@ -214,7 +214,7 @@ mod tests {
         let violations = check(&MethodsLayout, &project);
         assert!(!violations
             .iter()
-            .any(|d| d.message.contains("body has ≤1 statement")));
+            .any(|d| d.message.contains("body is a one-liner")));
     }
 
     #[test]

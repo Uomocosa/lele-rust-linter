@@ -1,8 +1,10 @@
 use crate::clicker;
 
 pub fn add(counter: &mut clicker::ClickCounter, delta: i32) {
-    let next = (**counter).saturating_add(delta);
-    **counter = next;
+    if delta == 0 {
+        return;
+    }
+    **counter = (**counter).saturating_add(delta);
 }
 
 #[cfg(test)]

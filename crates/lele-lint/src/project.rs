@@ -15,6 +15,7 @@ use crate::DunderPath;
 use crate::Entry;
 use crate::EntryPoint;
 use crate::Error;
+use crate::InlineTraitMethodsEntry;
 use crate::ModuleInfoMap;
 use crate::NoDelegatesEntry;
 use crate::Origin;
@@ -38,6 +39,7 @@ pub struct Project {
     pub entry_points: Vec<EntryPoint>,
     pub collection_wrappers: Vec<CollectionWrapperEntry>,
     pub no_delegates: Vec<NoDelegatesEntry>,
+    pub inline_trait_methods: Vec<InlineTraitMethodsEntry>,
     pub methods_dir: Option<PathBuf>,
     pub methods_entries: Vec<Entry>,
     pub methods_parsed_files: HashMap<PathBuf, syn::File>,

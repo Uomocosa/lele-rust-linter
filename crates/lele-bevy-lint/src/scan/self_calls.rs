@@ -1,3 +1,4 @@
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
@@ -5,16 +6,9 @@ use syn::visit::Visit;
 #[derive(Deref, DerefMut)]
 pub(crate) struct SelfCalls<'a>(pub(crate) &'a mut Vec<String>);
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl<'ast> Visit<'ast> for SelfCalls<'_> {
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if let syn::Expr::Path(receiver) = &*node.receiver
-            && receiver.path.is_ident("self")
-        {
-            self.push(node.method.to_string());
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
+    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {}
 }
 
 #[cfg(test)]

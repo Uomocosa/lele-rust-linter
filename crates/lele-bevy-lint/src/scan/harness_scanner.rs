@@ -1,7 +1,6 @@
-use syn::visit::Visit;
-
 use crate::scan;
-use crate::scan::basic::constants::HARNESS_RUN;
+use atomic_delegate_macros::atomic_delegate;
+use syn::visit::Visit;
 
 pub(crate) struct HarnessScanner {
     pub(crate) is_run_imported: bool,
@@ -9,35 +8,13 @@ pub(crate) struct HarnessScanner {
     pub(crate) is_checked: bool,
 }
 
-const CHECKING_METHODS: [&str; 2] = ["expect", "unwrap"];
-
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for HarnessScanner {
-    fn visit_expr_call(&mut self, node: &'ast syn::ExprCall) {
-        if scan::HarnessCall::is_harness_path(&node.func, self.is_run_imported) {
-            self.is_called = true;
-        }
-        syn::visit::visit_expr_call(self, node);
-    }
-
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if node.method == HARNESS_RUN {
-            self.is_called = true;
-        }
-        let is_checking = CHECKING_METHODS.iter().any(|method| node.method == method);
-        if is_checking && scan::HarnessCall::is_harness_run(&node.receiver, self.is_run_imported) {
-            self.is_checked = true;
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
-
-    fn visit_expr_try(&mut self, node: &'ast syn::ExprTry) {
-        if scan::HarnessCall::is_harness_run(&node.expr, self.is_run_imported) {
-            self.is_checked = true;
-        }
-        syn::visit::visit_expr_try(self, node);
-    }
-
+    #[atomic_delegate(HarnessScanner, Visit)]
+    fn visit_expr_call(&mut self, node: &'ast syn::ExprCall) {}
+    #[atomic_delegate(HarnessScanner, Visit)]
+    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {}
+    #[atomic_delegate(HarnessScanner, Visit)]
+    fn visit_expr_try(&mut self, node: &'ast syn::ExprTry) {}
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         for expr in scan::MacroCall(node).exprs() {
             self.visit_expr(&expr);

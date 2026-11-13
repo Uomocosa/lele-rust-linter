@@ -1,6 +1,7 @@
+use crate::rules;
+use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 
-use crate::rules;
 use std::collections::HashSet;
 use syn::visit::Visit;
 
@@ -13,36 +14,23 @@ pub(crate) struct CaughtErrorScan<'a> {
     pub(crate) is_kept: bool,
 }
 
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for CaughtErrorScan<'_> {
-    fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
-        if let syn::Expr::Path(path) = &*call.func {
-            self.record_variant(&path.path);
-        }
-        syn::visit::visit_expr_call(self, call);
-    }
-
-    fn visit_expr_struct(&mut self, item: &'ast syn::ExprStruct) {
-        self.record_variant(&item.path);
-        syn::visit::visit_expr_struct(self, item);
-    }
-
-    fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
-        if call.method == "to_string" && self.is_error_name(&call.receiver) {
-            self.is_stringified = true;
-            return;
-        }
-        syn::visit::visit_expr_method_call(self, call);
-    }
-
+    #[atomic_delegate(CaughtErrorScan, Visit)]
+    fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {}
+    #[atomic_delegate(CaughtErrorScan, Visit)]
+    fn visit_expr_struct(&mut self, item: &'ast syn::ExprStruct) {}
+    #[atomic_delegate(CaughtErrorScan, Visit)]
+    fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {}
     fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
         if path.path.is_ident(&self.error_name) {
             self.is_kept = true;
         }
     }
-
     fn visit_macro(&mut self, mac: &'ast syn::Macro) {
-        if rules::no_stringified_errors::NoStringifiedErrors::mentions_name(mac.tokens.clone(), &self.error_name) {
+        if rules::no_stringified_errors::NoStringifiedErrors::mentions_name(
+            mac.tokens.clone(),
+            &self.error_name,
+        ) {
             self.is_stringified = true;
         }
     }

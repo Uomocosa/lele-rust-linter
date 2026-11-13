@@ -18,8 +18,8 @@ pub use basic::enums::PlacementKind;
 pub use basic::enums::Requirement;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
-    LayoutSection, LeleSection, LeleToml, LeleTomlLintSections, ModDecl, NoDelegatesEntry,
-    ParseFailure, Reexport, RuleDoc, ScannedDir,
+    InlineTraitMethodsEntry, LayoutSection, LeleSection, LeleToml, LeleTomlLintSections, ModDecl,
+    NoDelegatesEntry, ParseFailure, Reexport, RuleDoc, ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

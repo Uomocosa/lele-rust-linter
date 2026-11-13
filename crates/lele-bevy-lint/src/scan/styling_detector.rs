@@ -1,28 +1,17 @@
+use atomic_delegate_macros::atomic_delegates;
 use std::collections::HashSet;
 
 use syn::visit::Visit;
-
-use crate::scan;
 
 pub(crate) struct StylingDetector<'a> {
     pub(crate) aliases: &'a HashSet<String>,
     pub(crate) found: bool,
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl<'ast> Visit<'ast> for StylingDetector<'_> {
-    fn visit_type_reference(&mut self, node: &'ast syn::TypeReference) {
-        if node.mutability.is_some() && scan::ScannedFile::is_styling(&node.elem) {
-            self.found = true;
-        }
-        syn::visit::visit_type_reference(self, node);
-    }
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        if node.segments.iter().any(|segment| self.aliases.contains(&segment.ident.to_string())) {
-            self.found = true;
-        }
-        syn::visit::visit_path(self, node);
-    }
+    fn visit_type_reference(&mut self, node: &'ast syn::TypeReference) {}
+    fn visit_path(&mut self, node: &'ast syn::Path) {}
 }
 
 #[cfg(test)]

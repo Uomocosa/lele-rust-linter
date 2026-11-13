@@ -1,30 +1,15 @@
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
 
-use crate::INPUT_DRIVERS;
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct InputScanner<'a>(pub(crate) &'a mut Vec<String>);
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl<'ast> Visit<'ast> for InputScanner<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        for segment in &node.segments {
-            let name = segment.ident.to_string();
-            if INPUT_DRIVERS.contains(&name.as_str()) {
-                self.push(name);
-            }
-        }
-        syn::visit::visit_path(self, node);
-    }
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        let name = node.method.to_string();
-        if INPUT_DRIVERS.contains(&name.as_str()) {
-            self.push(name);
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
+    fn visit_path(&mut self, node: &'ast syn::Path) {}
+    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {}
 }
 
 #[cfg(test)]

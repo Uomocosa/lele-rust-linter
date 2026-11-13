@@ -1,2 +1,10 @@
 mod inspect_signature;
+mod visit_expr_method_call;
+mod visit_impl_item_fn;
+mod visit_item_fn;
+mod visit_item_impl;
 pub use inspect_signature::inspect_signature;
+pub use visit_expr_method_call::visit_expr_method_call;
+pub use visit_impl_item_fn::visit_impl_item_fn;
+pub use visit_item_fn::visit_item_fn;
+pub use visit_item_impl::visit_item_impl;

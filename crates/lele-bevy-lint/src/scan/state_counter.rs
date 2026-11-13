@@ -1,21 +1,15 @@
+use crate::scan;
+use atomic_delegate_macros::atomic_delegate;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
 
-use crate::scan;
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct StateCounter<'a>(pub(crate) &'a mut usize);
 
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for StateCounter<'_> {
-    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        let literal = scan::StructLiteral(node);
-        if literal.is_type("State") && literal.has_field("apply") {
-            ***self = self.saturating_add(1);
-        }
-        syn::visit::visit_expr_struct(self, node);
-    }
+    #[atomic_delegate(StateCounter, Visit)]
+    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {}
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         for expr in scan::MacroCall(node).exprs() {
             self.visit_expr(&expr);

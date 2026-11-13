@@ -24,9 +24,6 @@ pub fn collect_rustfmt_candidates(project: &Project) -> Result<Vec<(RustfmtKey, 
             let syn::Item::Impl(imp) = item else {
                 continue;
             };
-            if imp.trait_.is_some() {
-                continue;
-            }
             for inner in &imp.items {
                 if let syn::ImplItem::Fn(method) = inner {
                     push(rel, &source, &method.block);
@@ -81,7 +78,7 @@ mod tests {
             syn::parse_str("pub fn d(f: &Foo) -> u8 { f.0 }\n").unwrap(),
         );
         let candidates = project.collect_rustfmt_candidates().unwrap();
-        assert_eq!(candidates.len(), 3);
+        assert_eq!(candidates.len(), 4);
         assert!(candidates.iter().any(|(_, text)| text == "f.0"));
         assert!(candidates.iter().any(|(_, text)| text == "self.0"));
     }

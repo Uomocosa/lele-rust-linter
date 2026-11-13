@@ -65,8 +65,12 @@ pub fn rule_check(
                 violations.extend(rules::delegate_macro::DelegateMacro::check_fn_shells(
                     project, rel_path, &primary, impl_block, &mut seen,
                 ));
+                let owned_block =
+                    rules::inline_trait_methods::InlineTraitMethods::without_listed_methods(
+                        project, impl_block,
+                    );
                 let migratable =
-                    rules::delegate_macro::DelegateMacro::migratable_idents(impl_block);
+                    rules::delegate_macro::DelegateMacro::migratable_idents(&owned_block);
                 if migratable.is_empty() {
                     continue;
                 }

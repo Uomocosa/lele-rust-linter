@@ -1,9 +1,8 @@
-use crate::rules;
 use crate::AllowWhitelistEntry;
 use crate::Project;
 use crate::RuleViolation;
+use atomic_delegate_macros::atomic_delegates;
 use std::path::PathBuf;
-use syn::spanned::Spanned;
 use syn::visit::Visit;
 
 pub(crate) struct AllowFinder<'a> {
@@ -13,24 +12,9 @@ pub(crate) struct AllowFinder<'a> {
     pub(crate) violations: Vec<RuleViolation>,
 }
 
+#[atomic_delegates]
 impl<'ast> Visit<'ast> for AllowFinder<'_> {
-    fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {
-        let kind = if attr.path().is_ident("allow") {
-            "allow"
-        } else if attr.path().is_ident("expect") {
-            "expect"
-        } else {
-            return;
-        };
-        let lint_paths = rules::no_allow_attributes::NoAllowAttributes::lint_paths(attr);
-        if self.is_whitelisted(&lint_paths) {
-            return;
-        }
-        let start = attr.span().start();
-        self.violations.push(RuleViolation::from_site(self.file.clone(), start.line, start.column, rules::no_allow_attributes::NoAllowAttributes::CODE, format!(
-                "`{kind}` attribute is banned — remove it and fix the code the lint points at; a `[[lele.lint.clippy_allow_whitelist]]` entry in lele.toml needs the user's approval"
-            )));
-    }
+    fn visit_attribute(&mut self, attr: &'ast syn::Attribute) {}
 }
 
 impl AllowFinder<'_> {

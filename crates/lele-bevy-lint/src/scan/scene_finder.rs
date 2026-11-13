@@ -1,21 +1,15 @@
+use crate::scan;
+use atomic_delegate_macros::atomic_delegate;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
 
-use crate::scan;
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct SceneFinder<'a>(pub(crate) &'a mut Vec<syn::ExprStruct>);
 
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for SceneFinder<'_> {
-    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {
-        let literal = scan::StructLiteral(node);
-        if literal.is_type("Scene") && literal.has_field("build") {
-            self.push(node.clone());
-        }
-        syn::visit::visit_expr_struct(self, node);
-    }
+    #[atomic_delegate(SceneFinder, Visit)]
+    fn visit_expr_struct(&mut self, node: &'ast syn::ExprStruct) {}
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         for expr in scan::MacroCall(node).exprs() {
             self.visit_expr(&expr);

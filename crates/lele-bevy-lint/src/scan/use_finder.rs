@@ -1,13 +1,11 @@
+use crate::scan;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
 
-use crate::scan;
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct UseFinder<'a>(pub(crate) &'a mut bool);
 
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for UseFinder<'_> {
     fn visit_item_use(&mut self, node: &'ast syn::ItemUse) {
         if scan::ScannedFile::imports_run(&node.tree, false) {

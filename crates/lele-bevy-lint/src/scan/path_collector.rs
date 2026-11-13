@@ -1,3 +1,4 @@
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
@@ -5,29 +6,9 @@ use syn::visit::Visit;
 #[derive(Deref, DerefMut)]
 pub(crate) struct PathCollector<'a>(pub(crate) &'a mut Vec<Vec<String>>);
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl<'ast> Visit<'ast> for PathCollector<'_> {
-    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {
-        if node.method == "add_systems" {
-            let mut paths = FullPaths(self);
-            for arg in node.args.iter().skip(1) {
-                paths.visit_expr(arg);
-            }
-        }
-        syn::visit::visit_expr_method_call(self, node);
-    }
-}
-
-#[derive(Deref, DerefMut)]
-struct FullPaths<'a, 'b>(&'a mut PathCollector<'b>);
-
-#[rustfmt::skip]
-impl<'ast> Visit<'ast> for FullPaths<'_, '_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        let segments = node.segments.iter().map(|segment| segment.ident.to_string()).collect();
-        self.push(segments);
-        syn::visit::visit_path(self, node);
-    }
+    fn visit_expr_method_call(&mut self, node: &'ast syn::ExprMethodCall) {}
 }
 
 #[cfg(test)]

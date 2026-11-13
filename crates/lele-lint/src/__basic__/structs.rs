@@ -58,6 +58,17 @@ pub struct LeleTomlLintSections {
     pub collection_wrappers: Vec<CollectionWrapperEntry>,
     #[serde(default)]
     pub no_delegates: Vec<NoDelegatesEntry>,
+    #[serde(default)]
+    pub inline_trait_methods: Vec<InlineTraitMethodsEntry>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct InlineTraitMethodsEntry {
+    #[serde(rename = "trait")]
+    pub trait_path: String,
+    pub methods: Vec<String>,
+    pub reason: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

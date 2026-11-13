@@ -47,6 +47,11 @@ pub fn rule_check(
                 continue;
             }
 
+            let owned_block =
+                rules::inline_trait_methods::InlineTraitMethods::without_listed_methods(
+                    project, impl_block,
+                );
+            let impl_block = &owned_block;
             let is_trait_impl = impl_block.trait_.is_some();
             let is_atomic_block = impl_block
                 .attrs
@@ -69,19 +74,29 @@ pub fn rule_check(
                 })
                 .collect();
 
-            if !methods_over_three.is_empty() && !is_trait_impl && !listed {
+            if !methods_over_three.is_empty() && !listed {
                 let names =
                     rules::atomic_delegates::AtomicDelegates::names_str(&methods_over_three);
+                let files = methods_over_three
+                    .iter()
+                    .map(|ident| {
+                        format!(
+                            "`{}/<type>/{}.rs`",
+                            project.methods_root_name(),
+                            ImplBlock(impl_block).delegate_body_name(ident)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
-                        "method(s) `{names}` have >3 statements — move each body to `{}/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block",
-                        project.methods_root_name()
+                        "method(s) `{names}` have >3 statements — move each body to {files} behind an empty shell in the type's `#[atomic_delegates]` block"
                     )));
                 continue;
             }
 
-            if !is_trait_impl && !is_atomic_block {
+            if !is_atomic_block {
                 violations.extend(
-                    rules::atomic_delegates::AtomicDelegates::inherent_block_violations(
+                    rules::atomic_delegates::AtomicDelegates::plain_block_violations(
                         project, rel_path, impl_block,
                     ),
                 );
@@ -123,11 +138,12 @@ pub fn rule_check(
                                     "one-liner method `{}` spans several lines — put the body on one line, e.g. `{{ module::func(self) }}`",
                                     method.sig.ident
                                 )));
-                        } else if has_skip && !is_trait_impl && is_multi_line {
+                        } else if has_skip && is_multi_line {
                             violations.push(RuleViolation::from_file(project.absolute_src_path(rel_path), rules::atomic_delegates::AtomicDelegates::CODE, format!(
-                                    "method `{}` is one statement spanning several lines — move its body to `{}/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block",
+                                    "method `{}` is one statement spanning several lines — move its body to `{}/<type>/{}.rs` behind an empty shell in the type's `#[atomic_delegates]` block",
                                     method.sig.ident,
-                                    project.methods_root_name()
+                                    project.methods_root_name(),
+                                    ImplBlock(impl_block).delegate_body_name(&method.sig.ident)
                                 )));
                         }
                     }
@@ -178,6 +194,7 @@ mod tests {
 
     use super::rule_check;
     use crate::rules;
+    use crate::InlineTraitMethodsEntry;
     use crate::Project;
     use crate::RuleViolation;
 
@@ -187,6 +204,26 @@ mod tests {
         let mut project = Project {
             root: dir.path().to_path_buf(),
             src_dir: dir.path().to_path_buf(),
+            ..Project::default()
+        };
+        project
+            .parsed_files
+            .insert(PathBuf::from("foo.rs"), syn::parse_str(src).unwrap());
+        project.fill_rustfmt_answers().unwrap();
+        rule_check(&rules::atomic_delegates::AtomicDelegates, &project)
+    }
+
+    fn run_check_inline(src: &str, trait_path: &str, methods: &[&str]) -> Vec<RuleViolation> {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("foo.rs"), src).unwrap();
+        let mut project = Project {
+            root: dir.path().to_path_buf(),
+            src_dir: dir.path().to_path_buf(),
+            inline_trait_methods: vec![InlineTraitMethodsEntry {
+                trait_path: trait_path.to_string(),
+                methods: methods.iter().map(|method| (*method).to_string()).collect(),
+                reason: "listed by the test".to_string(),
+            }],
             ..Project::default()
         };
         project
@@ -349,9 +386,30 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_trait_impl_simple_match_in_skip_block_is_clean() {
+    fn test_usage_trait_impl_simple_match_in_skip_block_is_m1() {
         let violations = run_check(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        match self.0 {\n            0 => 1,\n            _ => 2,\n        }\n    }\n}\n",
+        );
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("is not a one-liner"));
+    }
+
+    #[test]
+    fn test_usage_trait_impl_method_over_three_statements_is_m1() {
+        let violations = run_check(
+            "pub struct Foo;\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        let c = 3;\n        let d = 4;\n        a + b + c + d\n    }\n}\n",
+        );
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains(">3 statements"));
+        assert!(violations[0].message.contains("rule_run.rs"));
+    }
+
+    #[test]
+    fn test_usage_trait_impl_method_listed_inline_is_clean() {
+        let violations = run_check_inline(
+            "pub struct Foo;\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        let c = 3;\n        let d = 4;\n        a + b + c + d\n    }\n}\n",
+            "crate::Rule",
+            &["run"],
         );
         assert!(violations.is_empty());
     }

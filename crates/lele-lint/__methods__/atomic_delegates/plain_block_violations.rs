@@ -2,13 +2,15 @@ use std::path::Path;
 
 use crate::rules;
 use crate::FnBody;
+use crate::ImplBlock;
 use crate::ImplMethod;
 use crate::ItemMarker;
 use crate::PlacementKind;
 use crate::Project;
 use crate::RuleViolation;
+use lele_snake_case::traits::ToLeleSnakeCase;
 
-pub fn inherent_block_violations(
+pub fn plain_block_violations(
     project: &Project,
     rel_path: &Path,
     impl_block: &syn::ItemImpl,
@@ -21,6 +23,7 @@ pub fn inherent_block_violations(
     let code = rules::atomic_delegates::AtomicDelegates::CODE;
     let root = project.methods_root_name();
     let listed = rules::atomic_delegates::AtomicDelegates::is_no_delegates_crate(project);
+    let impl_block_type = ImplBlock(impl_block).self_type_last().unwrap_or_default();
     let mut violations = Vec::new();
     let mut plain_one_liners: Vec<String> = Vec::new();
     let mut plain_ctors: Vec<String> = Vec::new();
@@ -71,13 +74,18 @@ pub fn inherent_block_violations(
             }
             PlacementKind::Delegate if listed => multi_line.push(name),
             PlacementKind::Delegate => {
+                let body_file = format!(
+                    "{root}/{}/{}.rs",
+                    impl_block_type.to_snake_case(),
+                    ImplBlock(impl_block).delegate_body_name(&method.sig.ident)
+                );
                 let message = if block.is_control_statement() {
                     format!(
-                        "method `{name}` is a `match`/`if`/loop whose branches do more than one thing — give each branch its own method, or move the body to `{root}/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block"
+                        "method `{name}` is a `match`/`if`/loop whose branches do more than one thing — give each branch its own method, or move the body to `{body_file}` behind an empty shell in the type's `#[atomic_delegates]` block"
                     )
                 } else {
                     format!(
-                        "method `{name}` is one statement that rustfmt prints on several lines — move its body to `{root}/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block"
+                        "method `{name}` is one statement that rustfmt prints on several lines — move its body to `{body_file}` behind an empty shell in the type's `#[atomic_delegates]` block"
                     )
                 };
                 violations.push(RuleViolation::from_file(file.clone(), code, message));
@@ -139,7 +147,7 @@ mod tests {
             panic!("expected an impl block");
         };
         let check = |block| {
-            rules::atomic_delegates::AtomicDelegates::inherent_block_violations(
+            rules::atomic_delegates::AtomicDelegates::plain_block_violations(
                 &project,
                 Path::new("foo.rs"),
                 block,
@@ -183,7 +191,7 @@ mod tests {
             panic!("expected an impl block");
         };
         let check = |block| {
-            rules::atomic_delegates::AtomicDelegates::inherent_block_violations(
+            rules::atomic_delegates::AtomicDelegates::plain_block_violations(
                 &project,
                 Path::new("foo.rs"),
                 block,

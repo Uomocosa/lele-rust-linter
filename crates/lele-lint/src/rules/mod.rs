@@ -14,6 +14,7 @@ pub mod dunder_module_name;
 pub(crate) mod error_message_omits_source;
 pub(crate) mod helpers_are_methods;
 pub(crate) mod impl_item_order;
+pub(crate) mod inline_trait_methods;
 pub(crate) mod method_file_co_location;
 pub(crate) mod method_visibility;
 pub(crate) mod methods_are_delegates;

@@ -15,6 +15,9 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
             .collection_wrappers
             .clone_from(&section.lint.collection_wrappers);
         project.no_delegates.clone_from(&section.lint.no_delegates);
+        project
+            .inline_trait_methods
+            .clone_from(&section.lint.inline_trait_methods);
         project.boundaries.clone_from(&section.boundary);
     }
 

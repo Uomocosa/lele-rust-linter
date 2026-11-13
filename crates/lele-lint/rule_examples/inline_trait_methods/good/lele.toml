@@ -1,0 +1,6 @@
+[lele.lint]
+
+[[lele.lint.inline_trait_methods]]
+trait = "bevy::app::Plugin"
+methods = ["build"]
+reason = "the framework reads build in the impl"

@@ -1,20 +1,15 @@
+use crate::scan;
+use atomic_delegate_macros::atomic_delegate;
 use derive_more::Deref;
 use derive_more::DerefMut;
 use syn::visit::Visit;
 
-use crate::scan;
-
 #[derive(Deref, DerefMut)]
 pub(crate) struct PathNames<'a>(pub(crate) &'a mut Vec<String>);
 
-#[rustfmt::skip]
 impl<'ast> Visit<'ast> for PathNames<'_> {
-    fn visit_path(&mut self, node: &'ast syn::Path) {
-        for segment in &node.segments {
-            self.push(segment.ident.to_string());
-        }
-        syn::visit::visit_path(self, node);
-    }
+    #[atomic_delegate(PathNames, Visit)]
+    fn visit_path(&mut self, node: &'ast syn::Path) {}
     fn visit_macro(&mut self, node: &'ast syn::Macro) {
         for expr in scan::MacroCall(node).exprs() {
             self.visit_expr(&expr);

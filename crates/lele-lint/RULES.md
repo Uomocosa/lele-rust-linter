@@ -973,7 +973,7 @@ pub use clock::Clock;
 
 - [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
 - [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Each hand-written method of an inherent impl block has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
@@ -981,6 +981,7 @@ pub use clock::Clock;
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
 - [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
+- [LELE043 `inline_trait_methods`](#lele043-inline_trait_methods): A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
 
 ### LELE004 `method_visibility`
 
@@ -1214,11 +1215,11 @@ mod tests {
 
 ### LELE017 `atomic_delegates`
 
-Each hand-written method of an inherent impl block has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 
 **Why:** rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.
 
-**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
+**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
 
 **Bad** (reports LELE017):
 
@@ -2581,6 +2582,89 @@ mod tests {
         assert_eq!(player.health, 100);
     }
 }
+```
+
+### LELE043 `inline_trait_methods`
+
+A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
+
+**Why:** Some traits are called by a framework that expects the method in the impl itself. Bevy's `Plugin::build` is the usual case: the trait method is the registration point, and a body that only forwards to an inherent shell hides the wiring the framework reads. The reason is recorded in the config so the exception is a decision, not an accident.
+
+**Fix:** Write the listed method's body inline in the trait impl and delete its `__methods__/<type>/<file>.rs` body. Remove any `#[atomic_delegate]` on the method and any `#[atomic_delegates]` on the impl block. Only the user adds or changes `[[lele.lint.inline_trait_methods]]` entries; a trait path matches an impl when the last segments agree (`bevy::app::Plugin` matches `impl Plugin` and `impl bevy::prelude::Plugin`, and `impl other::Plugin` does not).
+
+**Bad** (reports LELE043):
+
+`lele.toml`
+
+```toml
+[lele.lint]
+
+[[lele.lint.inline_trait_methods]]
+trait = "bevy::app::Plugin"
+methods = ["build"]
+reason = "the framework reads build in the impl"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod starboard_plugin;
+
+pub use starboard_plugin::StarboardPlugin;
+```
+
+`src/starboard_plugin.rs`
+
+```rust
+pub struct StarboardPlugin;
+
+#[atomic_delegates]
+impl StarboardPlugin {
+    pub fn build(&self, app: &mut Vec<String>) {}
+}
+
+impl bevy::app::Plugin for StarboardPlugin {
+    fn build(&self, app: &mut Vec<String>) {
+        self.build(app)
+    }
+}
+
+// no test_usage necessary
+```
+
+**Good:**
+
+`lele.toml`
+
+```toml
+[lele.lint]
+
+[[lele.lint.inline_trait_methods]]
+trait = "bevy::app::Plugin"
+methods = ["build"]
+reason = "the framework reads build in the impl"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod starboard_plugin;
+
+pub use starboard_plugin::StarboardPlugin;
+```
+
+`src/starboard_plugin.rs`
+
+```rust
+pub struct StarboardPlugin;
+
+impl bevy::app::Plugin for StarboardPlugin {
+    fn build(&self, app: &mut Vec<String>) {
+        app.push(String::from("starboard"));
+    }
+}
+
+// no test_usage necessary
 ```
 
 ## Imports and re-exports

@@ -37,23 +37,11 @@ impl ErrorMessageOmitsSource {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ErrorMessageOmitsSource));
     }
-    pub(crate) fn source_field_name(fields: &syn::Fields) -> Option<String> {
-        fields.iter().enumerate().find_map(|(index, field)| {
-            let is_marked = field
-                .attrs
-                .iter()
-                .any(|attr| attr.path().is_ident("from") || attr.path().is_ident("source"));
-            let name = field
-                .ident
-                .as_ref()
-                .map_or_else(|| index.to_string(), ToString::to_string);
-            (is_marked || name == "source").then_some(name)
-        })
-    }
 }
 
 #[atomic_delegates]
 impl ErrorMessageOmitsSource {
+    pub(crate) fn source_field_name(fields: &syn::Fields) -> Option<String> {}
     pub(crate) fn message_prints_field(message: &syn::Attribute, field: &str) -> bool {}
 }
 

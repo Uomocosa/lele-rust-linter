@@ -9,7 +9,6 @@ use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
-use std::ffi::OsStr;
 use std::path::Path;
 
 pub struct DunderModuleName;
@@ -52,15 +51,15 @@ impl DunderModuleName {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(DunderModuleName));
     }
-    pub(crate) fn dunder_named<'a>(dunders: &'a [DunderPath], ident: &str) -> Option<&'a DunderPath> {
-        dunders
-            .iter()
-            .find(|dunder| dunder.file_stem() == Some(OsStr::new(ident)))
-    }
 }
 
 #[atomic_delegates]
 impl DunderModuleName {
+    pub(crate) fn dunder_named<'a>(
+        dunders: &'a [DunderPath],
+        ident: &str,
+    ) -> Option<&'a DunderPath> {
+    }
     pub(crate) fn dunder_in_path<'a>(
         dunders: &'a [DunderPath],
         target: &str,
@@ -88,29 +87,11 @@ impl DunderModuleName {
         item: &syn::ItemUse,
     ) {
     }
+    pub(crate) fn render_visibility(vis: &syn::Visibility) -> String {}
 }
 
 #[rustfmt::skip]
 impl DunderModuleName {
-    pub(crate) fn render_visibility(vis: &syn::Visibility) -> String {
-        match vis {
-            syn::Visibility::Public(_) => "pub".to_string(),
-            syn::Visibility::Inherited => String::new(),
-            syn::Visibility::Restricted(restricted) => {
-                let segments: Vec<String> = restricted
-                    .path
-                    .segments
-                    .iter()
-                    .map(|segment| segment.ident.to_string())
-                    .collect();
-                if segments.len() == 1 && segments.first().is_some_and(|first| first == "crate") {
-                    "pub(crate)".to_string()
-                } else {
-                    format!("pub(in {})", segments.join("::"))
-                }
-            }
-        }
-    }
     pub(crate) fn reexport_message(item: &str, suggestion: &str) -> String {
         if item == "*" { format!("do not re-export `{suggestion}`") } else { format!("do not re-export `{item}`: refer to it as `{suggestion}`") }
     }

@@ -1,7 +1,6 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::Identifier;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -41,30 +40,17 @@ impl MethodFileCoLocation {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(MethodFileCoLocation));
     }
-    pub(crate) fn pub_fn_names(file: &syn::File) -> Vec<String> {
-        file.items
-            .iter()
-            .filter_map(|item| match item {
-                syn::Item::Fn(f) if matches!(f.vis, syn::Visibility::Public(_)) => {
-                    Some(f.sig.ident.to_string())
-                }
-                _ => None,
-            })
-            .collect()
-    }
+}
+
+#[atomic_delegates]
+impl MethodFileCoLocation {
+    pub(crate) fn pub_fn_names(file: &syn::File) -> Vec<String> {}
     pub(crate) fn find_parent_type(
         stem: &str,
         known_stems: &HashSet<String>,
         type_dirs: &HashMap<String, Vec<PathBuf>>,
     ) -> Option<Vec<PathBuf>> {
-        Identifier(stem)
-            .longest_type_prefix(known_stems)
-            .and_then(|prefix| type_dirs.get(prefix).cloned())
     }
-}
-
-#[atomic_delegates]
-impl MethodFileCoLocation {
     pub(crate) fn build_type_map(project: &Project) -> HashMap<String, Vec<PathBuf>> {}
 }
 

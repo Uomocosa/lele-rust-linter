@@ -41,44 +41,17 @@ impl MethodsLayout {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(MethodsLayout));
     }
-    pub(crate) fn defines_pub_fn(file: &syn::File, name: &str) -> bool {
-        file.items.iter().any(|item| {
-            matches!(
-                item,
-                syn::Item::Fn(func)
-                    if matches!(func.vis, syn::Visibility::Public(_))
-                        && func.sig.ident == name
-            )
-        })
-    }
-    pub(crate) fn pub_fn_block<'a>(file: &'a syn::File, name: &str) -> Option<&'a syn::Block> {
-        file.items.iter().find_map(|item| match item {
-            syn::Item::Fn(func)
-                if matches!(func.vis, syn::Visibility::Public(_)) && func.sig.ident == name =>
-            {
-                Some(&*func.block)
-            }
-            _ => None,
-        })
-    }
     pub(crate) fn is_index_file(rel: &Path) -> bool {
         Self::file_stem(rel).is_some_and(|stem| stem == "mod")
-    }
-    pub(crate) fn parent_dir(rel: &Path) -> Option<String> {
-        rel.parent()
-            .and_then(Path::file_name)
-            .and_then(|name| name.to_str())
-            .map(str::to_string)
-    }
-    pub(crate) fn file_stem(rel: &Path) -> Option<String> {
-        rel.file_stem()
-            .and_then(|stem| stem.to_str())
-            .map(str::to_string)
     }
 }
 
 #[atomic_delegates]
 impl MethodsLayout {
+    pub(crate) fn defines_pub_fn(file: &syn::File, name: &str) -> bool {}
+    pub(crate) fn pub_fn_block<'a>(file: &'a syn::File, name: &str) -> Option<&'a syn::Block> {}
+    pub(crate) fn parent_dir(rel: &Path) -> Option<String> {}
+    pub(crate) fn file_stem(rel: &Path) -> Option<String> {}
     pub(crate) fn file_violation(project: &Project, rel: &Path, message: String) -> RuleViolation {}
     pub(crate) fn read_methods_file(project: &Project, rel: &Path) -> Option<String> {}
     pub(crate) fn check_body(

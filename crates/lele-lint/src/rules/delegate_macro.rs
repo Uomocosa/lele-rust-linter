@@ -1,10 +1,7 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::FnBody;
-use crate::ImplBlock;
 use crate::ImplItemGroup;
-use crate::ItemMarker;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -46,97 +43,37 @@ impl DelegateMacro {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(DelegateMacro));
     }
-    pub(crate) fn mirror_names(project: &Project, primary: &str, idents: &[&syn::Ident]) -> Vec<String> {
+    pub(crate) fn is_reserved(ident: &syn::Ident) -> bool {
+        RESERVED_DELEGATE_METHODS.contains(&ident.to_string().as_str())
+    }
+}
+
+impl DelegateMacro {
+    pub(crate) fn mirror_names(
+        project: &Project,
+        primary: &str,
+        idents: &[&syn::Ident],
+    ) -> Vec<String> {
         let root = project.methods_root_name();
         idents
             .iter()
             .map(|ident| format!("{root}/{}/{ident}.rs", primary.to_snake_case()))
             .collect()
     }
-    pub(crate) fn annotated_inherent_blocks(file: &syn::File, primary: &str, group: ImplItemGroup) -> usize {
-        file.items
-            .iter()
-            .filter(|item| match item {
-                syn::Item::Impl(block) => {
-                    block.trait_.is_none()
-                        && !block
-                            .attrs
-                            .iter()
-                            .any(|attr| ItemMarker(attr).is_cfg_test())
-                        && block
-                            .attrs
-                            .iter()
-                            .any(|attr| ItemMarker(attr).is_atomic_delegates())
-                        && ImplBlock(block).self_type_last().as_deref() == Some(primary)
-                        && Self::shell_order_groups(block).as_slice() == [group]
-                }
-                _ => false,
-            })
-            .count()
-    }
-    pub(crate) fn has_fn(impl_block: &syn::ItemImpl) -> bool {
-        impl_block
-            .items
-            .iter()
-            .any(|item| matches!(item, syn::ImplItem::Fn(_)))
-    }
-    pub(crate) fn migratable_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
-        impl_block
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                syn::ImplItem::Fn(method)
-                    if !method
-                        .attrs
-                        .iter()
-                        .any(|attr| ItemMarker(attr).is_atomic_delegate())
-                        && (method.block.stmts.is_empty()
-                            || FnBody(&method.block).is_delegate_call()
-                            || FnBody(&method.block).is_methods_dispatch()) =>
-                {
-                    Some(&method.sig.ident)
-                }
-                _ => None,
-            })
-            .collect()
-    }
-    pub(crate) fn real_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {
-        impl_block
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                syn::ImplItem::Fn(method)
-                    if !method
-                        .attrs
-                        .iter()
-                        .any(|attr| ItemMarker(attr).is_atomic_delegate())
-                        && !method.block.stmts.is_empty()
-                        && !FnBody(&method.block).is_delegate_call()
-                        && !FnBody(&method.block).is_methods_dispatch() =>
-                {
-                    Some(&method.sig.ident)
-                }
-                _ => None,
-            })
-            .collect()
-    }
-    pub(crate) fn fn_methods(impl_block: &syn::ItemImpl) -> Vec<&syn::ImplItemFn> {
-        impl_block
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                syn::ImplItem::Fn(method) => Some(method),
-                _ => None,
-            })
-            .collect()
-    }
-    pub(crate) fn is_reserved(ident: &syn::Ident) -> bool {
-        RESERVED_DELEGATE_METHODS.contains(&ident.to_string().as_str())
-    }
 }
 
 #[atomic_delegates]
 impl DelegateMacro {
+    pub(crate) fn annotated_inherent_blocks(
+        file: &syn::File,
+        primary: &str,
+        group: ImplItemGroup,
+    ) -> usize {
+    }
+    pub(crate) fn has_fn(impl_block: &syn::ItemImpl) -> bool {}
+    pub(crate) fn migratable_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {}
+    pub(crate) fn real_idents(impl_block: &syn::ItemImpl) -> Vec<&syn::Ident> {}
+    pub(crate) fn fn_methods(impl_block: &syn::ItemImpl) -> Vec<&syn::ImplItemFn> {}
     pub(crate) fn check_delegated_methods(
         project: &Project,
         rel_path: &Path,

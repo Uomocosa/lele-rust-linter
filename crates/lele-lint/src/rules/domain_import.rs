@@ -42,19 +42,6 @@ impl DomainImport {
     pub(crate) fn is_pub_use(item_use: &syn::ItemUse) -> bool {
         matches!(item_use.vis, syn::Visibility::Public(_))
     }
-    pub(crate) fn collect_use_segments(tree: &syn::UseTree) -> Vec<String> {
-        match tree {
-            syn::UseTree::Path(p) => {
-                let mut segs = vec![p.ident.to_string()];
-                segs.extend(Self::collect_use_segments(&p.tree));
-                segs
-            }
-            syn::UseTree::Name(n) => vec![n.ident.to_string()],
-            syn::UseTree::Rename(r) => vec![r.ident.to_string()],
-            syn::UseTree::Glob(_) => Vec::new(),
-            syn::UseTree::Group(_) => Vec::new(),
-        }
-    }
     pub(crate) fn find_use_line(item_use: &syn::ItemUse) -> usize {
         item_use.span().start().line
     }
@@ -62,6 +49,7 @@ impl DomainImport {
 
 #[atomic_delegates]
 impl DomainImport {
+    pub(crate) fn collect_use_segments(tree: &syn::UseTree) -> Vec<String> {}
     pub(crate) fn check_import(
         item_use: &syn::ItemUse,
         dunder_paths: &[DunderPath],

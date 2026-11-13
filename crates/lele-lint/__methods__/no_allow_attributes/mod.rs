@@ -1,4 +1,4 @@
-mod check;
 mod lint_paths;
-pub use check::check;
+mod rule_check;
 pub use lint_paths::lint_paths;
+pub use rule_check::rule_check;

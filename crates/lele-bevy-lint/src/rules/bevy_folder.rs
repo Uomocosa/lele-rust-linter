@@ -30,7 +30,7 @@ impl Rule for BevyFolder {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(BevyFolder)]
+    #[atomic_delegate(BevyFolder, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

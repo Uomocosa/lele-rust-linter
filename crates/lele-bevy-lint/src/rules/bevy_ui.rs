@@ -27,7 +27,7 @@ impl Rule for BevyUi {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(BevyUi)]
+    #[atomic_delegate(BevyUi, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

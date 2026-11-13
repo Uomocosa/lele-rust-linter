@@ -1,4 +1,5 @@
 use lele_snake_case::traits::ToLeleSnakeCase;
+use lele_snake_case::DelegateFile;
 
 use crate::ImplBlock;
 
@@ -35,7 +36,11 @@ pub fn delegate_body_name(impl_block: ImplBlock, method: &syn::Ident) -> String 
         .map(|name| format!("_{}", name.to_snake_case()))
         .collect::<Vec<_>>()
         .concat();
-    format!("{method}{suffix}")
+    DelegateFile::stem(
+        impl_block.trait_ident().as_deref(),
+        &method.to_string(),
+        &suffix,
+    )
 }
 
 #[cfg(test)]
@@ -63,6 +68,14 @@ mod tests {
         );
         let plain: syn::ItemImpl = syn::parse_quote! { impl Rule for Foo {} };
         let ident: syn::Ident = syn::parse_quote!(check);
-        assert_eq!(delegate_body_name(ImplBlock(&plain), &ident), "check");
+        assert_eq!(delegate_body_name(ImplBlock(&plain), &ident), "rule_check");
+        let inherent: syn::ItemImpl = syn::parse_quote! { impl Foo {} };
+        assert_eq!(delegate_body_name(ImplBlock(&inherent), &ident), "check");
+        let display: syn::ItemImpl = syn::parse_quote! { impl Display for Foo {} };
+        let ident: syn::Ident = syn::parse_quote!(fmt);
+        assert_eq!(
+            delegate_body_name(ImplBlock(&display), &ident),
+            "display_fmt"
+        );
     }
 }

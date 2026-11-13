@@ -1,10 +1,10 @@
-mod check;
 mod missing_fn_flatten;
 mod missing_reexports;
 mod public_modules;
 mod root_reexports;
-pub use check::check;
+mod rule_check;
 pub use missing_fn_flatten::missing_fn_flatten;
 pub use missing_reexports::missing_reexports;
 pub use public_modules::public_modules;
 pub use root_reexports::root_reexports;
+pub use rule_check::rule_check;

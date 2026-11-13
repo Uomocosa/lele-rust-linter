@@ -12,6 +12,7 @@ impl ItemMarker<'_> {
     pub fn derives_any_of(self, names: &[&str]) -> bool {}
     pub fn is_named(self, name: &str) -> bool {}
     pub fn derives_data_shape(self) -> bool {}
+    pub fn atomic_delegate_trait_arg(self) -> Option<String> {}
 }
 
 #[rustfmt::skip]
@@ -65,7 +66,6 @@ mod tests {
             .map(ItemMarker)
             .unwrap()
             .is_atomic_delegate());
-
         let wire: syn::ItemStruct =
             syn::parse_quote! { #[derive(Parser)] struct Args { root: String } };
         assert!(wire

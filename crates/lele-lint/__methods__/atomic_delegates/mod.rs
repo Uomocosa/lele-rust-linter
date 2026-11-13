@@ -1,14 +1,14 @@
-mod check;
 mod has_any_method;
 mod inherent_block_violations;
 mod is_no_delegates_crate;
 mod is_one_line_body;
 mod names_str;
 mod no_delegates_violations;
-pub use check::check;
+mod rule_check;
 pub use has_any_method::has_any_method;
 pub use inherent_block_violations::inherent_block_violations;
 pub use is_no_delegates_crate::is_no_delegates_crate;
 pub use is_one_line_body::is_one_line_body;
 pub use names_str::names_str;
 pub use no_delegates_violations::no_delegates_violations;
+pub use rule_check::rule_check;

@@ -34,7 +34,7 @@ impl Rule for BoundaryImports {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(BoundaryImports)]
+    #[atomic_delegate(BoundaryImports, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

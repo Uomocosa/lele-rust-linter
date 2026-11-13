@@ -1,4 +1,3 @@
-mod check;
 mod is_atomic_delegate_only;
 mod is_default_only_impl;
 mod is_exempt;
@@ -7,7 +6,7 @@ mod is_pure_module_tree;
 mod is_type_only;
 mod opt_out_at_end;
 mod reads_opt_out;
-pub use check::check;
+mod rule_check;
 pub use is_atomic_delegate_only::is_atomic_delegate_only;
 pub use is_default_only_impl::is_default_only_impl;
 pub use is_exempt::is_exempt;
@@ -16,3 +15,4 @@ pub use is_pure_module_tree::is_pure_module_tree;
 pub use is_type_only::is_type_only;
 pub use opt_out_at_end::opt_out_at_end;
 pub use reads_opt_out::reads_opt_out;
+pub use rule_check::rule_check;

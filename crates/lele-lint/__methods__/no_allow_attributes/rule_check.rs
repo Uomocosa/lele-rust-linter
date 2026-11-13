@@ -1,0 +1,125 @@
+use syn::visit::Visit;
+
+use crate::rules;
+use crate::Project;
+use crate::RuleViolation;
+
+pub fn rule_check(
+    _self: &rules::no_allow_attributes::NoAllowAttributes,
+    project: &Project,
+) -> Vec<RuleViolation> {
+    let mut violations = Vec::new();
+    for source in project.content_sources() {
+        let rel_path = source.relative_path;
+        let file = source.file;
+        let mut finder = rules::no_allow_attributes::AllowFinder {
+            file: project.absolute_path(source.origin, rel_path),
+            config_base: project.config_base(),
+            clippy_allow_whitelist: &project.clippy_allow_whitelist,
+            violations: Vec::new(),
+        };
+        finder.visit_file(file);
+        violations.extend(finder.violations);
+    }
+    violations
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    use super::rule_check;
+    use crate::rules;
+    use crate::rules::no_allow_attributes::NoAllowAttributes;
+    use crate::AllowWhitelistEntry;
+    use crate::Project;
+
+    fn entry(allow: &str, file: &str, reason: &str) -> AllowWhitelistEntry {
+        AllowWhitelistEntry {
+            allow: allow.to_string(),
+            file: PathBuf::from(file),
+            reason: reason.to_string(),
+        }
+    }
+
+    #[test]
+    fn test_usage() {
+        let rule = rules::no_allow_attributes::NoAllowAttributes;
+        let project = Project::default();
+        assert!(rule_check(&rule, &project).is_empty());
+    }
+
+    fn run_check_with(code: &str, clippy_allow_whitelist: Vec<AllowWhitelistEntry>) -> usize {
+        let file: syn::File = syn::parse_str(code).unwrap();
+        let mut parsed_files = HashMap::new();
+        parsed_files.insert(PathBuf::from("x.rs"), file);
+        let project = Project {
+            root: PathBuf::new(),
+            src_dir: PathBuf::from("src"),
+            entries: Vec::new(),
+            module_info: HashMap::default(),
+            parsed_files,
+            clippy_allow_whitelist,
+            ..Project::default()
+        };
+        rule_check(&NoAllowAttributes, &project).len()
+    }
+
+    fn run_check(code: &str) -> usize {
+        run_check_with(code, Vec::new())
+    }
+
+    #[test]
+    fn test_usage_flags_allow() {
+        assert_eq!(run_check("#[allow(dead_code)] struct Foo;"), 1);
+        assert_eq!(run_check("struct Foo { #[allow(dead_code)] bar: u32 }"), 1);
+        assert_eq!(run_check("#![allow(dead_code)]"), 1);
+        assert_eq!(
+            run_check("#[allow(clippy::missing_const_for_fn)] fn f() {}"),
+            1
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_expect() {
+        assert_eq!(run_check("#[expect(dead_code)] struct Foo;"), 1);
+    }
+
+    #[test]
+    fn test_usage_clean_passes() {
+        assert_eq!(run_check("struct Foo { bar: u32 }"), 0);
+        assert_eq!(run_check("#[derive(Clone)] struct Foo { bar: u32 }"), 0);
+        assert_eq!(run_check("#[cfg(test)] mod tests {}"), 0);
+    }
+
+    #[test]
+    fn test_usage_whitelisted_passes() {
+        let whitelist = vec![entry("unreachable_code", "src/x.rs", "derive macro")];
+        assert_eq!(run_check_with("#![allow(unreachable_code)]", whitelist), 0);
+    }
+
+    #[test]
+    fn test_usage_whitelist_needs_matching_file() {
+        let whitelist = vec![entry("unreachable_code", "src/other.rs", "derive macro")];
+        assert_eq!(run_check_with("#![allow(unreachable_code)]", whitelist), 1);
+    }
+
+    #[test]
+    fn test_usage_whitelist_needs_reason() {
+        let whitelist = vec![entry("unreachable_code", "src/x.rs", "   ")];
+        assert_eq!(run_check_with("#![allow(unreachable_code)]", whitelist), 1);
+    }
+
+    #[test]
+    fn test_usage_whitelist_lists_all_lints() {
+        let whitelist = vec![entry("unreachable_code", "src/x.rs", "derive macro")];
+        assert_eq!(
+            run_check_with(
+                "#[allow(unreachable_code, dead_code)] struct Foo;",
+                whitelist
+            ),
+            1
+        );
+    }
+}

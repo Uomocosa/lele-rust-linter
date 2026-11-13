@@ -1,4 +1,3 @@
-mod check;
 mod collect_reexports;
 mod default_path;
 mod dunder_in_path;
@@ -9,7 +8,7 @@ mod mount_visibility_hit;
 mod path_attribute;
 mod reexport_suggestion;
 mod render_visibility;
-pub use check::check;
+mod rule_check;
 pub use collect_reexports::collect_reexports;
 pub use default_path::default_path;
 pub use dunder_in_path::dunder_in_path;
@@ -20,3 +19,4 @@ pub use mount_visibility_hit::mount_visibility_hit;
 pub use path_attribute::path_attribute;
 pub use reexport_suggestion::reexport_suggestion;
 pub use render_visibility::render_visibility;
+pub use rule_check::rule_check;

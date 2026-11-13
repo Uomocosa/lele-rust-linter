@@ -1,10 +1,10 @@
 mod advice;
-mod check;
 mod constructed_shape;
 mod is_self;
+mod rule_check;
 mod takes_self_typed_argument;
 pub use advice::advice;
-pub use check::check;
 pub use constructed_shape::constructed_shape;
 pub use is_self::is_self;
+pub use rule_check::rule_check;
 pub use takes_self_typed_argument::takes_self_typed_argument;

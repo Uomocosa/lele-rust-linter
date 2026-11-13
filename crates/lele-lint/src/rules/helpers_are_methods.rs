@@ -27,7 +27,7 @@ impl Rule for HelpersAreMethods {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(HelpersAreMethods)]
+    #[atomic_delegate(HelpersAreMethods, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

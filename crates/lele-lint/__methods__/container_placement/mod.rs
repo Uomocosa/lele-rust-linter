@@ -1,4 +1,3 @@
-mod check;
 mod check_container_file;
 mod check_free_file;
 mod classify;
@@ -8,7 +7,7 @@ mod ecs_role;
 mod has_behavior;
 mod is_excluded;
 mod role_of_stem;
-pub use check::check;
+mod rule_check;
 pub use check_container_file::check_container_file;
 pub use check_free_file::check_free_file;
 pub use classify::classify;
@@ -18,3 +17,4 @@ pub use ecs_role::ecs_role;
 pub use has_behavior::has_behavior;
 pub use is_excluded::is_excluded;
 pub use role_of_stem::role_of_stem;
+pub use rule_check::rule_check;

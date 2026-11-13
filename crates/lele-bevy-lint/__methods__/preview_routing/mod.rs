@@ -1,4 +1,4 @@
-mod check;
 mod problems;
-pub use check::check;
+mod rule_check;
 pub use problems::problems;
+pub use rule_check::rule_check;

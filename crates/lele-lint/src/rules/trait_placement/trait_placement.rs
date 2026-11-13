@@ -30,7 +30,7 @@ impl Rule for TraitPlacement {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(TraitPlacement)]
+    #[atomic_delegate(TraitPlacement, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

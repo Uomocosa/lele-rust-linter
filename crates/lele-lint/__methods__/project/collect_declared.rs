@@ -99,7 +99,7 @@ mod tests {
         let declared = collect_declared(&project);
         assert!(declared
             .get("foo")
-            .is_some_and(|d| d.methods.contains("check")));
+            .is_some_and(|d| d.methods.contains("rule_check")));
     }
 
     #[test]

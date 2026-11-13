@@ -8,6 +8,7 @@ use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 use lele_snake_case::traits::ToLeleSnakeCase;
+use lele_snake_case::DelegateFile;
 use rule_examples_macro::rule_examples;
 use std::collections::HashSet;
 use std::path::Path;
@@ -34,7 +35,7 @@ impl Rule for DelegateMacro {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(DelegateMacro)]
+    #[atomic_delegate(DelegateMacro, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 
@@ -52,12 +53,16 @@ impl DelegateMacro {
     pub(crate) fn mirror_names(
         project: &Project,
         primary: &str,
+        trait_ident: Option<&str>,
         idents: &[&syn::Ident],
     ) -> Vec<String> {
         let root = project.methods_root_name();
         idents
             .iter()
-            .map(|ident| format!("{root}/{}/{ident}.rs", primary.to_snake_case()))
+            .map(|ident| {
+                let stem = DelegateFile::stem(trait_ident, &ident.to_string(), "");
+                format!("{root}/{}/{stem}.rs", primary.to_snake_case())
+            })
             .collect()
     }
 }

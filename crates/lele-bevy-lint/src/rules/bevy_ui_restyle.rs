@@ -29,7 +29,7 @@ impl Rule for BevyUiRestyle {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(BevyUiRestyle)]
+    #[atomic_delegate(BevyUiRestyle, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

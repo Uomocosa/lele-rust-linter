@@ -1,4 +1,4 @@
-mod check;
 mod has_tests_component;
-pub use check::check;
+mod rule_check;
 pub use has_tests_component::has_tests_component;
+pub use rule_check::rule_check;

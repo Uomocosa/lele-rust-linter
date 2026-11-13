@@ -1,3 +1,4 @@
+use lele_snake_case::DelegateFile;
 use lele_snake_case::traits::ToLeleSnakeCase;
 use proc_macro::TokenStream;
 use quote::ToTokens;
@@ -34,6 +35,7 @@ pub(crate) struct DelegateImpl {
     impl_block: syn::ItemImpl,
     module: syn::Ident,
     body_suffix: String,
+    trait_ident: Option<String>,
 }
 
 impl TryFrom<syn::ItemImpl> for DelegateImpl {
@@ -42,10 +44,12 @@ impl TryFrom<syn::ItemImpl> for DelegateImpl {
     fn try_from(impl_block: syn::ItemImpl) -> Result<Self, Self::Error> {
         let module = Self::module_ident(&impl_block)?;
         let body_suffix = Self::trait_args_suffix(impl_block.trait_.as_ref());
+        let trait_ident = Self::trait_ident(impl_block.trait_.as_ref());
         Ok(Self {
             impl_block,
             module,
             body_suffix,
+            trait_ident,
         })
     }
 }
@@ -71,6 +75,15 @@ impl DelegateImpl {
             self_type.span(),
             "`#[atomic_delegates]` requires a named type",
         ))
+    }
+
+    pub(crate) fn trait_ident(
+        trait_path: Option<&(Option<syn::token::Not>, syn::Path, syn::token::For)>,
+    ) -> Option<String> {
+        let (_, path, _) = trait_path?;
+        path.segments
+            .last()
+            .map(|segment| segment.ident.to_string())
     }
 
     pub(crate) fn trait_args_suffix(
@@ -161,6 +174,7 @@ impl DelegateImpl {
                 module: self.module.clone(),
                 method: method.clone(),
                 body_suffix: self.body_suffix.clone(),
+                trait_ident: self.trait_ident.clone(),
                 macro_name: "`#[atomic_delegates]`",
             }
             .expanded()?,
@@ -172,6 +186,7 @@ pub(crate) struct DelegateShell {
     module: syn::Ident,
     method: syn::ImplItemFn,
     body_suffix: String,
+    trait_ident: Option<String>,
     macro_name: &'static str,
 }
 
@@ -180,22 +195,25 @@ impl DelegateShell {
         attr_tokens: proc_macro2::TokenStream,
         item_tokens: proc_macro2::TokenStream,
     ) -> syn::Result<Self> {
+        let (type_ident, trait_ident) = Self::attr_args(attr_tokens)?;
         Ok(Self {
-            module: Self::attr_module(attr_tokens)?,
+            module: format_ident!("{}", type_ident.to_string().to_snake_case()),
             method: syn::parse2(item_tokens)?,
             body_suffix: String::new(),
+            trait_ident: trait_ident.map(|ident| ident.to_string()),
             macro_name: "`#[atomic_delegate]`",
         })
     }
 
-    pub fn attr_module(attr_tokens: proc_macro2::TokenStream) -> syn::Result<syn::Ident> {
-        let type_ident: syn::Ident = syn::parse2(attr_tokens).map_err(|_| {
+    pub fn attr_args(
+        attr_tokens: proc_macro2::TokenStream,
+    ) -> syn::Result<(syn::Ident, Option<syn::Ident>)> {
+        syn::parse::Parser::parse2(Self::parse_attr_args, attr_tokens).map_err(|_| {
             syn::Error::new(
                 proc_macro2::Span::call_site(),
-                "`#[atomic_delegate]` takes a single type name, e.g. `#[atomic_delegate(Foo)]`",
+                "`#[atomic_delegate]` takes a type name, optionally followed by its trait: `#[atomic_delegate(Foo)]` or `#[atomic_delegate(Foo, Rule)]`",
             )
-        })?;
-        Ok(format_ident!("{}", type_ident.to_string().to_snake_case()))
+        })
     }
 
     pub fn expansion(
@@ -218,6 +236,18 @@ impl DelegateShell {
         }
         self.reserved_violation()?;
         self.dispatching()
+    }
+
+    pub(crate) fn parse_attr_args(
+        input: syn::parse::ParseStream,
+    ) -> syn::Result<(syn::Ident, Option<syn::Ident>)> {
+        let type_ident: syn::Ident = input.parse()?;
+        if input.is_empty() {
+            return Ok((type_ident, None));
+        }
+        input.parse::<syn::Token![,]>()?;
+        let trait_ident: syn::Ident = input.parse()?;
+        Ok((type_ident, Some(trait_ident)))
     }
 
     pub(crate) fn reserved_violation(&self) -> syn::Result<()> {
@@ -305,7 +335,11 @@ impl DelegateShell {
     pub(crate) fn named_call(&self, args: &[proc_macro2::TokenStream]) -> proc_macro2::TokenStream {
         let turbofish = Self::turbofish(&self.generic_tokens());
         let module = &self.module;
-        let body_fn = format_ident!("{}{}", self.method.sig.ident, self.body_suffix);
+        let method = self.method.sig.ident.to_string();
+        let body_fn = format_ident!(
+            "{}",
+            DelegateFile::stem(self.trait_ident.as_deref(), &method, &self.body_suffix)
+        );
         quote!(crate::methods::#module::#body_fn #turbofish (#(#args),*))
     }
 
@@ -362,8 +396,15 @@ mod tests {
         };
         let expanded = DelegateImpl::expanded(input).unwrap().to_string();
         assert!(expanded.contains("impl Rule for Foo"));
-        assert!(expanded.contains("crate :: methods :: foo :: check (self , project)"));
+        assert!(expanded.contains("crate :: methods :: foo :: rule_check (self , project)"));
         assert!(expanded.contains("# [rustfmt :: skip]"));
+        let display = quote! {
+            impl std::fmt::Display for Foo {
+                fn fmt(&self, formatter: &mut Formatter) -> Result {}
+            }
+        };
+        let expanded = DelegateImpl::expanded(display).unwrap().to_string();
+        assert!(expanded.contains("crate :: methods :: foo :: display_fmt (self , formatter)"));
     }
 
     #[test]
@@ -407,6 +448,22 @@ mod tests {
         assert!(
             expanded.contains("crate :: methods :: constants_placement :: check (self , project)")
         );
+    }
+
+    #[test]
+    fn test_usage_single_fn_trait_arg_names_body() {
+        let input = quote! {
+            fn check(&self, project: &Project) -> Vec<RuleViolation> {}
+        };
+        let with_trait = DelegateShell::expansion(quote!(Foo, Rule), input.clone())
+            .unwrap()
+            .to_string();
+        assert!(with_trait.contains("crate :: methods :: foo :: rule_check (self , project)"));
+        let without_trait = DelegateShell::expansion(quote!(Foo), input.clone())
+            .unwrap()
+            .to_string();
+        assert!(without_trait.contains("crate :: methods :: foo :: check (self , project)"));
+        assert!(DelegateShell::expansion(quote!(Foo, Rule, Extra), input).is_err());
     }
 
     #[test]

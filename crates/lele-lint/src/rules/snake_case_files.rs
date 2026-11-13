@@ -28,7 +28,7 @@ impl Rule for SnakeCaseFiles {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(SnakeCaseFiles)]
+    #[atomic_delegate(SnakeCaseFiles, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

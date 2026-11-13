@@ -30,7 +30,7 @@ impl Rule for NoComments {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
-    #[atomic_delegate(NoComments)]
+    #[atomic_delegate(NoComments, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }
 

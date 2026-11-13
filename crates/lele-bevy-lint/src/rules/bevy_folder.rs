@@ -39,8 +39,15 @@ impl BevyFolder {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(Self));
     }
+}
+
+impl BevyFolder {
     pub(crate) fn last_path_ident(ty: &syn::Type) -> Option<String> {
-        match ty { syn::Type::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()), syn::Type::Reference(r) => Self::last_path_ident(&r.elem), _ => None, }
+        match ty {
+            syn::Type::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()),
+            syn::Type::Reference(r) => Self::last_path_ident(&r.elem),
+            _ => None,
+        }
     }
 }
 

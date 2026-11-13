@@ -38,6 +38,9 @@ impl NoDunderTests {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoDunderTests));
     }
+}
+
+impl NoDunderTests {
     pub(crate) fn cfg_test_line(item: &syn::Item) -> Option<usize> {
         match item {
             syn::Item::Mod(module)

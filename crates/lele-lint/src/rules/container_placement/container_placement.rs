@@ -41,6 +41,9 @@ impl ContainerPlacement {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ContainerPlacement));
     }
+}
+
+impl ContainerPlacement {
     pub(crate) fn exposed_name(item: &syn::Item) -> Option<String> {
         match item {
             syn::Item::Struct(s) if Visibility(&s.vis).is_exposed() => Some(s.ident.to_string()),

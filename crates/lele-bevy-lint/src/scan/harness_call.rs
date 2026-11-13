@@ -21,6 +21,9 @@ impl HarnessCall {
 
 #[rustfmt::skip]
 impl HarnessCall {
+}
+
+impl HarnessCall {
     pub(crate) fn is_harness_run(expr: &syn::Expr, is_run_imported: bool) -> bool {
         match expr {
             syn::Expr::Paren(inner) => Self::is_harness_run(&inner.expr, is_run_imported),

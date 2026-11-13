@@ -43,7 +43,13 @@ impl BoundaryImports {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(BoundaryImports));
     }
-    pub(crate) fn forbidden_hit(hit: &rules::boundary_imports::PathHit, cannot_use: &[String]) -> Option<String> {
+}
+
+impl BoundaryImports {
+    pub(crate) fn forbidden_hit(
+        hit: &rules::boundary_imports::PathHit,
+        cannot_use: &[String],
+    ) -> Option<String> {
         if cannot_use
             .iter()
             .any(|forbidden| Self::matches_hit(forbidden, hit))

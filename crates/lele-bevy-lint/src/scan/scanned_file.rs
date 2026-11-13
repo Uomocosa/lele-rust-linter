@@ -64,11 +64,33 @@ impl ScannedFile<'_> {
 
 #[rustfmt::skip]
 impl ScannedFile<'_> {
+}
+
+impl ScannedFile<'_> {
     pub(crate) fn imports_run(tree: &syn::UseTree, is_under_harness: bool) -> bool {
-        match tree { syn::UseTree::Path(path) => Self::imports_run(&path.tree, is_under_harness || path.ident == HARNESS_CRATE), syn::UseTree::Name(name) => is_under_harness && name.ident == HARNESS_RUN, syn::UseTree::Rename(rename) => is_under_harness && rename.ident == HARNESS_RUN, syn::UseTree::Glob(_) => is_under_harness, syn::UseTree::Group(group) => group.items.iter().any(|item| Self::imports_run(item, is_under_harness)), }
+        match tree {
+            syn::UseTree::Path(path) => {
+                Self::imports_run(&path.tree, is_under_harness || path.ident == HARNESS_CRATE)
+            }
+            syn::UseTree::Name(name) => is_under_harness && name.ident == HARNESS_RUN,
+            syn::UseTree::Rename(rename) => is_under_harness && rename.ident == HARNESS_RUN,
+            syn::UseTree::Glob(_) => is_under_harness,
+            syn::UseTree::Group(group) => group
+                .items
+                .iter()
+                .any(|item| Self::imports_run(item, is_under_harness)),
+        }
     }
     pub(crate) fn kind_of(name: &str) -> Option<scan::PreviewKind> {
-        if name.ends_with(PNG_SUFFIX) { Some(scan::PreviewKind::Png) } else if name.ends_with(MP4_SUFFIX) { Some(scan::PreviewKind::Mp4) } else if name.ends_with(SCENE_SUFFIX) { Some(scan::PreviewKind::Scene) } else { None }
+        if name.ends_with(PNG_SUFFIX) {
+            Some(scan::PreviewKind::Png)
+        } else if name.ends_with(MP4_SUFFIX) {
+            Some(scan::PreviewKind::Mp4)
+        } else if name.ends_with(SCENE_SUFFIX) {
+            Some(scan::PreviewKind::Scene)
+        } else {
+            None
+        }
     }
 }
 

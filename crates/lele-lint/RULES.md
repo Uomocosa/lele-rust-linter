@@ -973,11 +973,11 @@ pub use clock::Clock;
 
 - [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
 - [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
+- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Each hand-written method of an inherent impl block has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
-- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
+- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
 - [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
@@ -1214,11 +1214,11 @@ mod tests {
 
 ### LELE017 `atomic_delegates`
 
-Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.
+Each hand-written method of an inherent impl block has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 
-**Why:** Longer methods belong in `__methods__/<type>/<method>.rs`; short ones stay readable as one line each.
+**Why:** rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.
 
-**Fix:** Move each method longer than 3 statements to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.
+**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
 
 **Bad** (reports LELE017):
 
@@ -1296,6 +1296,19 @@ impl Default for Player {
 #[rustfmt::skip]
 impl Player {
     pub fn is_alive(&self) -> bool { self.health > 0 }
+}
+
+impl Player {
+    pub fn status(&self) -> &'static str {
+        match self.health {
+            0 => "down",
+            _ => "up",
+        }
+    }
+    pub fn label(&self) -> String {
+        let prefix = "player";
+        format!("{prefix}: {}", self.name)
+    }
 }
 
 #[cfg(test)]
@@ -1640,11 +1653,11 @@ mod tests {
 
 ### LELE030 `methods_layout`
 
-Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
+Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 
 **Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do. A single statement spanning several lines is a real body and may stay in its delegate file.
 
-**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument) and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. If the body is a single one-line statement, do not create the file: write the method inline in a `#[rustfmt::skip] impl` block, then delete the file. Never pad a body or change a signature to keep a delegate file. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
+**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument) and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. If the body is a single one-line statement, do not create the file: write the method inline in a `#[rustfmt::skip] impl` block, then delete the file. If the body is a single simple `match`/`if`/loop, write it inline in a plain `impl` block (rustfmt formats it), then delete the file. Never pad a body or change a signature to keep a delegate file. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
 
 **Bad** (reports LELE030):
 

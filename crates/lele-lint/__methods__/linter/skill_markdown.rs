@@ -47,7 +47,7 @@ A fix for one rule must not break another. Before saving, check the file against
   no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
 - Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).
 - A data type with no `impl` goes in the domain's `__basic__/` (LELE020).
-- A method body over 3 statements lives in `__methods__/<type>/<method>.rs` (LELE017, LELE030).
+- Method bodies have four kinds, decided by rustfmt: a one-liner (one statement rustfmt prints on one line) stays inline under `#[rustfmt::skip]`; a single simple `match`/`if`/loop, or a body of 2 or 3 statements, stays inline in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/<type>/<method>.rs`. Never pad a body to change its kind (LELE017, LELE030).
 
 ";
 

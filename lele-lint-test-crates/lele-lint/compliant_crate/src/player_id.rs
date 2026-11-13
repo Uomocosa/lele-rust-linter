@@ -5,9 +5,7 @@ pub struct PlayerId(pub u64);
 
 #[rustfmt::skip]
 impl PlayerId {
-    pub fn as_u64(self) -> u64 {
-        *self
-    }
+    pub fn as_u64(self) -> u64 { *self }
 }
 
 #[cfg(test)]

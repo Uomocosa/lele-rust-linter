@@ -1,11 +1,10 @@
 use crate::clicker;
 
 pub fn increment(counter: &mut clicker::ClickCounter) {
-    if **counter == i32::MAX {
-        **counter = i32::MIN;
-    } else {
-        **counter += 1;
+    if **counter >= 100 {
+        return;
     }
+    **counter += 1;
 }
 
 #[cfg(test)]

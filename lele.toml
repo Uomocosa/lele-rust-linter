@@ -27,3 +27,7 @@ why        = "crates/lele-lint/src/common holds pure wrappers over syn ASTs and 
 folders    = ["crates/lele-lint/src/common"]
 cannot_use = ["std::fs", "std::env", "std::process", "std::net", "std::time"]
 require    = "honest"
+
+[[lele.lint.no_delegates]]
+crate = "crates/lele-snake-case"
+reason = "atomic-delegate-macros depends on this crate, so it cannot use #[atomic_delegates]"

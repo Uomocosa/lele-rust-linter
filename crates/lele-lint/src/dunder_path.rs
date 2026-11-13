@@ -38,6 +38,9 @@ impl DunderPath {
     pub fn is_dunder_dir(&self) -> bool { self.extension().is_none() }
     pub fn is_dunder_file(&self) -> bool { self.extension().is_some() }
     pub fn is_container(&self) -> bool { self.kind() == DunderKind::Container }
+}
+
+impl DunderPath {
     pub(crate) fn kind(&self) -> DunderKind {
         if CODE_DUNDER_MODULES.contains(&self.module_name()) {
             DunderKind::Code

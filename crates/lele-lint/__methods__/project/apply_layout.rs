@@ -14,6 +14,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
         project
             .collection_wrappers
             .clone_from(&section.lint.collection_wrappers);
+        project.no_delegates.clone_from(&section.lint.no_delegates);
         project.boundaries.clone_from(&section.boundary);
     }
 
@@ -52,7 +53,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
     let methods_root = config.layout_methods_root();
     let methods_dir = project.root.join(&methods_root);
     if !methods_dir.is_dir() {
-        return Ok(());
+        return project.fill_rustfmt_answers();
     }
 
     let entries = Entry::walk(&methods_dir, &methods_dir)?;
@@ -61,7 +62,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
     project.methods_entries = entries;
     project.methods_parsed_files = parsed_files;
     project.parse_failures.extend(parse_failures);
-    Ok(())
+    project.fill_rustfmt_answers()
 }
 
 #[cfg(test)]

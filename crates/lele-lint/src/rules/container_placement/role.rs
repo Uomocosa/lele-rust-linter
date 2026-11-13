@@ -24,6 +24,9 @@ impl Role {
         Role::TypeAlias,
         Role::Const,
     ];
+}
+
+impl Role {
     pub(crate) fn file(self) -> &'static str {
         match self {
             Role::Resource => "resources.rs",

@@ -51,10 +51,13 @@ impl Linter {
     pub(crate) fn print_github(d: &RuleViolation, w: &mut impl Write) {}
 }
 
-#[rustfmt::skip]
 impl Linter {
     pub(crate) fn paint(color: bool, style: &str, text: &str) -> String {
-        if color { format!("\x1b[{style}m{text}\x1b[0m") } else { text.to_owned() }
+        if color {
+            format!("\x1b[{style}m{text}\x1b[0m")
+        } else {
+            text.to_owned()
+        }
     }
 }
 

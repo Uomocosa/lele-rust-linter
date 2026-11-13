@@ -1,10 +1,11 @@
 use crate::clicker;
 
 pub fn add(counter: &mut clicker::ClickCounter, delta: i32) {
-    if delta == 0 {
+    let sum = (**counter).saturating_add(delta);
+    if sum < 0 {
         return;
     }
-    **counter = (**counter).saturating_add(delta);
+    **counter = sum;
 }
 
 #[cfg(test)]

@@ -14,13 +14,15 @@ pub use basic::enums::EntryKind;
 pub(crate) use basic::enums::ImplItemGroup;
 pub use basic::enums::Location;
 pub use basic::enums::Origin;
+pub use basic::enums::PlacementKind;
 pub use basic::enums::Requirement;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
-    LayoutSection, LeleSection, LeleToml, LeleTomlLintSections, ModDecl, ParseFailure, Reexport,
-    RuleDoc, ScannedDir,
+    LayoutSection, LeleSection, LeleToml, LeleTomlLintSections, ModDecl, NoDelegatesEntry,
+    ParseFailure, Reexport, RuleDoc, ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
+pub use basic::type_aliases::RustfmtKey;
 pub mod dunder_path;
 pub use dunder_path::DunderPath;
 pub mod entry;

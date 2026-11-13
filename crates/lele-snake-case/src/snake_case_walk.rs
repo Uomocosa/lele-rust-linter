@@ -18,39 +18,22 @@ impl From<&str> for SnakeCaseWalk {
 
 #[rustfmt::skip]
 impl SnakeCaseWalk {
-    pub(crate) fn push_char(&mut self, position: usize, c: char) {
-        if position >= self.skip_until {
-            self.push_word_start(position, c);
-        }
-    }
 
-    pub(crate) fn push_word_start(&mut self, position: usize, c: char) {
-        if let Some(word) = self.acronym_at(position) {
-            self.push_acronym(word, position);
-        } else {
-            self.push_scalar_char(position, c);
-        }
-    }
 
-    pub(crate) fn push_word_underscore(&mut self) {
-        if !self.result.is_empty() && !self.result.ends_with('_') {
-            self.result.push('_');
-        }
-    }
 
-    pub(crate) fn push_scalar_char(&mut self, position: usize, c: char) {
-        if c.is_uppercase() {
-            self.push_uppercase_char(position, c);
-        } else {
-            self.result.push(c);
-        }
-    }
 
+
+
+
+
+
+}
+
+impl SnakeCaseWalk {
     pub(crate) fn starts_new_word(&self, position: usize) -> bool {
         self.preceded_by_lowercase(position)
             || (self.followed_by_lowercase(position) && self.preceded_by_uppercase(position))
     }
-
     pub(crate) fn preceded_by_lowercase(&self, position: usize) -> bool {
         position > 0
             && self
@@ -58,7 +41,6 @@ impl SnakeCaseWalk {
                 .get(position.saturating_sub(1))
                 .is_some_and(|p| p.is_lowercase())
     }
-
     pub(crate) fn preceded_by_uppercase(&self, position: usize) -> bool {
         position > 0
             && self
@@ -66,13 +48,45 @@ impl SnakeCaseWalk {
                 .get(position.saturating_sub(1))
                 .is_some_and(|p| p.is_uppercase())
     }
-
     pub(crate) fn followed_by_lowercase(&self, position: usize) -> bool {
         self.chars
             .get(position.saturating_add(1))
             .is_some_and(|p| p.is_lowercase())
     }
+    pub(crate) fn is_word_start(&self, position: usize) -> bool {
+        position == 0
+            || self
+                .chars
+                .get(position.saturating_sub(1))
+                .is_some_and(|p| !p.is_uppercase())
+    }
+}
 
+impl SnakeCaseWalk {
+    pub(crate) fn push_char(&mut self, position: usize, c: char) {
+        if position >= self.skip_until {
+            self.push_word_start(position, c);
+        }
+    }
+    pub(crate) fn push_word_start(&mut self, position: usize, c: char) {
+        if let Some(word) = self.acronym_at(position) {
+            self.push_acronym(word, position);
+        } else {
+            self.push_scalar_char(position, c);
+        }
+    }
+    pub(crate) fn push_word_underscore(&mut self) {
+        if !self.result.is_empty() && !self.result.ends_with('_') {
+            self.result.push('_');
+        }
+    }
+    pub(crate) fn push_scalar_char(&mut self, position: usize, c: char) {
+        if c.is_uppercase() {
+            self.push_uppercase_char(position, c);
+        } else {
+            self.result.push(c);
+        }
+    }
     pub(crate) fn acronym_at(&self, position: usize) -> Option<&'static str> {
         if self.is_word_start(position) {
             constants::ACRONYMS
@@ -82,14 +96,6 @@ impl SnakeCaseWalk {
         } else {
             None
         }
-    }
-
-    pub(crate) fn is_word_start(&self, position: usize) -> bool {
-        position == 0
-            || self
-                .chars
-                .get(position.saturating_sub(1))
-                .is_some_and(|p| !p.is_uppercase())
     }
 }
 

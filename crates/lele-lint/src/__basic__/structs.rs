@@ -56,6 +56,8 @@ pub struct LeleTomlLintSections {
     pub entry_points: Vec<EntryPoint>,
     #[serde(default)]
     pub collection_wrappers: Vec<CollectionWrapperEntry>,
+    #[serde(default)]
+    pub no_delegates: Vec<NoDelegatesEntry>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -64,6 +66,14 @@ pub struct CollectionWrapperEntry {
     #[serde(rename = "type")]
     pub type_name: String,
     pub file: std::path::PathBuf,
+    pub reason: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct NoDelegatesEntry {
+    #[serde(rename = "crate")]
+    pub crate_path: std::path::PathBuf,
     pub reason: String,
 }
 

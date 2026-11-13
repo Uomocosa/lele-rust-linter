@@ -39,20 +39,6 @@ impl TraitImplCoLocation {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(TraitImplCoLocation));
     }
-    pub(crate) fn container_target_message(
-        trait_name: &str,
-        type_name: &str,
-        target: &Path,
-        graduate: &Path,
-    ) -> String {
-        format!("`impl {trait_name} for {type_name}` lives outside `{}`, which defines `{type_name}`: a type with an impl keeps its own file — move `{type_name}` to `{}` and put the impl there", target.display(), graduate.display())
-    }
-    pub(crate) fn impl_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
-        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{type_name}`", target.display())
-    }
-    pub(crate) fn trait_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
-        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{trait_name}`", target.display())
-    }
 }
 
 impl TraitImplCoLocation {
@@ -81,6 +67,16 @@ impl TraitImplCoLocation {
 
 #[atomic_delegates]
 impl TraitImplCoLocation {
+    pub(crate) fn container_target_message(
+        trait_name: &str,
+        type_name: &str,
+        target: &Path,
+        graduate: &Path,
+    ) -> String {
+    }
+    pub(crate) fn impl_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {}
+    pub(crate) fn trait_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
+    }
     pub(crate) fn check_hit(
         rel_path: &Path,
         hit: &rules::trait_impl_co_location::ImplHit,

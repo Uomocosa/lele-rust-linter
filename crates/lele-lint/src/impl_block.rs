@@ -10,7 +10,6 @@ impl ImplBlock<'_> {
     pub fn is_default_impl(self) -> bool {}
 }
 
-#[rustfmt::skip]
 impl ImplBlock<'_> {
     pub fn self_type_last(&self) -> Option<String> {
         match &*self.self_ty {

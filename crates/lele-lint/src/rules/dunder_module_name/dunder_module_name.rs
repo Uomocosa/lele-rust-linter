@@ -90,10 +90,13 @@ impl DunderModuleName {
     pub(crate) fn render_visibility(vis: &syn::Visibility) -> String {}
 }
 
-#[rustfmt::skip]
 impl DunderModuleName {
     pub(crate) fn reexport_message(item: &str, suggestion: &str) -> String {
-        if item == "*" { format!("do not re-export `{suggestion}`") } else { format!("do not re-export `{item}`: refer to it as `{suggestion}`") }
+        if item == "*" {
+            format!("do not re-export `{suggestion}`")
+        } else {
+            format!("do not re-export `{item}`: refer to it as `{suggestion}`")
+        }
     }
 }
 

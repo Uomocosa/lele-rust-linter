@@ -16,7 +16,6 @@ impl DeclaredType {
     pub fn glue_index_content(root_names: &[String]) -> String {}
 }
 
-#[rustfmt::skip]
 impl DeclaredType {
     pub(crate) fn combined_cfg(cfgs: &[String]) -> Option<String> {
         match cfgs {

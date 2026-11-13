@@ -16,9 +16,11 @@ use crate::Entry;
 use crate::EntryPoint;
 use crate::Error;
 use crate::ModuleInfoMap;
+use crate::NoDelegatesEntry;
 use crate::Origin;
 use crate::ParseFailure;
 use crate::ParsedSource;
+use crate::RustfmtKey;
 use crate::ScannedDir;
 
 #[derive(Default)]
@@ -35,6 +37,7 @@ pub struct Project {
     pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
     pub entry_points: Vec<EntryPoint>,
     pub collection_wrappers: Vec<CollectionWrapperEntry>,
+    pub no_delegates: Vec<NoDelegatesEntry>,
     pub methods_dir: Option<PathBuf>,
     pub methods_entries: Vec<Entry>,
     pub methods_parsed_files: HashMap<PathBuf, syn::File>,
@@ -42,6 +45,7 @@ pub struct Project {
     pub example_parsed_files: HashMap<PathBuf, syn::File>,
     pub boundaries: Vec<BoundaryEntry>,
     pub parse_failures: Vec<ParseFailure>,
+    pub rustfmt_one_liners: BTreeMap<RustfmtKey, bool>,
 }
 
 #[atomic_delegates]
@@ -76,6 +80,8 @@ impl Project {
     pub fn methods_in_root(&self, type_snake: &str, root: &str) -> BTreeSet<String> {}
     pub fn dunder_dir(&self) -> Option<String> {}
     pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {}
+    pub fn fill_rustfmt_answers(&mut self) -> Result<(), Error> {}
+    pub fn rustfmt_one_liner(&self, rel_path: &Path, stmt: &syn::Stmt) -> bool {}
 }
 
 #[rustfmt::skip]
@@ -84,6 +90,9 @@ impl Project {
         self.parsed_files.get(rel_path)
     }
     pub fn is_multi_root(&self) -> bool { self.layout_roots.len() > 1 }
+}
+
+impl Project {
     pub fn config_base(&self) -> PathBuf {
         if self.config_dir.as_os_str().is_empty() {
             self.root.clone()
@@ -94,7 +103,11 @@ impl Project {
     pub fn absolute_path(&self, origin: Origin, rel_path: &Path) -> PathBuf {
         match origin {
             Origin::Src => self.absolute_src_path(rel_path),
-            Origin::Methods => self.methods_dir.clone().unwrap_or_else(|| self.root.join("__methods__")).join(rel_path),
+            Origin::Methods => self
+                .methods_dir
+                .clone()
+                .unwrap_or_else(|| self.root.join("__methods__"))
+                .join(rel_path),
             Origin::Examples => self.root.join("examples").join(rel_path),
         }
     }
@@ -137,6 +150,18 @@ impl Project {
     pub(crate) fn file_cfgs(map: &common::ModuleCfgMap, rel_path: &Path) -> Vec<String> {}
     pub(crate) fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {}
     pub(crate) fn src_index_for_rel(&self, rel_path: &Path) -> usize {}
+    pub(crate) fn collect_rustfmt_candidates(&self) -> Result<Vec<(RustfmtKey, String)>, Error> {}
+    pub(crate) fn run_rustfmt(&self, source: &str) -> Result<String, Error> {}
+    pub(crate) fn crate_edition(&self) -> String {}
+    pub(crate) fn rustfmt_max_width(&self) -> usize {}
+    pub(crate) fn statement_text(source: &str, stmt: &syn::Stmt) -> String {}
+    pub(crate) fn rustfmt_source(candidates: &[(RustfmtKey, String)]) -> String {}
+    pub(crate) fn rustfmt_answers(
+        output: &str,
+        keys: &[RustfmtKey],
+        max_width: usize,
+    ) -> Result<BTreeMap<RustfmtKey, bool>, Error> {
+    }
 }
 
 #[cfg(test)]

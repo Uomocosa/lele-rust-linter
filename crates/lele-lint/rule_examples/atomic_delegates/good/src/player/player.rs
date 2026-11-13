@@ -17,6 +17,19 @@ impl Player {
     pub fn is_alive(&self) -> bool { self.health > 0 }
 }
 
+impl Player {
+    pub fn status(&self) -> &'static str {
+        match self.health {
+            0 => "down",
+            _ => "up",
+        }
+    }
+    pub fn label(&self) -> String {
+        let prefix = "player";
+        format!("{prefix}: {}", self.name)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::player;

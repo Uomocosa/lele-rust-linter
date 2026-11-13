@@ -26,6 +26,21 @@ pub enum Error {
 
     #[error("dunder path `{}` must end in `__<name>__`", .0.display())]
     NotDunder(std::path::PathBuf),
+
+    #[error("rustfmt could not be run in {}", .root.display())]
+    RustfmtStart {
+        root: std::path::PathBuf,
+        source: std::io::Error,
+    },
+
+    #[error("rustfmt rejected the placement check: {stderr}")]
+    RustfmtFailed { stderr: String },
+
+    #[error("rustfmt output could not be parsed")]
+    RustfmtOutput(#[source] syn::Error),
+
+    #[error("rustfmt output lacks a placement answer for a method")]
+    RustfmtMissing,
 }
 
 #[atomic_delegates]

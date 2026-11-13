@@ -18,6 +18,14 @@ pub enum Requirement {
     Honest,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlacementKind {
+    OneLiner,
+    SimpleBlock,
+    FewStatements,
+    Delegate,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     Src,

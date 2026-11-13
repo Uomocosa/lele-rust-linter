@@ -38,6 +38,9 @@ impl BevyUiRestyle {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(Self));
     }
+}
+
+impl BevyUiRestyle {
     pub(crate) fn suffix(kind: scan::PreviewKind) -> &'static str {
         match kind {
             scan::PreviewKind::Png => "png",

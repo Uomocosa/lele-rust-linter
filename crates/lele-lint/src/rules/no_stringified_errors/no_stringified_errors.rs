@@ -38,6 +38,9 @@ impl NoStringifiedErrors {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoStringifiedErrors));
     }
+}
+
+impl NoStringifiedErrors {
     pub(crate) fn names_an_error_type(ty: &syn::Type) -> bool {
         match ty {
             syn::Type::Reference(reference) => Self::names_an_error_type(&reference.elem),

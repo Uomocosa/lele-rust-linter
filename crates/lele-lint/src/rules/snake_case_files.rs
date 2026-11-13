@@ -37,6 +37,9 @@ impl SnakeCaseFiles {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(SnakeCaseFiles));
     }
+}
+
+impl SnakeCaseFiles {
     pub(crate) fn extract_name(path: &std::path::Path, is_dir: bool) -> Option<&str> {
         if is_dir {
             path.file_name().and_then(|n| n.to_str())

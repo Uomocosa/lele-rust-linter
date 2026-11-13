@@ -37,10 +37,19 @@ impl NoSerializedEntity {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(Self));
     }
+}
+
+impl NoSerializedEntity {
     pub(crate) fn struct_has_entity(struct_def: &syn::ItemStruct) -> bool {
         match &struct_def.fields {
-            syn::Fields::Named(fields) => fields.named.iter().any(|field| Self::contains_entity(&field.ty)),
-            syn::Fields::Unnamed(fields) => fields.unnamed.iter().any(|field| Self::contains_entity(&field.ty)),
+            syn::Fields::Named(fields) => fields
+                .named
+                .iter()
+                .any(|field| Self::contains_entity(&field.ty)),
+            syn::Fields::Unnamed(fields) => fields
+                .unnamed
+                .iter()
+                .any(|field| Self::contains_entity(&field.ty)),
             syn::Fields::Unit => false,
         }
     }

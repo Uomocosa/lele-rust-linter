@@ -1,6 +1,14 @@
+mod has_control_keyword;
+mod is_control_statement;
 mod is_delegate_call;
 mod is_methods_dispatch;
+mod is_simple_block;
+mod placement_kind;
 mod single_path_call_segments;
+pub use has_control_keyword::has_control_keyword;
+pub use is_control_statement::is_control_statement;
 pub use is_delegate_call::is_delegate_call;
 pub use is_methods_dispatch::is_methods_dispatch;
+pub use is_simple_block::is_simple_block;
+pub use placement_kind::placement_kind;
 pub use single_path_call_segments::single_path_call_segments;

@@ -41,9 +41,14 @@ impl NoSuperImports {
     pub(crate) fn starts_with_super(tree: &syn::UseTree) -> bool {
         matches!(tree, syn::UseTree::Path(path) if path.ident == "super")
     }
+}
+
+impl NoSuperImports {
     pub(crate) fn use_tree_string(tree: &syn::UseTree) -> String {
         match tree {
-            syn::UseTree::Path(path) => format!("{}::{}", path.ident, Self::use_tree_string(&path.tree)),
+            syn::UseTree::Path(path) => {
+                format!("{}::{}", path.ident, Self::use_tree_string(&path.tree))
+            }
             syn::UseTree::Name(name) => name.ident.to_string(),
             syn::UseTree::Rename(rename) => format!("{} as {}", rename.ident, rename.rename),
             syn::UseTree::Glob(_) => "*".to_string(),

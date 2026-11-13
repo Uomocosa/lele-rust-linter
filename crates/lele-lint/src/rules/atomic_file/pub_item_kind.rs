@@ -4,7 +4,6 @@ pub(crate) enum PubItemKind {
     Fn,
 }
 
-#[rustfmt::skip]
 impl PubItemKind {
     pub(crate) fn kind_str(&self) -> &'static str {
         match self {

@@ -34,7 +34,6 @@ impl<'ast> Visit<'ast> for TypeVisitor<'_> {
     }
 }
 
-#[rustfmt::skip]
 impl TypeVisitor<'_> {
     pub(crate) fn record(&mut self, attrs: &[syn::Attribute], ident: &syn::Ident) {
         if !attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {

@@ -42,7 +42,9 @@ impl NoCollectionNewtype {
     pub(crate) fn has_unsigned_element(ty: &syn::Type) -> bool {
         Self::element_type(ty).is_some_and(Self::is_unsigned_int)
     }
-    pub(crate) fn impl_self_is(imp: &syn::ItemImpl, name: &str) -> bool { matches!(&*imp.self_ty, syn::Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == name)) }
+}
+
+impl NoCollectionNewtype {
     pub(crate) fn singular_name(name: &str) -> String {
         if let Some(stripped) = name.strip_suffix("ies") {
             format!("{stripped}y")
@@ -58,6 +60,7 @@ impl NoCollectionNewtype {
 
 #[atomic_delegates]
 impl NoCollectionNewtype {
+    pub(crate) fn impl_self_is(imp: &syn::ItemImpl, name: &str) -> bool {}
     pub(crate) fn derives_deref_mut(struct_def: &syn::ItemStruct) -> bool {}
     pub(crate) fn has_public_field(struct_def: &syn::ItemStruct) -> bool {}
     pub(crate) fn has_invariant_impl(items: &[syn::Item], name: &str) -> bool {}
@@ -70,13 +73,6 @@ impl NoCollectionNewtype {
     pub(crate) fn check_struct(
         struct_def: &syn::ItemStruct,
         file_path: &Path,
-    ) -> Vec<RuleViolation> {
-    }
-    pub(crate) fn check_struct_for_project(
-        struct_def: &syn::ItemStruct,
-        file_path: &Path,
-        project: &Project,
-        items: &[syn::Item],
     ) -> Vec<RuleViolation> {
     }
     pub(crate) fn check_listed_wrapper(
@@ -101,4 +97,38 @@ impl NoCollectionNewtype {
     pub(crate) fn is_unsigned_int(ty: &syn::Type) -> bool {}
 }
 
-// no test_usage necessary
+impl NoCollectionNewtype {
+    pub(crate) fn check_struct_for_project(
+        struct_def: &syn::ItemStruct,
+        file_path: &Path,
+        project: &Project,
+        items: &[syn::Item],
+    ) -> Vec<RuleViolation> {
+        match Self::listed_entry(project, struct_def, file_path) {
+            Some(_) => Self::check_listed_wrapper(struct_def, file_path, items),
+            None => Self::check_struct(struct_def, file_path),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::rules;
+    use crate::Project;
+    use std::path::Path;
+
+    #[test]
+    fn test_usage() {
+        let file = syn::parse_str::<syn::File>("pub struct Bag(pub Vec<u8>);").unwrap();
+        let project = Project::default();
+        let found = rules::no_collection_newtype::NoCollectionNewtype::check_struct_for_project(
+            &syn::parse_quote!(
+                pub struct Hand(pub Vec<String>);
+            ),
+            Path::new("x.rs"),
+            &project,
+            &file.items,
+        );
+        assert_eq!(found.len(), 1);
+    }
+}

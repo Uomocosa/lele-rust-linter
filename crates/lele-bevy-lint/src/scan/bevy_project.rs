@@ -49,6 +49,9 @@ impl BevyProject<'_> {
 
 #[rustfmt::skip]
 impl BevyProject<'_> {
+}
+
+impl BevyProject<'_> {
     pub(crate) fn display_path(origin: Origin, rel_path: &Path) -> String {
         match origin {
             Origin::Src => rel_path.display().to_string(),

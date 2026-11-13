@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
@@ -15,9 +17,9 @@ impl AtomicDelegates {
     pub const CODE: &'static str = "LELE017";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
-        summary: "Hand-written methods have at most 3 statements, and an impl block with one-line methods carries `#[rustfmt::skip]`.",
-        why: "Longer methods belong in `__methods__/<type>/<method>.rs`; short ones stay readable as one line each.",
-        fix: "Move each method longer than 3 statements to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block; put `#[rustfmt::skip]` on blocks of one-line methods.",
+        summary: "Each hand-written method of an inherent impl block has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.",
+        why: "rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.",
+        fix: "Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.",
         bad: rule_examples!("atomic_delegates/bad"),
         good: rule_examples!("atomic_delegates/good"),
     };
@@ -44,6 +46,14 @@ impl AtomicDelegates {
     pub(crate) fn has_any_method(impl_block: &syn::ItemImpl) -> bool {}
     pub(crate) fn names_str(idents: &[&syn::Ident]) -> String {}
     pub(crate) fn is_one_line_body(method: &syn::ImplItemFn) -> bool {}
+    pub(crate) fn is_no_delegates_crate(project: &Project) -> bool {}
+    pub(crate) fn no_delegates_violations(project: &Project) -> Vec<RuleViolation> {}
+    pub(crate) fn inherent_block_violations(
+        project: &Project,
+        rel_path: &Path,
+        impl_block: &syn::ItemImpl,
+    ) -> Vec<RuleViolation> {
+    }
 }
 
 // no test_usage necessary

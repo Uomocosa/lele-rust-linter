@@ -173,18 +173,27 @@ mod tests {
 
     #[test]
     fn test_usage_short_body_demands_inline() {
-        let mut project = Project::default();
-        project.parsed_files.insert(
-            PathBuf::from("widget.rs"),
-            syn::parse_str(
-                "pub struct Widget;\n#[atomic_delegates]\nimpl Widget { pub fn spin(&self) {} }\n",
-            )
-            .unwrap(),
-        );
+        let dir = tempfile::tempdir().unwrap();
+        let widget =
+            "pub struct Widget;\n#[atomic_delegates]\nimpl Widget { pub fn spin(&self) {} }\n";
+        let spin = "pub fn spin(w: &mut Widget) { w.spin_once() }\n";
+        std::fs::write(dir.path().join("widget.rs"), widget).unwrap();
+        std::fs::create_dir_all(dir.path().join("methods/widget")).unwrap();
+        std::fs::write(dir.path().join("methods/widget/spin.rs"), spin).unwrap();
+        let mut project = Project {
+            root: dir.path().to_path_buf(),
+            src_dir: dir.path().to_path_buf(),
+            methods_dir: Some(dir.path().join("methods")),
+            ..Project::default()
+        };
+        project
+            .parsed_files
+            .insert(PathBuf::from("widget.rs"), syn::parse_str(widget).unwrap());
         project.methods_parsed_files.insert(
             PathBuf::from("widget/spin.rs"),
-            syn::parse_str("pub fn spin(w: &mut Widget) { w.spin_once() }\n").unwrap(),
+            syn::parse_str(spin).unwrap(),
         );
+        project.fill_rustfmt_answers().unwrap();
         let violations = check(&MethodsLayout, &project);
         assert!(
             violations

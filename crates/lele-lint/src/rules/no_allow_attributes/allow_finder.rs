@@ -1,5 +1,6 @@
 use crate::rules;
 use crate::AllowWhitelistEntry;
+use crate::Project;
 use crate::RuleViolation;
 use std::path::PathBuf;
 use syn::spanned::Spanned;
@@ -7,7 +8,7 @@ use syn::visit::Visit;
 
 pub(crate) struct AllowFinder<'a> {
     pub(crate) file: PathBuf,
-    pub(crate) crate_rel: PathBuf,
+    pub(crate) config_base: PathBuf,
     pub(crate) clippy_allow_whitelist: &'a [AllowWhitelistEntry],
     pub(crate) violations: Vec<RuleViolation>,
 }
@@ -39,7 +40,7 @@ impl AllowFinder<'_> {
         }
         self.clippy_allow_whitelist.iter().any(|entry| {
             !entry.reason.trim().is_empty()
-                && self.crate_rel == entry.file
+                && Project::same_file(&self.config_base.join(&entry.file), &self.file)
                 && lint_paths.iter().all(|path| path == &entry.allow)
         })
     }

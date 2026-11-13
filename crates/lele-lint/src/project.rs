@@ -92,6 +92,17 @@ impl Project {
     pub fn is_multi_root(&self) -> bool { self.layout_roots.len() > 1 }
 }
 
+#[rustfmt::skip]
+impl Project {
+    pub fn config_path(&self, file: &Path) -> PathBuf { self.config_base().join(file) }
+    pub fn is_in_crate(&self, path: &Path) -> bool {
+        Self::canonical_or_self(path).starts_with(Self::canonical_or_self(&self.root))
+    }
+    pub fn same_file(left: &Path, right: &Path) -> bool {
+        Self::canonical_or_self(left) == Self::canonical_or_self(right)
+    }
+}
+
 impl Project {
     pub fn config_base(&self) -> PathBuf {
         if self.config_dir.as_os_str().is_empty() {
@@ -143,6 +154,11 @@ impl Project {
         std::fs::write(path, content)?;
         Ok(())
     }
+}
+
+#[rustfmt::skip]
+impl Project {
+    pub(crate) fn canonical_or_self(path: &Path) -> PathBuf { std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf()) }
 }
 
 #[atomic_delegates]

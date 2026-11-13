@@ -1,12 +1,14 @@
+use crate::config;
 use crate::rules;
 use crate::Project;
 use crate::RuleViolation;
 
 pub fn entry_violations(project: &Project) -> Vec<RuleViolation> {
     let code = rules::no_collection_newtype::NoCollectionNewtype::CODE;
+    let config_file = project.config_base().join(config::CONFIG_FILENAME);
     let mut violations = Vec::new();
     for entry in &project.collection_wrappers {
-        let path = project.root.join(&entry.file);
+        let path = project.config_path(&entry.file);
         if entry.reason.trim().is_empty() {
             violations.push(RuleViolation::from_file(
                 path.clone(),
@@ -17,7 +19,18 @@ pub fn entry_violations(project: &Project) -> Vec<RuleViolation> {
                 ),
             ));
         }
-        if path.is_file()
+        if !path.is_file() {
+            violations.push(RuleViolation::from_file(
+                config_file.clone(),
+                code,
+                format!(
+                    "stale [[lele.lint.collection_wrappers]] entry: file `{}` does not exist — delete the entry",
+                    entry.file.display()
+                ),
+            ));
+            continue;
+        }
+        if project.is_in_crate(&path)
             && !rules::no_collection_newtype::NoCollectionNewtype::defines_listed_wrapper(
                 project, entry,
             )
@@ -54,9 +67,13 @@ mod tests {
             }],
             ..Project::default()
         };
-        let violations =
-            rules::no_collection_newtype::NoCollectionNewtype::entry_violations(&project);
-        assert_eq!(violations.len(), 1);
-        assert!(violations[0].message.contains("has no reason"));
+        let messages: Vec<String> =
+            rules::no_collection_newtype::NoCollectionNewtype::entry_violations(&project)
+                .into_iter()
+                .map(|v| v.message)
+                .collect();
+        assert_eq!(messages.len(), 2, "{messages:?}");
+        assert!(messages.iter().any(|m| m.contains("has no reason")));
+        assert!(messages.iter().any(|m| m.contains("does not exist")));
     }
 }

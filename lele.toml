@@ -1,5 +1,5 @@
-# One lele.toml per workspace. `just lint` passes `--config lele.toml`, and the
-# config file's directory is the base, so boundary `folders` are workspace-relative.
+# One lele.toml per workspace. `just lint` passes `--config lele.toml`. Every path
+# in this file is relative to this file's directory (the config base).
 
 [lele.config]
 exclude = ["target", ".devenv", ".git", "lele-lint-test-crates"]

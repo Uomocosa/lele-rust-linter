@@ -15,7 +15,7 @@ impl NoAllowAttributes {
     pub const CODE: &'static str = "LELE024";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Style,
-        summary: "No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.",
+        summary: "No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).",
         why: "Every silenced lint is a decision the user made on purpose, recorded with its reason.",
         fix: "Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.",
         bad: rule_examples!("no_allow_attributes/bad"),

@@ -11,7 +11,8 @@ pub fn listed_entry(
         .collection_wrappers
         .iter()
         .find(|entry| {
-            struct_def.ident == entry.type_name && project.root.join(&entry.file) == file_path
+            struct_def.ident == entry.type_name
+                && Project::same_file(&project.config_path(&entry.file), file_path)
         })
         .cloned()
 }

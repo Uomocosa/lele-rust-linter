@@ -3,13 +3,15 @@ use crate::CollectionWrapperEntry;
 use crate::Project;
 
 pub fn defines_listed_wrapper(project: &Project, entry: &CollectionWrapperEntry) -> bool {
-    let path = project.root.join(&entry.file);
+    let path = project.config_path(&entry.file);
     project.content_sources().any(|source| {
-        project.absolute_path(source.origin, source.relative_path) == path
-            && source.file.items.iter().any(|item| {
-                matches!(item, syn::Item::Struct(strukt) if strukt.ident == entry.type_name
+        Project::same_file(
+            &project.absolute_path(source.origin, source.relative_path),
+            &path,
+        ) && source.file.items.iter().any(|item| {
+            matches!(item, syn::Item::Struct(strukt) if strukt.ident == entry.type_name
                     && rules::no_collection_newtype::NoCollectionNewtype::wraps_collection(strukt))
-            })
+        })
     })
 }
 

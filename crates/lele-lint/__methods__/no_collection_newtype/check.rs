@@ -339,9 +339,10 @@ mod tests {
     }
 
     #[test]
-    fn test_listing_entry_for_missing_file_is_not_stale() {
+    fn test_listing_entry_for_missing_file_is_stale() {
         let messages = messages_for(&[], vec![deck_entry("cap")]);
-        assert_eq!(messages, Vec::<String>::new());
+        assert_eq!(messages.len(), 1, "{messages:?}");
+        assert!(messages[0].contains("file `src/cards/deck.rs` does not exist"));
     }
 
     #[test]

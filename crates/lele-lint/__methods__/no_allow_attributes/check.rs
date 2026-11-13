@@ -1,9 +1,6 @@
-use std::path::Path;
-
 use syn::visit::Visit;
 
 use crate::rules;
-use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -15,16 +12,9 @@ pub fn check(
     for source in project.content_sources() {
         let rel_path = source.relative_path;
         let file = source.file;
-        let crate_rel = match source.origin {
-            Origin::Src if project.src_index_for_rel(rel_path) == 0 => {
-                Path::new("src").join(rel_path)
-            }
-            Origin::Src => rel_path.to_path_buf(),
-            _ => Path::new("src").join(rel_path),
-        };
         let mut finder = rules::no_allow_attributes::AllowFinder {
             file: project.absolute_path(source.origin, rel_path),
-            crate_rel,
+            config_base: project.config_base(),
             clippy_allow_whitelist: &project.clippy_allow_whitelist,
             violations: Vec::new(),
         };
@@ -65,7 +55,7 @@ mod tests {
         let mut parsed_files = HashMap::new();
         parsed_files.insert(PathBuf::from("x.rs"), file);
         let project = Project {
-            root: PathBuf::from("."),
+            root: PathBuf::new(),
             src_dir: PathBuf::from("src"),
             entries: Vec::new(),
             module_info: HashMap::default(),

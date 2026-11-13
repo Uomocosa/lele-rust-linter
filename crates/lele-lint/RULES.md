@@ -979,7 +979,7 @@ pub use clock::Clock;
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
 - [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
-- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 - [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 ### LELE004 `method_visibility`
@@ -2214,11 +2214,11 @@ mod tests {
 
 ### LELE034 `no_free_functions`
 
-A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt.
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
-**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call.
+**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call; its `file` is relative to the lele.toml that holds it.
 
 **Bad** (reports LELE034):
 
@@ -3837,7 +3837,7 @@ No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(S
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
 
-**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource. Keep a wrapper only when the collection has a rule every holder must respect (size cap, ordering, uniqueness) — `Deck(Vec<Card>)` with at most 52 cards is one, `Rooms(Vec<Room>)` with nothing to enforce is not. Then ask the user to list it in `[[lele.lint.collection_wrappers]]` (the entry is the user's decision, never yours), give it a private field, `#[derive(Deref)]` without `DerefMut`, and check the invariant in `TryFrom` or its methods; inside them reach the collection with `let Self(cards) = self;`.
+**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource. Keep a wrapper only when the collection has a rule every holder must respect (size cap, ordering, uniqueness) — `Deck(Vec<Card>)` with at most 52 cards is one, `Rooms(Vec<Room>)` with nothing to enforce is not. Then ask the user to list it in `[[lele.lint.collection_wrappers]]` (the entry is the user's decision, never yours; its `file` is relative to that lele.toml), give it a private field, `#[derive(Deref)]` without `DerefMut`, and check the invariant in `TryFrom` or its methods; inside them reach the collection with `let Self(cards) = self;`.
 
 **Bad** (reports LELE026):
 
@@ -4639,12 +4639,12 @@ pub use guest::Guest;
 
 ## Style
 
-- [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
+- [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).
 - [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
 ### LELE024 `no_allow_attributes`
 
-No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason.
+No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).
 
 **Why:** Every silenced lint is a decision the user made on purpose, recorded with its reason.
 

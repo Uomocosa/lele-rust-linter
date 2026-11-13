@@ -39,19 +39,6 @@ impl TraitImplCoLocation {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(TraitImplCoLocation));
     }
-    pub(crate) fn is_exempt_source(rel_path: &Path) -> bool {
-        let file_name = rel_path.file_name().and_then(|name| name.to_str()).unwrap_or("");
-        file_name == "build.rs"
-            || rel_path
-                .components()
-                .any(|component| component.as_os_str().to_str() == Some("tests"))
-    }
-    pub(crate) fn impl_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
-        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{type_name}`", target.display())
-    }
-    pub(crate) fn trait_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
-        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{trait_name}`", target.display())
-    }
     pub(crate) fn container_target_message(
         trait_name: &str,
         type_name: &str,
@@ -59,6 +46,25 @@ impl TraitImplCoLocation {
         graduate: &Path,
     ) -> String {
         format!("`impl {trait_name} for {type_name}` lives outside `{}`, which defines `{type_name}`: a type with an impl keeps its own file — move `{type_name}` to `{}` and put the impl there", target.display(), graduate.display())
+    }
+    pub(crate) fn impl_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
+        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{type_name}`", target.display())
+    }
+    pub(crate) fn trait_target_message(trait_name: &str, type_name: &str, target: &Path) -> String {
+        format!("`impl {trait_name} for {type_name}` must live in `{}`, the file that defines `{trait_name}`", target.display())
+    }
+}
+
+impl TraitImplCoLocation {
+    pub(crate) fn is_exempt_source(rel_path: &Path) -> bool {
+        let file_name = rel_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        file_name == "build.rs"
+            || rel_path
+                .components()
+                .any(|component| component.as_os_str().to_str() == Some("tests"))
     }
     pub(crate) fn ambiguous_target_message(
         name: &str,

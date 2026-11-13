@@ -1,5 +1,6 @@
 use crate::rules;
 use crate::ItemMarker;
+use atomic_delegate_macros::atomic_delegates;
 use derive_more::{Deref, DerefMut};
 use syn::visit::Visit;
 
@@ -38,14 +39,9 @@ impl<'ast> Visit<'ast> for ImplVisitor<'_> {
     }
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl ImplVisitor<'_> {
-    pub(crate) fn is_blanket_self(item: &syn::ItemImpl) -> bool {
-        matches!(&*item.self_ty, syn::Type::Path(type_path)
-            if type_path.path.get_ident().is_some_and(|ident| {
-                item.generics.type_params().any(|param| param.ident == *ident)
-            }))
-    }
+    pub(crate) fn is_blanket_self(item: &syn::ItemImpl) -> bool {}
 }
 
 // no test_usage necessary

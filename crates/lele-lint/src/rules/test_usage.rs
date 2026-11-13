@@ -9,8 +9,6 @@ use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
 use std::path::Path;
 
-const OPT_OUT: &str = "// no test_usage necessary";
-
 pub struct TestUsage;
 
 impl TestUsage {
@@ -40,17 +38,11 @@ impl TestUsage {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(TestUsage));
     }
-    pub(crate) fn opt_out_at_end(content: &str) -> bool {
-        content
-            .lines()
-            .rev()
-            .find(|line| !line.trim().is_empty())
-            .is_some_and(|line| line.trim().starts_with(OPT_OUT))
-    }
 }
 
 #[atomic_delegates]
 impl TestUsage {
+    pub(crate) fn opt_out_at_end(content: &str) -> bool {}
     pub(crate) fn reads_opt_out(path: &Path) -> bool {}
     pub(crate) fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {}
     pub(crate) fn is_pure_module_tree(file: &syn::File) -> bool {}

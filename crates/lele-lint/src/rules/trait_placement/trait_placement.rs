@@ -39,15 +39,21 @@ impl TraitPlacement {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(TraitPlacement));
     }
+    pub(crate) fn misplaced_message(trait_name: &str, target: &Path) -> String {
+        format!("trait `{trait_name}` must live in `{}`", target.display())
+    }
+}
+
+impl TraitPlacement {
     pub(crate) fn is_exempt_source(rel_path: &Path) -> bool {
-        let file_name = rel_path.file_name().and_then(|name| name.to_str()).unwrap_or("");
+        let file_name = rel_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
         file_name == "build.rs"
             || rel_path
                 .components()
                 .any(|component| component.as_os_str().to_str() == Some("tests"))
-    }
-    pub(crate) fn misplaced_message(trait_name: &str, target: &Path) -> String {
-        format!("trait `{trait_name}` must live in `{}`", target.display())
     }
     pub(crate) fn suffix_message(trait_name: &str, target: &Path) -> String {
         let bare = trait_name.strip_suffix("Trait").unwrap_or(trait_name);

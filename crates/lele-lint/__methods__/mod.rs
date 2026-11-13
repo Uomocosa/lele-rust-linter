@@ -24,6 +24,7 @@ pub mod identifier;
 pub mod impl_block;
 pub mod impl_item_order;
 pub mod impl_method;
+pub mod impl_visitor;
 pub mod inner_fn_finder;
 pub mod item_marker;
 pub mod linter;

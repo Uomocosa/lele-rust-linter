@@ -44,16 +44,11 @@ impl SnakeCaseFiles {
             path.file_stem().and_then(|n| n.to_str())
         }
     }
-    pub(crate) fn is_allowed_dunder(project: &Project, name: &str) -> bool {
-        project
-            .dunder_paths
-            .iter()
-            .any(|dunder| dunder.file_stem() == Some(std::ffi::OsStr::new(name)))
-    }
 }
 
 #[atomic_delegates]
 impl SnakeCaseFiles {
+    pub(crate) fn is_allowed_dunder(project: &Project, name: &str) -> bool {}
     pub(crate) fn is_snake_case(name: &str) -> bool {}
 }
 

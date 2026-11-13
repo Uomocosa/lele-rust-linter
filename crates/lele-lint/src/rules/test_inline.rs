@@ -5,6 +5,7 @@ use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
 
 pub struct TestInline;
@@ -36,10 +37,11 @@ impl TestInline {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(TestInline));
     }
-    pub(crate) fn has_tests_component(path: &std::path::Path) -> bool {
-        path.components()
-            .any(|c| c.as_os_str().to_str().is_some_and(|s| s == "tests"))
-    }
+}
+
+#[atomic_delegates]
+impl TestInline {
+    pub(crate) fn has_tests_component(path: &std::path::Path) -> bool {}
 }
 
 // no test_usage necessary

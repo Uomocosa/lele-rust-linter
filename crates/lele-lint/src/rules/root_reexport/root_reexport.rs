@@ -39,21 +39,11 @@ impl RootReexport {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(RootReexport));
     }
-    pub(crate) fn public_modules(lib: &syn::File) -> HashSet<String> {
-        lib.items
-            .iter()
-            .filter_map(|item| match item {
-                syn::Item::Mod(m) if matches!(m.vis, syn::Visibility::Public(_)) => {
-                    Some(m.ident.to_string())
-                }
-                _ => None,
-            })
-            .collect()
-    }
 }
 
 #[atomic_delegates]
 impl RootReexport {
+    pub(crate) fn public_modules(lib: &syn::File) -> HashSet<String> {}
     pub(crate) fn missing_fn_flatten(stem: &str, file: &syn::File, lib: &syn::File) -> Vec<String> {
     }
     pub(crate) fn missing_reexports(

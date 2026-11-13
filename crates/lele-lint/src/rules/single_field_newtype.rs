@@ -1,7 +1,6 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::ItemMarker;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -39,16 +38,11 @@ impl SingleFieldNewtype {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(SingleFieldNewtype));
     }
-    pub(crate) fn has_deref_derive(struct_def: &syn::ItemStruct) -> bool {
-        struct_def
-            .attrs
-            .iter()
-            .any(|attr| ItemMarker(attr).derives_any_of(&["Deref"]))
-    }
 }
 
 #[atomic_delegates]
 impl SingleFieldNewtype {
+    pub(crate) fn has_deref_derive(struct_def: &syn::ItemStruct) -> bool {}
     pub(crate) fn check_struct(
         struct_def: &syn::ItemStruct,
         file_path: &Path,

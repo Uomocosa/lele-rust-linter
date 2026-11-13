@@ -43,29 +43,6 @@ impl BoundaryImports {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(BoundaryImports));
     }
-    pub(crate) fn src_stem_map(project: &Project) -> HashMap<String, BTreeMap<String, PathBuf>> {
-        let mut map: HashMap<String, BTreeMap<String, PathBuf>> = HashMap::new();
-        for rel in project.parsed_files.keys() {
-            let Some(stem) = rel.file_stem().and_then(|stem| stem.to_str()) else {
-                continue;
-            };
-            let root = project.root_name_for_rel(rel);
-            let crate_rel = if project.src_index_for_rel(rel) == 0 {
-                Path::new("src").join(rel)
-            } else {
-                rel.clone()
-            };
-            map.entry(stem.to_string())
-                .or_default()
-                .insert(root, crate_rel);
-        }
-        map
-    }
-    pub(crate) fn is_local(path: &str) -> bool {
-        ["crate", "self", "super"]
-            .iter()
-            .any(|root| path == *root || path.starts_with(&format!("{root}::")))
-    }
     pub(crate) fn forbidden_hit(hit: &rules::boundary_imports::PathHit, cannot_use: &[String]) -> Option<String> {
         if cannot_use
             .iter()
@@ -90,64 +67,39 @@ impl BoundaryImports {
             None
         }
     }
+}
+
+impl BoundaryImports {
+    pub(crate) fn src_stem_map(project: &Project) -> HashMap<String, BTreeMap<String, PathBuf>> {
+        let mut map: HashMap<String, BTreeMap<String, PathBuf>> = HashMap::new();
+        for rel in project.parsed_files.keys() {
+            let Some(stem) = rel.file_stem().and_then(|stem| stem.to_str()) else {
+                continue;
+            };
+            let root = project.root_name_for_rel(rel);
+            let crate_rel = if project.src_index_for_rel(rel) == 0 {
+                Path::new("src").join(rel)
+            } else {
+                rel.clone()
+            };
+            map.entry(stem.to_string())
+                .or_default()
+                .insert(root, crate_rel);
+        }
+        map
+    }
+}
+
+#[atomic_delegates]
+impl BoundaryImports {
+    pub(crate) fn is_local(path: &str) -> bool {}
     pub(crate) fn walk_use_tree(
         tree: &syn::UseTree,
         prefix: &mut Vec<String>,
         collector: &mut rules::boundary_imports::UseCollector,
         line: usize,
     ) {
-        match tree {
-            syn::UseTree::Path(path) => {
-                let mut next = prefix.clone();
-                next.push(path.ident.to_string());
-                Self::walk_use_tree(&path.tree, &mut next, collector, line);
-            }
-            syn::UseTree::Name(name) => {
-                let mut full = prefix.clone();
-                if name.ident != "self" {
-                    full.push(name.ident.to_string());
-                }
-                let joined = full.join("::");
-                collector
-                    .aliases
-                    .insert(name.ident.to_string(), joined.clone());
-                collector.hits.push(rules::boundary_imports::PathHit {
-                    path: joined,
-                    line,
-                    glob: false,
-                });
-            }
-            syn::UseTree::Rename(rename) => {
-                let mut full = prefix.clone();
-                full.push(rename.ident.to_string());
-                let joined = full.join("::");
-                collector
-                    .aliases
-                    .insert(rename.rename.to_string(), joined.clone());
-                collector.hits.push(rules::boundary_imports::PathHit {
-                    path: joined,
-                    line,
-                    glob: false,
-                });
-            }
-            syn::UseTree::Glob(_) => {
-                collector.hits.push(rules::boundary_imports::PathHit {
-                    path: prefix.join("::"),
-                    line,
-                    glob: true,
-                });
-            }
-            syn::UseTree::Group(group) => {
-                for item in &group.items {
-                    Self::walk_use_tree(item, prefix, collector, line);
-                }
-            }
-        }
     }
-}
-
-#[atomic_delegates]
-impl BoundaryImports {
     pub(crate) fn base_prefix(project: &Project, base: &Path) -> PathBuf {}
     pub(crate) fn file_in_boundary(
         project: &Project,

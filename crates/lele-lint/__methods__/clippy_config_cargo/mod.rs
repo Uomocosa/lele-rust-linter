@@ -1,6 +1,10 @@
 mod check;
 mod find_workspace_root;
+mod inherits_workspace_lints;
+mod is_deny_with_priority;
 mod resolve_clippy_table;
 pub use check::check;
 pub use find_workspace_root::find_workspace_root;
+pub use inherits_workspace_lints::inherits_workspace_lints;
+pub use is_deny_with_priority::is_deny_with_priority;
 pub use resolve_clippy_table::resolve_clippy_table;

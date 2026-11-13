@@ -1,7 +1,6 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::ImplMethod;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -38,15 +37,11 @@ impl ConstructorNoSkip {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ConstructorNoSkip));
     }
-    pub(crate) fn has_any_real_constructor(impl_block: &syn::ItemImpl) -> bool {
-        impl_block.items.iter().any(
-            |item| matches!(item, syn::ImplItem::Fn(method) if ImplMethod(method).is_real_constructor()),
-        )
-    }
 }
 
 #[atomic_delegates]
 impl ConstructorNoSkip {
+    pub(crate) fn has_any_real_constructor(impl_block: &syn::ItemImpl) -> bool {}
     pub(crate) fn type_name_string(ty: &syn::Type) -> String {}
     pub(crate) fn is_atomic_delegates(impl_block: &syn::ItemImpl) -> bool {}
 }

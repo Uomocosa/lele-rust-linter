@@ -2,8 +2,6 @@ use crate::rules;
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::ImplBlock;
-use crate::ItemMarker;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -43,11 +41,6 @@ impl ContainerPlacement {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ContainerPlacement));
     }
-    pub(crate) fn role_of_stem(stem: &str) -> Option<rules::container_placement::Role> {
-        rules::container_placement::Role::ALL
-            .into_iter()
-            .find(|role| role.file().strip_suffix(".rs") == Some(stem))
-    }
     pub(crate) fn exposed_name(item: &syn::Item) -> Option<String> {
         match item {
             syn::Item::Struct(s) if Visibility(&s.vis).is_exposed() => Some(s.ident.to_string()),
@@ -58,61 +51,14 @@ impl ContainerPlacement {
             _ => None,
         }
     }
-    pub(crate) fn classify(item: &syn::Item) -> Option<rules::container_placement::Role> {
-        match item {
-            syn::Item::Struct(s) => {
-                let derives = Self::derive_names(&s.attrs);
-                if Self::is_excluded(&derives) {
-                    return None;
-                }
-                if let Some(role) = Self::ecs_role(&derives) {
-                    return Some(role);
-                }
-                if matches!(s.fields, syn::Fields::Unnamed(ref f) if f.unnamed.len() == 1) {
-                    Some(rules::container_placement::Role::Newtype)
-                } else {
-                    Some(rules::container_placement::Role::Struct)
-                }
-            }
-            syn::Item::Enum(e) => {
-                let derives = Self::derive_names(&e.attrs);
-                if Self::is_excluded(&derives) {
-                    return None;
-                }
-                Self::ecs_role(&derives).or(Some(rules::container_placement::Role::Enum))
-            }
-            syn::Item::Type(_) => Some(rules::container_placement::Role::TypeAlias),
-            syn::Item::Const(_) | syn::Item::Static(_) => Some(rules::container_placement::Role::Const),
-            _ => None,
-        }
-    }
-    pub(crate) fn is_excluded(derives: &[String]) -> bool {
-        derives.iter().any(|derive| {
-            matches!(
-                derive.as_str(),
-                "Error" | "Parser" | "Args" | "Subcommand" | "ValueEnum" | "NetworkBehaviour"
-            )
-        })
-    }
-    pub(crate) fn has_behavior(file: &syn::File, type_name: &str) -> bool {
-        file.items.iter().any(|item| {
-            let syn::Item::Impl(impl_block) = item else {
-                return false;
-            };
-            if impl_block
-                .attrs
-                .iter()
-                .any(|attr| ItemMarker(attr).is_atomic_delegates())
-            {
-                return true;
-            }
-            ImplBlock(impl_block).self_type_last().as_deref() == Some(type_name)
-        })
-    }
 }
 
 #[atomic_delegates]
 impl ContainerPlacement {
+    pub(crate) fn role_of_stem(stem: &str) -> Option<rules::container_placement::Role> {}
+    pub(crate) fn classify(item: &syn::Item) -> Option<rules::container_placement::Role> {}
+    pub(crate) fn is_excluded(derives: &[String]) -> bool {}
+    pub(crate) fn has_behavior(file: &syn::File, type_name: &str) -> bool {}
     pub(crate) fn check_container_file(
         rel_path: &Path,
         file: &syn::File,

@@ -37,23 +37,12 @@ impl AtomicDelegates {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(AtomicDelegates));
     }
-    pub(crate) fn has_any_method(impl_block: &syn::ItemImpl) -> bool {
-        impl_block
-            .items
-            .iter()
-            .any(|item| matches!(item, syn::ImplItem::Fn(_)))
-    }
-    pub(crate) fn names_str(idents: &[&syn::Ident]) -> String {
-        idents
-            .iter()
-            .map(|i| i.to_string())
-            .collect::<Vec<_>>()
-            .join(", ")
-    }
 }
 
 #[atomic_delegates]
 impl AtomicDelegates {
+    pub(crate) fn has_any_method(impl_block: &syn::ItemImpl) -> bool {}
+    pub(crate) fn names_str(idents: &[&syn::Ident]) -> String {}
     pub(crate) fn is_one_line_body(method: &syn::ImplItemFn) -> bool {}
 }
 

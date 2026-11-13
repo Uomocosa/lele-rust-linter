@@ -38,37 +38,12 @@ impl ClippyConfigCargo {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ClippyConfigCargo));
     }
-    pub(crate) fn inherits_workspace_lints(value: &toml::Value) -> bool {
-        value
-            .get("lints")
-            .and_then(|v| v.get("workspace"))
-            .and_then(|v| v.as_bool())
-            == Some(true)
-    }
-    pub(crate) fn is_deny_with_priority(value: &toml::Value, require_priority: bool) -> bool {
-        match value {
-            toml::Value::String(s) => s == "deny",
-            toml::Value::Table(t) => {
-                let level_ok = t.get("level").and_then(|v| v.as_str()) == Some("deny");
-                if !level_ok {
-                    return false;
-                }
-                if require_priority {
-                    match t.get("priority").and_then(|v| v.as_integer()) {
-                        Some(-1) => true,
-                        _ => false,
-                    }
-                } else {
-                    true
-                }
-            }
-            _ => false,
-        }
-    }
 }
 
 #[atomic_delegates]
 impl ClippyConfigCargo {
+    pub(crate) fn inherits_workspace_lints(value: &toml::Value) -> bool {}
+    pub(crate) fn is_deny_with_priority(value: &toml::Value, require_priority: bool) -> bool {}
     pub(crate) fn resolve_clippy_table(
         value: &toml::Value,
         project: &Project,

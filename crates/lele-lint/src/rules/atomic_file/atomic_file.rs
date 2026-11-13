@@ -42,21 +42,11 @@ impl AtomicFile {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(AtomicFile));
     }
-    pub(crate) fn known_type_stems(project: &Project) -> HashSet<String> {
-        project
-            .parsed_files
-            .iter()
-            .filter_map(|(rel_path, file)| {
-                let stem = rel_path.file_stem()?.to_str()?;
-                common::SourceFile(file).primary_type_name(stem)?;
-                Some(stem.to_string())
-            })
-            .collect()
-    }
 }
 
 #[atomic_delegates]
 impl AtomicFile {
+    pub(crate) fn known_type_stems(project: &Project) -> HashSet<String> {}
     pub(crate) fn check_atomic_file(
         file: &syn::File,
         rel_path: &Path,

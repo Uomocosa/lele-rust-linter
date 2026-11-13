@@ -37,22 +37,13 @@ impl ConversionIsFrom {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(ConversionIsFrom));
     }
-    pub(crate) fn takes_self_typed_argument(sig: &syn::Signature, self_name: &str) -> bool {
-        sig.inputs.iter().any(|input| {
-            let syn::FnArg::Typed(typed) = input else {
-                return false;
-            };
-            quote::ToTokens::to_token_stream(&*typed.ty)
-                .into_iter()
-                .any(|token| matches!(token, proc_macro2::TokenTree::Ident(ident) if ident == "Self" || ident == self_name))
-        })
-    }
     pub(crate) fn is_exempt_from_conversion(sig: &syn::Signature) -> bool { sig.asyncness.is_some() || sig.constness.is_some() || Self::has_generic_argument(sig) }
-    pub(crate) fn is_self(ty: &syn::Type, self_name: &str) -> bool { matches!(ty, syn::Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 && path.path.segments.last().is_some_and(|segment| { segment.arguments.is_none() && (segment.ident == "Self" || segment.ident == self_name) })) }
 }
 
 #[atomic_delegates]
 impl ConversionIsFrom {
+    pub(crate) fn takes_self_typed_argument(sig: &syn::Signature, self_name: &str) -> bool {}
+    pub(crate) fn is_self(ty: &syn::Type, self_name: &str) -> bool {}
     pub(crate) fn advice(sig: &syn::Signature, self_name: &str, shape: &str) -> Option<String> {}
     pub(crate) fn has_generic_argument(sig: &syn::Signature) -> bool {}
     pub(crate) fn constructed_shape(

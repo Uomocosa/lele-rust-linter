@@ -55,6 +55,7 @@ pub mod single_field_newtype;
 pub mod snake_case_files;
 pub mod source_file;
 pub mod source_path;
+pub mod stringified_error_visitor;
 pub mod test_inline;
 pub mod test_usage;
 pub mod trait_impl_co_location;

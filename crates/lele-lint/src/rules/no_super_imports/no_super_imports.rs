@@ -38,12 +38,6 @@ impl NoSuperImports {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoSuperImports));
     }
-    pub(crate) fn generic_suggestion() -> (String, String) {
-        (
-            "use crate::<domain>;".to_string(),
-            "<domain>::…".to_string(),
-        )
-    }
     pub(crate) fn starts_with_super(tree: &syn::UseTree) -> bool {
         matches!(tree, syn::UseTree::Path(path) if path.ident == "super")
     }
@@ -60,6 +54,7 @@ impl NoSuperImports {
 
 #[atomic_delegates]
 impl NoSuperImports {
+    pub(crate) fn generic_suggestion() -> (String, String) {}
     pub(crate) fn suggestion(rel_path: &Path, hit: &str) -> (String, String) {}
 }
 

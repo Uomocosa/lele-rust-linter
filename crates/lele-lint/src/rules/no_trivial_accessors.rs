@@ -39,27 +39,13 @@ impl NoTrivialAccessors {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoTrivialAccessors));
     }
-    pub(crate) fn vis_to_string(vis: &syn::Visibility) -> Option<String> {
-        match vis {
-            syn::Visibility::Public(_) => Some("pub".to_string()),
-            syn::Visibility::Restricted(res) => {
-                let s = quote::quote!(#res).to_string();
-                Some(s.replace(" )", ")").replace("( ", "("))
-            }
-            syn::Visibility::Inherited => None,
-        }
-    }
-    pub(crate) fn filtered_stmts(block: &syn::Block) -> Vec<&syn::Stmt> {
-        block.stmts.iter().filter(|s| !Self::is_log_macro(s)).collect()
-    }
-    pub(crate) fn is_ok_or_some(call: &syn::ExprCall) -> bool {
-        matches!(&*call.func, syn::Expr::Path(path)
-            if path.path.segments.last().is_some_and(|segment| segment.ident == "Ok" || segment.ident == "Some"))
-    }
 }
 
 #[atomic_delegates]
 impl NoTrivialAccessors {
+    pub(crate) fn vis_to_string(vis: &syn::Visibility) -> Option<String> {}
+    pub(crate) fn filtered_stmts(block: &syn::Block) -> Vec<&syn::Stmt> {}
+    pub(crate) fn is_ok_or_some(call: &syn::ExprCall) -> bool {}
     pub(crate) fn collect_vis_fields(file: &syn::File) -> HashMap<String, String> {}
     pub(crate) fn is_builder(method: &syn::ImplItemFn) -> bool {}
     pub(crate) fn is_log_macro(stmt: &syn::Stmt) -> bool {}

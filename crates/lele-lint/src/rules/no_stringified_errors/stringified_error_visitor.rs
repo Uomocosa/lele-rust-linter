@@ -1,4 +1,5 @@
 use crate::rules;
+use atomic_delegate_macros::atomic_delegates;
 use std::collections::HashSet;
 use syn::visit::Visit;
 
@@ -54,9 +55,12 @@ impl<'ast> Visit<'ast> for StringifiedErrorVisitor<'_> {
     }
 }
 
-#[rustfmt::skip]
 impl StringifiedErrorVisitor<'_> {
-    pub(crate) fn inspect(&mut self, error_name: &syn::Ident, body: impl FnOnce(&mut rules::no_stringified_errors::CaughtErrorScan<'_>)) {
+    pub(crate) fn inspect(
+        &mut self,
+        error_name: &syn::Ident,
+        body: impl FnOnce(&mut rules::no_stringified_errors::CaughtErrorScan<'_>),
+    ) {
         let mut scan = rules::no_stringified_errors::CaughtErrorScan {
             error_name: error_name.to_string(),
             error_enums: self.error_enums,
@@ -69,27 +73,19 @@ impl StringifiedErrorVisitor<'_> {
         if let (Some(variant), true, false) =
             (scan.built_variant, scan.is_stringified, scan.is_kept)
         {
-            self.hits.push(rules::no_stringified_errors::StringifiedErrorHit {
-                line: error_name.span().start().line,
-                error_name: scan.error_name,
-                variant,
-            });
+            self.hits
+                .push(rules::no_stringified_errors::StringifiedErrorHit {
+                    line: error_name.span().start().line,
+                    error_name: scan.error_name,
+                    variant,
+                });
         }
     }
+}
 
-    pub(crate) fn inspect_signature(&mut self, sig: &syn::Signature, block: &syn::Block) {
-        for input in &sig.inputs {
-            let syn::FnArg::Typed(typed) = input else {
-                continue;
-            };
-            let syn::Pat::Ident(pat) = &*typed.pat else {
-                continue;
-            };
-            if self.is_from_impl_for_error_enum || rules::no_stringified_errors::NoStringifiedErrors::names_an_error_type(&typed.ty) {
-                self.inspect(&pat.ident, |scan| scan.visit_block(block));
-            }
-        }
-    }
+#[atomic_delegates]
+impl StringifiedErrorVisitor<'_> {
+    pub(crate) fn inspect_signature(&mut self, sig: &syn::Signature, block: &syn::Block) {}
 }
 
 // no test_usage necessary

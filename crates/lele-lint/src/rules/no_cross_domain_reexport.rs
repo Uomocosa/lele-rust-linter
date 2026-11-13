@@ -38,17 +38,11 @@ impl NoCrossDomainReexport {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoCrossDomainReexport));
     }
-    pub(crate) fn own_domain_of(mod_rs_path: &Path) -> String {
-        mod_rs_path
-            .components()
-            .next()
-            .map(|component| component.as_os_str().to_string_lossy().to_string())
-            .unwrap_or_default()
-    }
 }
 
 #[atomic_delegates]
 impl NoCrossDomainReexport {
+    pub(crate) fn own_domain_of(mod_rs_path: &Path) -> String {}
     pub(crate) fn reexport_target_domain(segments: &[String]) -> Option<String> {}
 }
 

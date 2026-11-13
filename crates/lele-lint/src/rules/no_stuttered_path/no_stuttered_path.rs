@@ -40,6 +40,9 @@ impl NoStutteredPath {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoStutteredPath));
     }
+}
+
+impl NoStutteredPath {
     pub(crate) fn root_module_stems(project: &Project) -> HashSet<String> {
         let mut stems = HashSet::new();
         for rel in project.parsed_files.keys() {
@@ -53,16 +56,11 @@ impl NoStutteredPath {
         }
         stems
     }
-    pub(crate) fn stem_name(rel_path: &Path) -> Option<String> {
-        rel_path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .map(str::to_string)
-    }
 }
 
 #[atomic_delegates]
 impl NoStutteredPath {
+    pub(crate) fn stem_name(rel_path: &Path) -> Option<String> {}
     pub(crate) fn collect_stutter(
         path: &syn::Path,
         root_stems: &HashSet<String>,

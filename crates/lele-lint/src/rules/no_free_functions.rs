@@ -39,23 +39,11 @@ impl NoFreeFunctions {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoFreeFunctions));
     }
-    pub(crate) fn local_type_names(project: &Project) -> BTreeSet<String> {
-        project
-            .parsed_files
-            .values()
-            .flat_map(|file| file.items.iter())
-            .filter_map(|item| match item {
-                syn::Item::Struct(item) => Some(item.ident.to_string()),
-                syn::Item::Enum(item) => Some(item.ident.to_string()),
-                syn::Item::Trait(item) => Some(item.ident.to_string()),
-                _ => None,
-            })
-            .collect()
-    }
 }
 
 #[atomic_delegates]
 impl NoFreeFunctions {
+    pub(crate) fn local_type_names(project: &Project) -> BTreeSet<String> {}
     pub(crate) fn is_exempt_file(rel_path: &Path, project: &Project) -> bool {}
     pub(crate) fn owner_hint(
         project: &Project,

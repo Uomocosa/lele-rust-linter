@@ -2,7 +2,6 @@ use crate::traits::Rule;
 use crate::Category;
 use crate::CollectionWrapperEntry;
 use crate::ExampleFile;
-use crate::ItemMarker;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -43,6 +42,7 @@ impl NoCollectionNewtype {
     pub(crate) fn has_unsigned_element(ty: &syn::Type) -> bool {
         Self::element_type(ty).is_some_and(Self::is_unsigned_int)
     }
+    pub(crate) fn impl_self_is(imp: &syn::ItemImpl, name: &str) -> bool { matches!(&*imp.self_ty, syn::Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == name)) }
     pub(crate) fn singular_name(name: &str) -> String {
         if let Some(stripped) = name.strip_suffix("ies") {
             format!("{stripped}y")
@@ -54,15 +54,19 @@ impl NoCollectionNewtype {
             format!("{name}Item")
         }
     }
-    pub(crate) fn derives_deref_mut(struct_def: &syn::ItemStruct) -> bool { struct_def.attrs.iter().any(|attr| ItemMarker(attr).derives_any_of(&["DerefMut"])) }
-    pub(crate) fn has_public_field(struct_def: &syn::ItemStruct) -> bool { struct_def.fields.iter().any(|field| !matches!(field.vis, syn::Visibility::Inherited)) }
-    pub(crate) fn impl_self_is(imp: &syn::ItemImpl, name: &str) -> bool { matches!(&*imp.self_ty, syn::Type::Path(path) if path.path.segments.last().is_some_and(|segment| segment.ident == name)) }
-    pub(crate) fn has_invariant_impl(items: &[syn::Item], name: &str) -> bool { items.iter().any(|item| matches!(item, syn::Item::Impl(imp) if Self::is_invariant_impl(imp, name))) }
-    pub(crate) fn listed_entry(project: &Project, struct_def: &syn::ItemStruct, file_path: &Path) -> Option<CollectionWrapperEntry> { project.collection_wrappers.iter().find(|entry| struct_def.ident == entry.type_name && project.root.join(&entry.file) == file_path).cloned() }
 }
 
 #[atomic_delegates]
 impl NoCollectionNewtype {
+    pub(crate) fn derives_deref_mut(struct_def: &syn::ItemStruct) -> bool {}
+    pub(crate) fn has_public_field(struct_def: &syn::ItemStruct) -> bool {}
+    pub(crate) fn has_invariant_impl(items: &[syn::Item], name: &str) -> bool {}
+    pub(crate) fn listed_entry(
+        project: &Project,
+        struct_def: &syn::ItemStruct,
+        file_path: &Path,
+    ) -> Option<CollectionWrapperEntry> {
+    }
     pub(crate) fn check_struct(
         struct_def: &syn::ItemStruct,
         file_path: &Path,

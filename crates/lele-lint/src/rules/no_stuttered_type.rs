@@ -4,10 +4,8 @@ use crate::ExampleFile;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
-use crate::Visibility;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
-use lele_snake_case::traits::ToLeleSnakeCase;
 use rule_examples_macro::rule_examples;
 use std::path::Path;
 
@@ -40,36 +38,12 @@ impl NoStutteredType {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoStutteredType));
     }
-    pub(crate) fn parent_dir_name(rel_path: &Path) -> Option<String> {
-        rel_path
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .and_then(|p| p.file_name())
-            .and_then(|n| n.to_str())
-            .map(str::to_string)
-    }
-    pub(crate) fn primary_exposed_type(file: &syn::File, stem: &str) -> Option<String> {
-        file.items.iter().find_map(|item| {
-            let (ident, vis) = match item {
-                syn::Item::Struct(s) => (&s.ident, &s.vis),
-                syn::Item::Enum(e) => (&e.ident, &e.vis),
-                _ => return None,
-            };
-            if !Visibility(vis).is_exposed() {
-                return None;
-            }
-            let name = ident.to_string();
-            if name.to_snake_case() == stem {
-                Some(name)
-            } else {
-                None
-            }
-        })
-    }
 }
 
 #[atomic_delegates]
 impl NoStutteredType {
+    pub(crate) fn parent_dir_name(rel_path: &Path) -> Option<String> {}
+    pub(crate) fn primary_exposed_type(file: &syn::File, stem: &str) -> Option<String> {}
     pub(crate) fn strip_dir_prefix(snake: &str, dir: &str) -> Option<String> {}
 }
 

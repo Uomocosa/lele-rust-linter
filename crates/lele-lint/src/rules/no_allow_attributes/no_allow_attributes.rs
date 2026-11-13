@@ -5,6 +5,7 @@ use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
 
 pub struct NoAllowAttributes;
@@ -36,22 +37,11 @@ impl NoAllowAttributes {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoAllowAttributes));
     }
-    pub(crate) fn lint_paths(attr: &syn::Attribute) -> Vec<String> {
-        attr.parse_args_with(syn::punctuated::Punctuated::<syn::Path, syn::Token![,]>::parse_terminated)
-            .map(|paths| {
-                paths
-                    .iter()
-                    .map(|path| {
-                        path.segments
-                            .iter()
-                            .map(|segment| segment.ident.to_string())
-                            .collect::<Vec<_>>()
-                            .join("::")
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
+}
+
+#[atomic_delegates]
+impl NoAllowAttributes {
+    pub(crate) fn lint_paths(attr: &syn::Attribute) -> Vec<String> {}
 }
 
 // no test_usage necessary

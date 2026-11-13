@@ -1,11 +1,11 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
-use crate::ItemMarker;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
+use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
 use std::collections::HashSet;
 
@@ -38,34 +38,6 @@ impl NoStringifiedErrors {
     pub fn register(rules: &mut Vec<Box<dyn Rule>>) {
         rules.push(Box::new(NoStringifiedErrors));
     }
-    pub(crate) fn own_error_enums(project: &Project) -> HashSet<String> {
-        project
-            .content_sources()
-            .flat_map(|source| source.file.items.iter())
-            .filter_map(|item| match item {
-                syn::Item::Enum(item_enum)
-                    if item_enum
-                        .attrs
-                        .iter()
-                        .any(|attr| ItemMarker(attr).derives_any_of(&["Error"])) =>
-                {
-                    Some(item_enum.ident.to_string())
-                }
-                _ => None,
-            })
-            .collect()
-    }
-    pub(crate) fn mentions_name(tokens: proc_macro2::TokenStream, name: &str) -> bool {
-        tokens.into_iter().any(|token| match token {
-            proc_macro2::TokenTree::Ident(ident) => ident == name,
-            proc_macro2::TokenTree::Literal(literal) => {
-                let text = literal.to_string();
-                text.contains(&format!("{{{name}}}")) || text.contains(&format!("{{{name}:"))
-            }
-            proc_macro2::TokenTree::Group(group) => Self::mentions_name(group.stream(), name),
-            proc_macro2::TokenTree::Punct(_) => false,
-        })
-    }
     pub(crate) fn names_an_error_type(ty: &syn::Type) -> bool {
         match ty {
             syn::Type::Reference(reference) => Self::names_an_error_type(&reference.elem),
@@ -87,6 +59,12 @@ impl NoStringifiedErrors {
             _ => None,
         }
     }
+}
+
+#[atomic_delegates]
+impl NoStringifiedErrors {
+    pub(crate) fn own_error_enums(project: &Project) -> HashSet<String> {}
+    pub(crate) fn mentions_name(tokens: proc_macro2::TokenStream, name: &str) -> bool {}
 }
 
 // no test_usage necessary

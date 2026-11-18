@@ -80,3 +80,6 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 
 ## Log
 (orchestrator appends: step, hash, worker kind+model, tokens, minutes, decisions)
+- P0: branches + plan (9ebe8c7, 84ac934), pushed. Orchestrator.
+- P1 linter: 10ea29e LELETEST001-003 rename, pushed. EfficientWorker muse-spark-1.3-contributor#low. Fleet check: 0 errors on all 24 targets.
+- P1 skills: ~/.config/opencode 86cbea6 (lele-ponytail-bridge-rs LELETEST003 + __methods__ paths).

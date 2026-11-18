@@ -15,6 +15,17 @@ Master plan: PLAN.md (D3, D4, D8, standing authorisations). Branch feature/test-
   error unless the crate is listed as e2e (`[lele.config] e2e_crates = [..]`, new key, paths
   relative to the config).
 
+## Orchestrator decisions (follow from the plan)
+- LELETEST004 reuses the existing TestUsage predicates, NOT `is_exempt` as a whole (that one also
+  exempts dunder paths, main.rs and tests/ dirs, where tests are allowed or wanted):
+  forbidden = `is_type_only(file)` || (`mod.rs`/`lib.rs` && `is_pure_module_tree`) ||
+  `constants.rs`. `is_atomic_delegate_only` files are NOT forbidden (phase 4 wants struct-file
+  `test_usage`, D4).
+- lele-bevy-lint `tests/rule_examples.rs` contiguity test becomes per family like phase 1
+  (`LELEBEVY001..N`, `LELEBEVYTEST001..N`).
+- Linter work is three commits/jobs: A = LELEBEVYTEST001; B = LELETEST004 + LELETEST003 change;
+  C = LELETEST002 extension + `e2e_crates` config key.
+
 ## Fleet
 - Delete forbidden test modules (and their helpers). Before deleting a `__bevy_systems__` test,
   move it into the owning `*_plugin.rs` tests ONLY if it asserts plugin-visible behaviour not

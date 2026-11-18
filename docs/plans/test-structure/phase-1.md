@@ -8,6 +8,11 @@ Master plan: docs/plans/test-structure/PLAN.md (decisions D1-D11). Branch featur
 - Update every reference in the linter repo: rule registry, rule_examples, tests, e2e
   fixtures, lele-lint-test-crates expectations, README, RULES.md / skills via `just docs`.
 - Keep remaining LELE0xx numbers as they are (gaps are fine).
+- Orchestrator decision (follows from the above): `tests/rule_examples.rs`
+  `codes_are_contiguous_in_registration_order` becomes per family: `LELE` codes are
+  LELE001..LELE043 minus an explicit retired list [006, 007, 009], in registration order;
+  `LELETEST` codes are LELETEST001..N contiguous, in registration order. A retired number is
+  never reused. Same idea for lele-bevy-lint when LELEBEVYTEST arrives (phase 2).
 
 ## Fleet
 - Replace the old codes wherever they appear (lele.toml, docs, comments that are allowed).

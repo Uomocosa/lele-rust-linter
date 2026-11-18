@@ -46,6 +46,8 @@ impl TestUsage {
     pub(crate) fn reads_opt_out(path: &Path) -> bool {}
     pub(crate) fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {}
     pub(crate) fn is_pure_module_tree(file: &syn::File) -> bool {}
+    pub(crate) fn is_plain_data(file: &syn::File) -> bool {}
+    pub(crate) fn is_forbidden_file(rel_path: &Path, file: &syn::File) -> bool {}
     pub(crate) fn is_type_only(file: &syn::File) -> bool {}
     pub(crate) fn is_default_only_impl(impl_block: &syn::ItemImpl) -> bool {}
     pub(crate) fn is_atomic_delegate_only(file: &syn::File) -> bool {}

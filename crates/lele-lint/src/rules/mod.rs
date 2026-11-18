@@ -33,6 +33,7 @@ pub(crate) mod no_stringified_errors;
 pub(crate) mod no_stuttered_path;
 pub(crate) mod no_stuttered_type;
 pub(crate) mod no_super_imports;
+pub(crate) mod no_tests_in_plain_data;
 pub(crate) mod no_trivial_accessors;
 pub(crate) mod root_reexport;
 pub(crate) mod single_field_newtype;

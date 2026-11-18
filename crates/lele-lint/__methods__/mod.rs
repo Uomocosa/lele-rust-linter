@@ -51,6 +51,7 @@ pub mod no_stringified_errors;
 pub mod no_stuttered_path;
 pub mod no_stuttered_type;
 pub mod no_super_imports;
+pub mod no_tests_in_plain_data;
 pub mod no_trivial_accessors;
 pub mod parsed_source;
 pub mod project;

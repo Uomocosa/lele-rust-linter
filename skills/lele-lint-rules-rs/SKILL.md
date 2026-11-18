@@ -134,6 +134,8 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.
 - **LELETEST003 `test_usage`**: Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
   - Fix: Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.
+- **LELETEST004 `no_tests_in_plain_data`**: No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
+  - Fix: Delete the `#[cfg(test)]` block from the plain-data file and test the method or function that uses the type instead.
 
 ## Style
 

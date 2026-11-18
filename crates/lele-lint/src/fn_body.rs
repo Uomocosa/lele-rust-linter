@@ -3,6 +3,7 @@ use derive_more::Deref;
 
 use crate::PlacementKind;
 
+pub(crate) mod branch_finder;
 pub(crate) mod control_finder;
 
 const MAX_INLINE_STATEMENTS: usize = 3;

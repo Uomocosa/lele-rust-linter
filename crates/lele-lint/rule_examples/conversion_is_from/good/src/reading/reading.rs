@@ -11,14 +11,3 @@ impl From<reading::SensorName> for Reading {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::reading;
-
-    #[test]
-    fn test_usage() {
-        let reading = reading::Reading::from(reading::SensorName("kitchen".to_string()));
-        assert_eq!(reading.celsius, 21);
-    }
-}

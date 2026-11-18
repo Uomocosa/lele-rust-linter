@@ -3,5 +3,3 @@ pub(crate) struct StutterHit {
     pub(crate) path: String,
     pub(crate) ty: String,
 }
-
-// no test_usage necessary

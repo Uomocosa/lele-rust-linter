@@ -14,6 +14,7 @@ pub fn default() -> Linter {
     rules::test_inline::TestInline::register(&mut rules);
     rules::helpers_are_methods::HelpersAreMethods::register(&mut rules);
     rules::test_usage::TestUsage::register(&mut rules);
+    rules::no_tests_in_plain_data::NoTestsInPlainData::register(&mut rules);
     rules::no_positional::NoPositional::register(&mut rules);
     rules::no_stuttered_path::NoStutteredPath::register(&mut rules);
     rules::no_stuttered_type::NoStutteredType::register(&mut rules);

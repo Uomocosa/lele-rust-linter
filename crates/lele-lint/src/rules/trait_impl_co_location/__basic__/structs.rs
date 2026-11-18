@@ -6,5 +6,3 @@ pub(crate) struct ImplHit {
     pub(crate) type_path: Option<Vec<String>>,
     pub(crate) is_blanket: bool,
 }
-
-// no test_usage necessary

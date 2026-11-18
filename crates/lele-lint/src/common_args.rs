@@ -27,22 +27,3 @@ pub struct CommonArgs {
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::CommonArgs;
-    use clap::Parser;
-
-    #[derive(Parser)]
-    struct Harness {
-        #[command(flatten)]
-        common: CommonArgs,
-    }
-
-    #[test]
-    fn test_usage() {
-        let parsed = Harness::try_parse_from(["x", "--scan-folder", "src,tests", "here"]).unwrap();
-        assert_eq!(parsed.common.scan_folder.map(|f| f.len()), Some(2));
-        assert_eq!(parsed.common.path, Some("here".into()));
-    }
-}

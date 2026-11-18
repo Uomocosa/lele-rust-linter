@@ -10,5 +10,3 @@ pub struct ReexportHit {
     pub raw: String,
     pub suggestion: String,
 }
-
-// no test_usage necessary

@@ -12,5 +12,3 @@ pub(crate) struct PathHit {
     pub(crate) line: usize,
     pub(crate) glob: bool,
 }
-
-// no test_usage necessary

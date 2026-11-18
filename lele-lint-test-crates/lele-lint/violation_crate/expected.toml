@@ -272,11 +272,19 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_single_field/config.rs"
+code = "LELETEST004"
+
+[[violations]]
+file = "src/bad_single_field/config.rs"
 code = "LELE020"
 
 [[violations]]
 file = "src/bad_single_field/config.rs"
 code = "LELE022"
+
+[[violations]]
+file = "src/bad_single_field/player.rs"
+code = "LELETEST004"
 
 [[violations]]
 file = "src/bad_single_field/player.rs"
@@ -340,11 +348,19 @@ code = "LELE034"
 
 [[violations]]
 file = "src/freenet/freenet_client.rs"
+code = "LELETEST004"
+
+[[violations]]
+file = "src/freenet/freenet_client.rs"
 code = "LELE012"
 
 [[violations]]
 file = "src/freenet/freenet_client.rs"
 code = "LELE020"
+
+[[violations]]
+file = "src/report.rs"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/report.rs"

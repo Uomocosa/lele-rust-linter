@@ -4178,17 +4178,6 @@ impl From<reading::SensorName> for Reading {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::reading;
-
-    #[test]
-    fn test_usage() {
-        let reading = reading::Reading::from(reading::SensorName("kitchen".to_string()));
-        assert_eq!(reading.celsius, 21);
-    }
-}
 ```
 
 `src/reading/__basic__/mod.rs`
@@ -4487,6 +4476,7 @@ pub use error::Error;
 - [LELETEST001 `no_dunder_tests`](#leletest001-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
 - [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 - [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+- [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 
 ### LELETEST001 `no_dunder_tests`
 
@@ -4719,6 +4709,118 @@ mod tests {
 ```rust
 mod guest;
 pub use guest::Guest;
+```
+
+### LELETEST004 `no_tests_in_plain_data`
+
+No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
+
+**Why:** Plain data has no behaviour of its own; it is tested through the code that uses it. Tuning values live in constants.rs and are not asserted (D8).
+
+**Fix:** Delete the `#[cfg(test)]` block from the plain-data file and test the method or function that uses the type instead.
+
+**Bad** (reports LELETEST004):
+
+`src/lib.rs`
+
+```rust
+pub mod settings;
+```
+
+`src/settings.rs`
+
+```rust
+pub struct Settings {
+    pub host: String,
+    pub port: u16,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            host: "localhost".to_string(),
+            port: 8080,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Settings;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Settings::default().port, 8080);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod registry_plugin;
+pub mod retry_policy;
+
+pub use registry_plugin::RegistryPlugin;
+pub use retry_policy::RetryPolicy;
+```
+
+`src/registry_plugin.rs`
+
+```rust
+pub struct RegistryPlugin;
+
+impl Plugin for RegistryPlugin {
+    fn build(&self, app: &mut App) {
+        let plugin = RegistryPlugin;
+        app.add(plugin);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RegistryPlugin;
+
+    #[test]
+    fn test_usage() {
+        let plugin = RegistryPlugin;
+        assert!(matches!(plugin, RegistryPlugin));
+    }
+}
+```
+
+`src/retry_policy.rs`
+
+```rust
+pub struct RetryPolicy {
+    pub attempts: u32,
+    pub delay_ms: u64,
+}
+
+impl RetryPolicy {
+    pub fn new(attempts: u32) -> Self {
+        let clamped = match attempts {
+            0 => 1,
+            n => n,
+        };
+        Self {
+            attempts: clamped,
+            delay_ms: 100,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RetryPolicy;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(RetryPolicy::new(0).attempts, 1);
+    }
+}
 ```
 
 ## Style

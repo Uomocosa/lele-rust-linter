@@ -13,6 +13,16 @@ pub fn rule_check(_self: &rules::test_usage::TestUsage, project: &Project) -> Ve
             continue;
         }
         let rel_path = source.relative_path;
+        if rules::test_usage::TestUsage::is_forbidden_file(rel_path, source.file) {
+            let absolute = project.absolute_path(source.origin, rel_path);
+            if rules::test_usage::TestUsage::reads_opt_out(&absolute) {
+                violations.push(RuleViolation::from_file(absolute, rules::test_usage::TestUsage::CODE, format!(
+                        "file `{}` holds only plain data — delete the `{OPT_OUT}` opt-out: plain-data files need no opt-out",
+                        rel_path.display()
+                    )));
+            }
+            continue;
+        }
         if rules::test_usage::TestUsage::is_exempt(rel_path, source.file, project) {
             continue;
         }

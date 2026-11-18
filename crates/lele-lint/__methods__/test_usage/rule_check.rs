@@ -13,11 +13,11 @@ pub fn rule_check(_self: &rules::test_usage::TestUsage, project: &Project) -> Ve
             continue;
         }
         let rel_path = source.relative_path;
-        if rules::test_usage::TestUsage::is_forbidden_file(rel_path, source.file) {
+        if rules::test_usage::TestUsage::needs_no_test_usage(rel_path, source.file) {
             let absolute = project.absolute_path(source.origin, rel_path);
             if rules::test_usage::TestUsage::reads_opt_out(&absolute) {
                 violations.push(RuleViolation::from_file(absolute, rules::test_usage::TestUsage::CODE, format!(
-                        "file `{}` holds only plain data — delete the `{OPT_OUT}` opt-out: plain-data files need no opt-out",
+                        "file `{}` needs no `test_usage` — delete the `{OPT_OUT}` opt-out: plain-data and `__bevy_systems__/` files need no opt-out",
                         rel_path.display()
                     )));
             }
@@ -81,6 +81,40 @@ mod tests {
             file: &file
         }
         .has_test_usage());
+    }
+
+    #[test]
+    fn test_usage_systems_file_without_tests_is_clean() {
+        use std::path::PathBuf;
+        let rule = rules::test_usage::TestUsage;
+        let system: syn::File = syn::parse_str("pub fn tick() {}").unwrap();
+        let mut project = Project::default();
+        project
+            .parsed_files
+            .insert(PathBuf::from("enemy/__bevy_systems__/tick.rs"), system);
+        assert!(rule_check(&rule, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_systems_file_with_opt_out_is_flagged() {
+        use std::path::PathBuf;
+        let rule = rules::test_usage::TestUsage;
+        let dir = tempfile::tempdir().unwrap();
+        let rel = Path::new("enemy/__bevy_systems__/tick.rs");
+        let absolute = dir.path().join(rel);
+        std::fs::create_dir_all(absolute.parent().unwrap()).unwrap();
+        let source = "pub fn tick() {}\n\n// no test_usage necessary\n";
+        std::fs::write(&absolute, source).unwrap();
+        let mut project = Project {
+            src_dir: dir.path().to_path_buf(),
+            ..Project::default()
+        };
+        project
+            .parsed_files
+            .insert(PathBuf::from(rel), syn::parse_str(source).unwrap());
+        let violations = rule_check(&rule, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("need no opt-out"));
     }
 
     #[test]

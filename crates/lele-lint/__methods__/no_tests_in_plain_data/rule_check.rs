@@ -73,6 +73,15 @@ mod tests {
     }
 
     #[test]
+    fn test_usage_systems_file_with_test_is_allowed() {
+        let project = project(&[(
+            "enemy/__bevy_systems__/tick.rs",
+            "pub fn tick() {}\n\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+        )]);
+        assert!(rule_check(&NoTestsInPlainData, &project).is_empty());
+    }
+
+    #[test]
     fn test_usage_behaviour_file_is_allowed() {
         let project = project(&[(
             "config/guest.rs",

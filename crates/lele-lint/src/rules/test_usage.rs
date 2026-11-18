@@ -16,9 +16,9 @@ impl TestUsage {
     pub const CODE: &'static str = "LELETEST003";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
-        summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.",
+        summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.",
         why: "The usage test is the function's documentation: it shows how to call it and proves it works.",
-        fix: "Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.",
+        fix: "Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need no test and no opt-out — delete a stray opt-out there.",
         bad: rule_examples!("test_usage/bad"),
         good: rule_examples!("test_usage/good"),
     };
@@ -48,6 +48,7 @@ impl TestUsage {
     pub(crate) fn is_pure_module_tree(file: &syn::File) -> bool {}
     pub(crate) fn is_plain_data(file: &syn::File) -> bool {}
     pub(crate) fn is_forbidden_file(rel_path: &Path, file: &syn::File) -> bool {}
+    pub(crate) fn needs_no_test_usage(rel_path: &Path, file: &syn::File) -> bool {}
     pub(crate) fn is_type_only(file: &syn::File) -> bool {}
     pub(crate) fn is_default_only_impl(impl_block: &syn::ItemImpl) -> bool {}
     pub(crate) fn is_atomic_delegate_only(file: &syn::File) -> bool {}

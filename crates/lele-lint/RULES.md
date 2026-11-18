@@ -4475,7 +4475,7 @@ pub use error::Error;
 
 - [LELETEST001 `no_dunder_tests`](#leletest001-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
 - [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
-- [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+- [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 
 ### LELETEST001 `no_dunder_tests`
@@ -4667,11 +4667,11 @@ pub use guest::Guest;
 
 ### LELETEST003 `test_usage`
 
-Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 
 **Why:** The usage test is the function's documentation: it shows how to call it and proves it works.
 
-**Fix:** Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.
+**Fix:** Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need no test and no opt-out — delete a stray opt-out there.
 
 **Bad** (reports LELETEST003):
 
@@ -4725,8 +4725,29 @@ mod tests {
 `src/lib.rs`
 
 ```rust
+mod enemy;
 mod guest;
 pub use guest::Guest;
+```
+
+`src/enemy/mod.rs`
+
+```rust
+#[path = "__bevy_systems__/mod.rs"]
+pub mod bevy_systems;
+```
+
+`src/enemy/__bevy_systems__/mod.rs`
+
+```rust
+pub mod tick_enemies;
+pub use tick_enemies::tick_enemies;
+```
+
+`src/enemy/__bevy_systems__/tick_enemies.rs`
+
+```rust
+pub fn tick_enemies() {}
 ```
 
 ### LELETEST004 `no_tests_in_plain_data`

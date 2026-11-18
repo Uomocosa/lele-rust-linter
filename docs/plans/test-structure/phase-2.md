@@ -16,10 +16,14 @@ Master plan: PLAN.md (D3, D4, D8, standing authorisations). Branch feature/test-
   relative to the config).
 
 ## Orchestrator decisions (follow from the plan)
-- LELETEST004 reuses the existing TestUsage predicates, NOT `is_exempt` as a whole (that one also
-  exempts dunder paths, main.rs and tests/ dirs, where tests are allowed or wanted):
-  forbidden = `is_type_only(file)` || (`mod.rs`/`lib.rs` && `is_pure_module_tree`) ||
-  `constants.rs`. `is_atomic_delegate_only` files are NOT forbidden (phase 4 wants struct-file
+- LELETEST004 does NOT reuse `is_exempt` (also exempts dunder paths, main.rs, tests/ dirs) nor
+  `is_type_only` (it ignores ALL trait impls, so `struct XPlugin` + `impl Plugin` counts as
+  type-only and plugin tests would be banned). Own predicate `is_plain_data(file)`:
+  the file has a struct/enum; every `impl` block (inherent or trait) holds only fns named
+  `new`, `default` or `from` (plus assoc consts); each such fn body has no `if`, `match`,
+  loop, `?`, closure, or `.await`. Forbidden = `is_plain_data` ||
+  (`mod.rs`/`lib.rs` && `is_pure_module_tree`) || `constants.rs`. Never forbidden: any file
+  with an `impl Plugin`, `*_plugin.rs`, `is_atomic_delegate_only` files (phase 4 wants their
   `test_usage`, D4).
 - lele-bevy-lint `tests/rule_examples.rs` contiguity test becomes per family like phase 1
   (`LELEBEVY001..N`, `LELEBEVYTEST001..N`).

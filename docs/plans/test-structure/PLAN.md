@@ -1,5 +1,7 @@
 # PLAN: Test structure (fleet-wide)
 
+> Resuming? Read HANDOFF.md first.
+
 Branch: `feature/test-structure` in `lele-rust-linter` and every fleet repo. Never merged
 mid-plan (single user, single machine; main does not move). All work commits and pushes here.
 

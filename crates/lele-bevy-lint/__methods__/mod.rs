@@ -19,6 +19,7 @@ pub mod input_scanner;
 pub mod local_names;
 pub mod macro_call;
 pub mod no_serialized_entity;
+pub mod no_tests_in_systems;
 pub mod path_collector;
 pub mod path_names;
 pub mod plugin_impl;

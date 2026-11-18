@@ -8,27 +8,31 @@ pub fn gate_create(button: Query<&mut BackgroundColor>) {
 
 #[cfg(test)]
 mod tests {
+    use super::gate_create;
     use lele_bevy_preview::run;
     use lele_bevy_preview::scene::{Kind, Scene, State};
-
-    use super::gate_create;
-
-    fn preview_build(app: &mut App) {
-        app.add_systems(Update, gate_create);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
-    }
-
-    fn rest(_world: &mut World) {}
 
     #[test]
     fn gate_create_ui_png_preview() {
         let scene = Scene {
             name: String::from("gate_create"),
             kind: Kind::System,
-            build: preview_build,
+            build: |app: &mut App| {
+                app.add_systems(Update, gate_create);
+                app.add_systems(
+                    PostStartup,
+                    lele_bevy_preview::scene::bevy_systems::center_roots,
+                );
+            },
             states: vec![
-                State { label: String::from("blank"), apply: rest },
-                State { label: String::from("typed"), apply: rest },
+                State {
+                    label: String::from("blank"),
+                    apply: |_world: &mut World| {},
+                },
+                State {
+                    label: String::from("typed"),
+                    apply: |_world: &mut World| {},
+                },
             ],
             timeline: None,
         };

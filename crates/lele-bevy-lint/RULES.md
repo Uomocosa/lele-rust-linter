@@ -187,6 +187,7 @@ pub enum Delta {
 - [LELEBEVY006 `bevy_plugin_scene`](#lelebevy006-bevy_plugin_scene): A file defining a `Plugin` whose build spawns UI (in its own folder, or through a system it registers directly or via its `__methods__/<plugin>/` delegate) must ship a `*_ui_scene_preview` test whose `Scene::build` adds that plugin.
 - [LELEBEVY007 `preview_routing`](#lelebevy007-preview_routing): Every `*_ui_png_preview`, `*_ui_mp4_preview` and `*_ui_scene_preview` fn must be a `#[test]` that calls `lele_bevy_preview::run(...)` and checks its result with `.expect(..)`, `.unwrap()` or `?`.
 - [LELEBEVY008 `preview_centered`](#lelebevy008-preview_centered): A preview whose scene is `Kind::System` or `Kind::Component` must centre its UI: its `build` (or a sibling fn it reaches) must call `lele_bevy_preview::scene::centered_root()` or add `lele_bevy_preview::scene::bevy_systems::center_roots`.
+- [LELEBEVYTEST001 `no_tests_in_systems`](#lelebevytest001-no_tests_in_systems): No `#[cfg(test)]` in a file under a `__bevy_systems__/` (or `bevy_systems/`) folder, except a test module holding only UI preview tests (plus `use`/`const`).
 
 ### LELEBEVY003 `bevy_ui`
 
@@ -348,27 +349,31 @@ pub fn gate_create(button: Query<&mut BackgroundColor>) {
 
 #[cfg(test)]
 mod tests {
+    use super::gate_create;
     use lele_bevy_preview::run;
     use lele_bevy_preview::scene::{Kind, Scene, State};
-
-    use super::gate_create;
-
-    fn preview_build(app: &mut App) {
-        app.add_systems(Update, gate_create);
-        app.add_systems(PostStartup, lele_bevy_preview::scene::bevy_systems::center_roots);
-    }
-
-    fn rest(_world: &mut World) {}
 
     #[test]
     fn gate_create_ui_png_preview() {
         let scene = Scene {
             name: String::from("gate_create"),
             kind: Kind::System,
-            build: preview_build,
+            build: |app: &mut App| {
+                app.add_systems(Update, gate_create);
+                app.add_systems(
+                    PostStartup,
+                    lele_bevy_preview::scene::bevy_systems::center_roots,
+                );
+            },
             states: vec![
-                State { label: String::from("blank"), apply: rest },
-                State { label: String::from("typed"), apply: rest },
+                State {
+                    label: String::from("blank"),
+                    apply: |_world: &mut World| {},
+                },
+                State {
+                    label: String::from("typed"),
+                    apply: |_world: &mut World| {},
+                },
             ],
             timeline: None,
         };
@@ -600,5 +605,96 @@ mod tests {
         run(&scene, &Config::default()).expect("preview");
     }
 }
+```
+
+### LELEBEVYTEST001 `no_tests_in_systems`
+
+No `#[cfg(test)]` in a file under a `__bevy_systems__/` (or `bevy_systems/`) folder, except a test module holding only UI preview tests (plus `use`/`const`).
+
+**Why:** A Bevy system is glue between queries and the honest core; the core is tested where it lives and the wiring once at plugin level.
+
+**Fix:** Delete the test module. If a test checks behaviour a user of the plugin can see and no other test covers it, move it to the owning `*_plugin.rs` tests, building the app with the plugin. Previews are the visual usage of a UI system and stay colocated: a `#[cfg(test)]` module holding only `*_ui_*_preview` tests (plus `use`/`const`) is allowed.
+
+**Bad** (reports LELEBEVYTEST001):
+
+`src/enemy/__bevy_systems__/tick_enemies.rs`
+
+```rust
+pub struct Query;
+
+pub fn tick_enemies(_q: Query) {}
+
+#[cfg(test)]
+mod tests {
+    use super::Query;
+    use super::tick_enemies;
+
+    #[test]
+    fn tick_enemies_ui_png_preview() {
+        tick_enemies(Query);
+    }
+
+    #[test]
+    fn extra_regression() {
+        tick_enemies(Query);
+    }
+}
+```
+
+**Good:**
+
+`src/enemy/__bevy_systems__/tick.rs`
+
+```rust
+pub struct Query;
+
+pub fn tick(_q: Query) {}
+
+pub fn build(app: &mut App) {
+    app.add_systems(Update, tick);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Query;
+    use super::tick;
+    use lele_bevy_preview::run;
+    use lele_bevy_preview::scene::{Kind, Scene, State};
+
+    #[test]
+    fn tick_ui_png_preview() {
+        let scene = Scene {
+            name: String::from("tick"),
+            kind: Kind::System,
+            build: |app: &mut App| {
+                app.add_systems(Update, tick);
+                app.add_systems(
+                    PostStartup,
+                    lele_bevy_preview::scene::bevy_systems::center_roots,
+                );
+            },
+            states: vec![
+                State {
+                    label: String::from("blank"),
+                    apply: |_world: &mut World| {},
+                },
+                State {
+                    label: String::from("typed"),
+                    apply: |_world: &mut World| {},
+                },
+            ],
+            timeline: None,
+        };
+        run(&scene, &Config::default()).expect("preview");
+    }
+}
+```
+
+`src/enemy/__bevy_systems__/tick_enemies.rs`
+
+```rust
+pub struct Query;
+
+pub fn tick_enemies(_q: Query) {}
 ```
 

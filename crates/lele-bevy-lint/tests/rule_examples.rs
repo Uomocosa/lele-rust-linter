@@ -139,15 +139,20 @@ fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Codes are exactly `LELEBEVY001..LELEBEVY<count>`, in registration order.
+/// Codes are `LELEBEVY001..N` and `LELEBEVYTEST001..M` contiguous, each in
+/// registration order.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    for (index, rule) in BevyLinter::default().rules.iter().enumerate() {
-        assert_eq!(
-            rule.code(),
-            format!("LELEBEVY{:03}", index + 1),
-            "{}",
-            rule.name()
-        );
+    let mut bevy_next: u32 = 1;
+    let mut test_next: u32 = 1;
+    for rule in BevyLinter::default().rules.iter() {
+        let code = rule.code();
+        if let Some(suffix) = code.strip_prefix("LELEBEVYTEST") {
+            assert_eq!(suffix, format!("{test_next:03}"), "{}", rule.name());
+            test_next += 1;
+        } else {
+            assert_eq!(code, format!("LELEBEVY{bevy_next:03}"), "{}", rule.name());
+            bevy_next += 1;
+        }
     }
 }

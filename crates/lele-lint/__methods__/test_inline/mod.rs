@@ -1,4 +1,10 @@
+mod file_has_test_items;
 mod has_tests_component;
+mod has_underscore_tests_stem;
+mod is_listed_e2e_dir;
 mod rule_check;
+pub use file_has_test_items::file_has_test_items;
 pub use has_tests_component::has_tests_component;
+pub use has_underscore_tests_stem::has_underscore_tests_stem;
+pub use is_listed_e2e_dir::is_listed_e2e_dir;
 pub use rule_check::rule_check;

@@ -18,6 +18,9 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
         project
             .inline_trait_methods
             .clone_from(&section.lint.inline_trait_methods);
+        project
+            .e2e_test_dirs
+            .clone_from(&section.config.e2e_test_dirs);
         project.boundaries.clone_from(&section.boundary);
     }
 

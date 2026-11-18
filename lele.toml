@@ -3,6 +3,7 @@
 
 [lele.config]
 exclude = ["target", ".devenv", ".git", "lele-lint-test-crates"]
+e2e_test_dirs = ["crates/lele-lint/tests", "crates/lele-bevy-lint/tests"]
 
 [lele.lint]
 

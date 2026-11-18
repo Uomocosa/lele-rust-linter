@@ -40,6 +40,7 @@ pub struct Project {
     pub collection_wrappers: Vec<CollectionWrapperEntry>,
     pub no_delegates: Vec<NoDelegatesEntry>,
     pub inline_trait_methods: Vec<InlineTraitMethodsEntry>,
+    pub e2e_test_dirs: Vec<PathBuf>,
     pub methods_dir: Option<PathBuf>,
     pub methods_entries: Vec<Entry>,
     pub methods_parsed_files: HashMap<PathBuf, syn::File>,

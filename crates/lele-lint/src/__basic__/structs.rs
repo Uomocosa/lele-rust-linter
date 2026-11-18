@@ -12,10 +12,18 @@ pub struct LeleSection {
     pub lint: LeleTomlLintSections,
     #[serde(default)]
     pub boundary: Vec<BoundaryEntry>,
-    #[serde(default, rename = "config")]
-    pub enforce_config: Option<toml::Value>,
+    #[serde(default)]
+    pub config: ConfigSection,
     #[serde(default)]
     pub layout: LayoutSection,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct ConfigSection {
+    #[serde(default)]
+    pub exclude: Vec<std::path::PathBuf>,
+    #[serde(default)]
+    pub e2e_test_dirs: Vec<std::path::PathBuf>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]

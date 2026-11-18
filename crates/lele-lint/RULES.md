@@ -4474,7 +4474,7 @@ pub use error::Error;
 ## Tests
 
 - [LELETEST001 `no_dunder_tests`](#leletest001-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
-- [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
+- [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
 - [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 
@@ -4566,13 +4566,22 @@ pub struct Item {
 
 ### LELETEST002 `test_inline`
 
-Unit tests live in the same file as the code (no `tests/` folders under `src/`).
+Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
 
-**Why:** The test sits next to what it tests, so reading one means reading the other.
+**Why:** The test sits next to what it tests, so reading one means reading the other. Only listed end-to-end suites may live outside the crate.
 
-**Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.
+**Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.config] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.
 
 **Bad** (reports LELETEST002):
+
+`src/greet_tests.rs`
+
+```rust
+#[test]
+fn greets_bob() {
+    assert_eq!(crate::Guest("Bob".to_string()).greet(), "Hello, Bob!");
+}
+```
 
 `src/guest.rs`
 
@@ -4603,6 +4612,15 @@ mod tests {
 ```rust
 mod guest;
 pub use guest::Guest;
+```
+
+`tests/e2e_probe.rs`
+
+```rust
+#[test]
+fn e2e_probe() {
+    assert_eq!(1 + 1, 2);
+}
 ```
 
 `src/tests/greet_more.rs`

@@ -377,3 +377,15 @@ code = "LELE022"
 [[violations]]
 file = "src/bad_dunder_mount/mod.rs"
 code = "LELE038"
+
+[[violations]]
+file = "src/bad_test_inline/greet_tests.rs"
+code = "LELETEST002"
+
+[[violations]]
+file = "src/bad_test_inline/greet_tests.rs"
+code = "LELETEST003"
+
+[[violations]]
+file = "tests"
+code = "LELETEST002"

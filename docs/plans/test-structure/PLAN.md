@@ -26,6 +26,7 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | D8 | Constants are tuned in `constants.rs`, never asserted in tests |
 | D9 | Honesty-based (MIR taxonomy) test rules deferred; skill guidance only |
 | D10 | Extra tests in a `__methods__/` file must be `#[rstest]` (default, user may veto) |
+| D12 | (user, 2026-11-18) LELEBEVYTEST001 allows a test module in a `__bevy_systems__/` file only if it holds nothing but preview tests (`*_ui_png_preview` / mp4 previews, as the UI rules detect them); previews are the visual usage of a UI system and stay colocated. UI rules unchanged |
 | D11 | `just t-touched` runs only tests colocated with touched files (+ owning plugin for a touched `__bevy_systems__` file); NOT reverse dependents |
 
 ### D4: what each file tests
@@ -83,3 +84,4 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - P0: branches + plan (9ebe8c7, 84ac934), pushed. Orchestrator.
 - P1 linter: 10ea29e LELETEST001-003 rename, pushed. EfficientWorker muse-spark-1.3-contributor#low. Fleet check: 0 errors on all 24 targets.
 - P1 skills: ~/.config/opencode 86cbea6 (lele-ponytail-bridge-rs LELETEST003 + __methods__ paths).
+- P2 A: 32fc336 LELEBEVYTEST001 (+D12 preview exemption, user decision). EfficientWorker muse-spark, 2 turns (1 stop on conflict).

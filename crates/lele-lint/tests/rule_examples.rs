@@ -156,15 +156,32 @@ fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Codes are exactly `LELE001..LELE<count>`, in registration order.
+/// `LELE` codes are LELE001..LELE043 minus retired [006, 007, 009], and `LELETEST`
+/// codes are LELETEST001..N contiguous, each in registration order. A retired number
+/// is never reused.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    for (index, rule) in Linter::default().rules.iter().enumerate() {
-        assert_eq!(
-            rule.code(),
-            format!("LELE{:03}", index + 1),
-            "{}",
-            rule.name()
-        );
+    const RETIRED: [u32; 3] = [6, 7, 9];
+    const MAX_LELE: u32 = 43;
+    let expected_lele: Vec<String> = (1..=MAX_LELE)
+        .filter(|n| !RETIRED.contains(n))
+        .map(|n| format!("LELE{n:03}"))
+        .collect();
+    let mut lele = expected_lele.iter();
+    let mut letest_next: u32 = 1;
+    for rule in Linter::default().rules.iter() {
+        let code = rule.code();
+        if code.starts_with("LELETEST") {
+            assert_eq!(code, format!("LELETEST{letest_next:03}"), "{}", rule.name());
+            letest_next += 1;
+        } else {
+            assert_eq!(
+                code,
+                lele.next().expect("more LELE rules than expected"),
+                "{}",
+                rule.name()
+            );
+        }
     }
+    assert!(lele.next().is_none(), "missing LELE rules");
 }

@@ -33,7 +33,7 @@ A fix for one rule must not break another. Before saving, check the file against
 
 - Named in snake_case after its one public item (LELE001, LELE002).
 - Ends with `#[cfg(test)] mod tests` holding a `test_usage` test, or with
-  `// no test_usage necessary` when there is nothing to test (LELE009).
+  `// no test_usage necessary` when there is nothing to test (LELETEST003).
 - No comments (LELE031): before deleting one, move what it says into the item's name or its
   `test_usage` test. No `#[allow]`/`#[expect]` (LELE024).
 - Imports the domain, not the item (`use crate::stock;` then `stock::Item`, LELE016);
@@ -128,11 +128,11 @@ A fix for one rule must not break another. Before saving, check the file against
 
 ## Tests
 
-- **LELE006 `no_dunder_tests`**: No `#[cfg(test)]` inside `__basic__/` containers.
+- **LELETEST001 `no_dunder_tests`**: No `#[cfg(test)]` inside `__basic__/` containers.
   - Fix: Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.
-- **LELE007 `test_inline`**: Unit tests live in the same file as the code (no `tests/` folders under `src/`).
+- **LELETEST002 `test_inline`**: Unit tests live in the same file as the code (no `tests/` folders under `src/`).
   - Fix: Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.
-- **LELE009 `test_usage`**: Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+- **LELETEST003 `test_usage`**: Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
   - Fix: Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.
 
 ## Style

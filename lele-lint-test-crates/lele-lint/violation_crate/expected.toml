@@ -68,7 +68,7 @@ code = "LELE034"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
@@ -84,7 +84,7 @@ code = "LELE031"
 
 [[violations]]
 file = "src/bad_crate_path/connect.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/bad_crate_path/connect.rs"
@@ -124,7 +124,7 @@ code = "LELE001"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
@@ -176,7 +176,7 @@ code = "LELE001"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
@@ -320,7 +320,7 @@ code = "LELE034"
 
 [[violations]]
 file = "src/bad_test_inline/tests"
-code = "LELE007"
+code = "LELETEST002"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
@@ -328,7 +328,7 @@ code = "LELE001"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"

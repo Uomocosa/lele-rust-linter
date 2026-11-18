@@ -20,7 +20,7 @@ code = "LELE030"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"
-code = "LELE009"
+code = "LELETEST003"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"

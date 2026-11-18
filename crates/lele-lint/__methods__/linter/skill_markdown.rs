@@ -40,7 +40,7 @@ A fix for one rule must not break another. Before saving, check the file against
 
 - Named in snake_case after its one public item (LELE001, LELE002).
 - Ends with `#[cfg(test)] mod tests` holding a `test_usage` test, or with
-  `// no test_usage necessary` when there is nothing to test (LELE009).
+  `// no test_usage necessary` when there is nothing to test (LELETEST003).
 - No comments (LELE031): before deleting one, move what it says into the item's name or its
   `test_usage` test. No `#[allow]`/`#[expect]` (LELE024).
 - Imports the domain, not the item (`use crate::stock;` then `stock::Item`, LELE016);

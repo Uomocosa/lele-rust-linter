@@ -4484,11 +4484,11 @@ pub use error::Error;
 
 ## Tests
 
-- [LELE006 `no_dunder_tests`](#lele006-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
-- [LELE007 `test_inline`](#lele007-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
-- [LELE009 `test_usage`](#lele009-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
+- [LELETEST001 `no_dunder_tests`](#leletest001-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
+- [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`).
+- [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
 
-### LELE006 `no_dunder_tests`
+### LELETEST001 `no_dunder_tests`
 
 No `#[cfg(test)]` inside `__basic__/` containers.
 
@@ -4496,7 +4496,7 @@ No `#[cfg(test)]` inside `__basic__/` containers.
 
 **Fix:** Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.
 
-**Bad** (reports LELE006):
+**Bad** (reports LELETEST001):
 
 `src/lib.rs`
 
@@ -4574,7 +4574,7 @@ pub struct Item {
 }
 ```
 
-### LELE007 `test_inline`
+### LELETEST002 `test_inline`
 
 Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 
@@ -4582,7 +4582,7 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`).
 
 **Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the `tests/` folder under `src/`.
 
-**Bad** (reports LELE007):
+**Bad** (reports LELETEST002):
 
 `src/guest.rs`
 
@@ -4657,7 +4657,7 @@ mod guest;
 pub use guest::Guest;
 ```
 
-### LELE009 `test_usage`
+### LELETEST003 `test_usage`
 
 Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`.
 
@@ -4665,7 +4665,7 @@ Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, 
 
 **Fix:** Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`.
 
-**Bad** (reports LELE009):
+**Bad** (reports LELETEST003):
 
 `src/guest.rs`
 

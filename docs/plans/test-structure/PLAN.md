@@ -85,3 +85,8 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - P1 linter: 10ea29e LELETEST001-003 rename, pushed. EfficientWorker muse-spark-1.3-contributor#low. Fleet check: 0 errors on all 24 targets.
 - P1 skills: ~/.config/opencode 86cbea6 (lele-ponytail-bridge-rs LELETEST003 + __methods__ paths).
 - P2 A: 32fc336 LELEBEVYTEST001 (+D12 preview exemption, user decision). EfficientWorker muse-spark, 2 turns (1 stop on conflict).
+- P0 nextest: p2p work done by SmartWorker (2 turns), commit blocked by new rules in prek; kept as .local-run patch, re-applied uncommitted, lands with p2p phase-2 commit. Baseline 1554 tests / 4m03; t-worker lobby-room 775 tests / 1m30 (was 886 / 2m40). Decision: default slow-timeout 60s reporting only; worker profile skips *_plugin and *_preview tests.
+- P2 B: a301021 LELETEST004 (own is_plain_data predicate; is_type_only ignores trait impls). EfficientWorker.
+- P2 C: be02dbf LELETEST002 *_tests.rs + e2e_test_dirs config key. EfficientWorker.
+- P2 fleet check (error lines): harness 1x003; p2p core 1x002 17x003 8x004 143xBEVYTEST001, lobby-room 1x002 11x003 3x004 901xBEVYTEST001, contract/shared/common 1/2/1x003; state-machine 3x003 34xBEVYTEST001; release 1x002 1x003; taxonomy 1x002 2x003; telegram helper 1x002, preview 1x002 2x003 6xBEVYTEST001. Compiles: unaffected (no macro change).
+- P2 fleet plan: p2p = 13 sequential SmartWorker jobs (~14 files, lists in p2p .local-run job-*), uncommitted until whole repo clean (pre-commit lints all crates), then commit per area. Small repos: one SmartWorker job each, commit+push.

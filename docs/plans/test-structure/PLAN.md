@@ -138,3 +138,15 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - p2p L6 ($0.14, extended +10 missed files): lobby 0 errors.
 - p2p S (\$0.06): S1-S3 crates clean. Full suite 1396 passed / 31 skipped, 246s (P2: 1208 / 269s). p2p commit 9bc8b5a (prek gate green). PHASE 3 DONE fleet-wide.
 - P3 cost: linter ~\$0.45, small repos ~\$0.31, p2p plan+20 jobs ~\$1.85. All SmartWorker deepseek-v4.1-flash#low. 1 send-back (C2 LELE019). Lesson: plan's per-file counts missed 10 single-hit lobby files: always re-list remaining hits before the last job of a crate.
+- P4 plan ($0.08): p4-linter-plan.md + p4-decisions.md. P4a rule job: SmartWorker.
+- P4a done uncommitted ($0.17): rule + 31 tests; self-lint 75 files. p4b (lele-lint+macros 37), p4c (bevy-lint 38 + commit).
+- P4b ($0.11): 35/37 fixed; rule fixes (proc_macro primary, statement-call receiver) into p4c.
+- P4 linter: 0ba628b pushed (p4b $0.11, p4c $0.09; proc_macro fns not primary). Fleet LELETEST007: harness 1 file, taxonomy 3, telegram 31, release 58, p2p 35 (core 23, lobby 11, contract 1). Launched in parallel: harness, taxonomy, telegram (commit), release-1, p2p-1 (nocommit). Template p4-fleet-brief.md + launch4.sh.
+- P4 harness 20d488c ($0.02), taxonomy 8935a11 ($0.07; static_cause.rs opt-out: needs live TyCtxt). Telegram: 27/31, 4 I/O-only shells -> opt-out (decision, also in p4-fleet-brief now).
+- P4 p2p-1 ($0.09): 22/23 core; start.rs (real node) -> p2p-2 with opt-out.
+- P4 release-1 ($0.09): 29 files; incident: setup test overwrote ~/.config/git/lele-pins.gitconfig, worker restored (orchestrator verified content + ~/.gitconfig untouched); brief now requires temp HOME.
+- P4 telegram b5e8863 ($0.20; 4 I/O shells opt-out), release f300acd ($0.17 total; warn_if_behind opt-out; push tests use temp repo without origin, verified).
+- P4 p2p 440ff21 ($0.16 total; 1398 tests / 257s; start.rs + spawn_lobby_tasks.rs opt-out). P4 FLEET DONE. Skill job: EfficientWorker (mechanical doc edit).
+- P4 skill: ~/.config/opencode 4809fa3 (RATIONALE §19 + SKILL.md pointer; EfficientWorker muse-spark, $0.005; user's uncommitted orchestrator-core/ui-sketch-rs untouched, verified).
+- 2026-11-19 FINAL: every lint target of all 7 repos 0 errors, all pushed. p2p 1398 tests / 257 s (baseline 1554 / 243 s, P2 1208 / 269 s). PLAN DONE (branches not merged: user decides).
+- P4 cost: linter ~$0.43, fleet ~$0.60. Opt-outs added (no unit test possible): taxonomy static_cause.rs, telegram get_updates/send_text_best_effort/send_video_best_effort/announce_artifacts, release warn_if_behind, p2p embedded_node/start.rs + spawn_lobby_tasks.rs.

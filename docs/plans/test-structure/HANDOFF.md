@@ -23,11 +23,10 @@ telegram 4390c38, p2p 9bc8b5a (1396 tests / 246 s). Taxonomy had 0 hits. See PLA
 Phase-3 tooling (p2p .local-run): p3-p2p-plan.md, p3-decisions.md, p3-fleet-brief.md, launch3.sh JOB,
 check3.sh JOB; linter .local-run: p3-small-brief.md, launch-small3.sh, read-job.sh.
 
-## Next: Phase 4
-Then Phase 4 (phase-4.md): LELETEST007 (one test_usage per file calling the primary item); the
-rstest rule was dropped (D10 = guidance). Pre-existing second test modules exist
-(`build_plugin_tests` in core p2p_plugin.rs, lobby discovery/plugin.rs, ui/direct_dial/
-friends_ui_plugin.rs; `png_tests` in layout_stream_panel.rs) - LELETEST007 must decide on them.
+## Phase 4: DONE (2026-11-19)
+LELETEST007 in lele-lint 0ba628b. Fleet: harness 20d488c, taxonomy 8935a11, telegram b5e8863,
+release f300acd, p2p 440ff21 (1398 tests / 257 s), state-machine had 0 hits. Skill:
+~/.config/opencode 4809fa3 (lele-syntax-rs RATIONALE §19). PLAN DONE; branches NOT merged.
 
 ## Open decisions for the USER (ask before acting)
 Items 1-5 of 2026-11-18 decided on 2026-11-19 (PLAN.md D5 revised, D13-D15, log). Remaining:

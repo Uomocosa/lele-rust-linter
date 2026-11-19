@@ -29,16 +29,14 @@ deleted system tests - recount first).
 Do a fleet count (step 3 of lele-linter-change-rs) BEFORE splitting work; Phase 3 is likely the
 biggest phase in p2p.
 
-Then Phase 4 (phase-4.md): LELETEST007 (one test_usage per file calling the primary item) and
-LELETEST008 (extra tests in __methods__/ are #[rstest]). Pre-existing second test modules exist
+Then Phase 4 (phase-4.md): LELETEST007 (one test_usage per file calling the primary item); the
+rstest rule was dropped (D10 = guidance). Pre-existing second test modules exist
 (`build_plugin_tests` in core p2p_plugin.rs, lobby discovery/plugin.rs, ui/direct_dial/
 friends_ui_plugin.rs; `png_tests` in layout_stream_panel.rs) - LELETEST007 must decide on them.
 
 ## Open decisions for the USER (ask before acting)
 Items 1-5 of 2026-11-18 decided on 2026-11-19 (PLAN.md D5 revised, D13-D15, log). Remaining:
-6. D10 (rstest-only extras in __methods__/) was an orchestrator default. User (2026-11-19): the intent
-   was HONEST methods' tests are rstest; options under discussion (drop rule -> skill guidance,
-   taxonomy-aware rule, syntactic proxy, keep).
+None (D10 decided 2026-11-19: guidance only, no lint).
 
 ## Tooling (local, gitignored) - p2p `.local-run/orchestrator/2026-11-18-test-structure/`
 - `worker-env.md` (copy also in lele-rust-linter/.local-run/...): every brief starts "read it first".

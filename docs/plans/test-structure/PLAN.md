@@ -27,7 +27,7 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | D7 | Clean rename, no aliases for old codes |
 | D8 | Constants are tuned in `constants.rs`, never asserted in tests |
 | D9 | Honesty-based (MIR taxonomy) test rules deferred; skill guidance only |
-| D10 | Extra tests in a `__methods__/` file must be `#[rstest]` (default, user may veto) |
+| D10 | (revised 2026-11-19, user) Corner cases of an HONEST method are `#[rstest]` cases: skill guidance only (lele-syntax-rs RATIONALE §18), no lint rule (honesty needs the MIR taxonomy, see D9). Former LELETEST009/008 dropped |
 | D12 | (user, 2026-11-18) LELEBEVYTEST001 allows a test module in a `__bevy_systems__/` file only if it holds nothing but preview tests (`*_ui_png_preview` / mp4 previews, as the UI rules detect them); previews are the visual usage of a UI system and stay colocated. UI rules unchanged |
 | D13 | (user, 2026-11-19) Preview authoring tools (`scene::Clock`, `Scene::hover::<C>`) are public API of `lele-bevy-preview`, not `testing/` items |
 | D14 | (user, 2026-11-19) `PeekedRoomFriends` stays: read by examples/starboard `draw_friend_highlights` (the phase-2 "dead code" report missed examples) |
@@ -38,7 +38,7 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | File | `test_usage` shows | Other tests |
 |---|---|---|
 | `struct.rs` (primary type + simple inline methods) | how the type is used in real code: build it, call its methods | corner cases combining several methods; free names |
-| `__methods__/<type>/<method>.rs` | that one method | `#[rstest]` corner cases for that method (D10) |
+| `__methods__/<type>/<method>.rs` | that one method | corner cases for that method; `#[rstest]` cases when the method is honest (D10, guidance) |
 | inline simple method in `struct.rs` | no dedicated test; covered by the struct's `test_usage` | - |
 | `*_plugin.rs` | the plugin added to a `TestApp` | free names (D3) |
 | `__basic__/`, plain data, trivial ctor, `__bevy_systems__/` | no tests (enforced) | - |
@@ -55,7 +55,6 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | LELETEST005 | lele-lint | 3 | test module holds only test fns, `use`, `const` (no other fn/struct/enum/impl) |
 | LELETEST006 | lele-lint | 3 | (was 007) `testing/` items only in `__app__/ __queries__/ __fixtures__/ __fakes__/`; test helpers only from `crate::testing::..` or a dependency's `testing` |
 | LELETEST007 | lele-lint | 4 | (was 008) one `test_usage` (D1); calls the primary item (D4); >=1 `assert*!` on a value derived from that call |
-| LELETEST008 | lele-lint | 4 | (was 009) extra tests in `__methods__/` files are `#[rstest]` (D10) |
 
 Every new rule gets `rule_examples`; `just docs` regenerates RULES.md + `lele-lint-rules-rs`.
 
@@ -111,3 +110,4 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - 2026-11-19 executed: telegram-bot-helper 1c64193 (lele-bevy-preview scene::Clock + Scene::hover; center_roots before/after restored, PNGs pixel-identical to pre-phase-2), p2p 3a746c2 (drive_roll_machines real row 9->10->11 + plain-text reference; pulse + both tooltip previews on Clock/hover, tooltip PNGs pixel-identical; rendezvous_preview_dial `me: &PeerId`). SmartWorker deepseek-v4.1-flash#low, ~$0.12 total. Skills dc6309f (testing/ reuse-first: RATIONALE §17, SMELLS S9, lele-linter-change-rs checks).
 - Open for user: rendezvous_preview_dial cannot leave __bevy_systems__/ as a free fn (LELE034 no_free_functions; owner types PeerId/RoomMember/Room are foreign). Options: method on shared_types Room, newtype owner, stay (untested), entry_points exemption. Move + 5 restored tests saved in p2p .local-run/orchestrator/2026-11-19-open-items/change4-moved.patch.
 - 2026-11-19 rendezvous_preview_dial: user chose `Room::rendezvous_preview_dial(&self, me)` in lobby-room shared_types; p2p e31f055 (5 tests restored). EfficientWorker muse-spark-1.3-contributor#low, ~$0.01. Open question closed.
+- 2026-11-19 D10 revised (user): rstest-only-extras lint dropped; honest corner cases -> #[rstest] is skill guidance (RATIONALE §18). Phase 4 = LELETEST007 only.

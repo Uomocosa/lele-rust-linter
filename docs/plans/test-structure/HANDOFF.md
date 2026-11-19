@@ -37,6 +37,8 @@ friends_ui_plugin.rs; `png_tests` in layout_stream_panel.rs) - LELETEST007 must 
 ## Open decisions for the USER (ask before acting)
 Items 1-5 of 2026-11-18 decided on 2026-11-19 (PLAN.md D5 revised, D13-D15, log). Remaining:
 6. D10 (rstest-only extras in __methods__/) was an orchestrator default; user never vetoed.
+7. rendezvous_preview_dial owner (LELE034 blocks the approved move to peek/): see PLAN.md log
+   2026-11-19; patch ready in p2p .local-run/orchestrator/2026-11-19-open-items/change4-moved.patch.
 
 ## Tooling (local, gitignored) - p2p `.local-run/orchestrator/2026-11-18-test-structure/`
 - `worker-env.md` (copy also in lele-rust-linter/.local-run/...): every brief starts "read it first".

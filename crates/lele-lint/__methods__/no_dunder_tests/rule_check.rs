@@ -28,31 +28,19 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use crate::DunderPath;
-    use std::path::PathBuf;
-
     use super::rule_check;
     use crate::rules::no_dunder_tests::NoDunderTests;
-    use crate::Project;
-
-    fn project(files: &[(&str, &str)]) -> Project {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        for (path, source) in files {
-            let file: syn::File = syn::parse_str(source).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        project
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let project = project(&[(
-            "discovery/__basic__/newtypes.rs",
-            "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "discovery/__basic__/newtypes.rs",
+                "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+            )],
+        );
         let violations = rule_check(&NoDunderTests, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("__basic__"));
@@ -60,19 +48,25 @@ mod tests {
 
     #[test]
     fn test_usage_allows_tests_outside_dunder() {
-        let project = project(&[(
-            "discovery/newtypes.rs",
-            "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "discovery/newtypes.rs",
+                "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+            )],
+        );
         assert!(rule_check(&NoDunderTests, &project).is_empty());
     }
 
     #[test]
     fn test_usage_allows_tests_in_bevy_systems_dir() {
-        let project = project(&[(
-            "discovery/__bevy_systems__/poll_input.rs",
-            "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "discovery/__bevy_systems__/poll_input.rs",
+                "#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+            )],
+        );
         assert!(rule_check(&NoDunderTests, &project).is_empty());
     }
 }

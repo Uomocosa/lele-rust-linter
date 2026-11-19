@@ -19,21 +19,14 @@ pub fn strip_trailing_code_dunders(dir: &Path, project: &Project) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use crate::rules;
-    use crate::DunderPath;
+    use crate::testing;
     use crate::Project;
     use std::path::Path;
     use std::path::PathBuf;
 
-    fn project() -> Project {
-        Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let project = project();
+        let project = testing::dunder_project();
         assert_eq!(
             rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(
                 &PathBuf::from("foo/__traits__"),
@@ -52,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_usage_crate_root_code_dunder_strips_to_the_root() {
-        let project = project();
+        let project = testing::dunder_project();
         assert_eq!(
             rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(
                 &PathBuf::from("__traits__"),
@@ -64,7 +57,7 @@ mod tests {
 
     #[test]
     fn test_usage_container_dunder_is_not_stripped() {
-        let project = project();
+        let project = testing::dunder_project();
         assert_eq!(
             rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(
                 &PathBuf::from("foo/__basic__"),
@@ -76,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_usage_plain_dirs_pass_through() {
-        let project = project();
+        let project = testing::dunder_project();
         assert_eq!(
             rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(
                 Path::new("foo"),

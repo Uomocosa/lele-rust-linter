@@ -43,16 +43,11 @@ pub fn try_from_start_dir_and_scan_folders(
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
 
     use super::try_from_start_dir_and_scan_folders;
+    use crate::testing;
     use crate::Error;
-
-    fn write_file(base: &Path, p: &str) {
-        let path = base.join(p);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, "pub fn f() {}\n").unwrap();
-    }
 
     #[test]
     fn test_usage() {
@@ -64,7 +59,7 @@ mod tests {
         )
         .unwrap();
         fs::create_dir_all(root.join("src")).unwrap();
-        write_file(root, "src/a.rs");
+        testing::write_source_file(root, "src/a.rs");
         let project = try_from_start_dir_and_scan_folders(Some(root), None).unwrap();
         assert!(project.parsed_files.contains_key(&PathBuf::from("a.rs")));
     }
@@ -79,8 +74,8 @@ mod tests {
         )
         .unwrap();
         fs::create_dir_all(root.join("src")).unwrap();
-        write_file(root, "src/a.rs");
-        write_file(root, "examples/demo.rs");
+        testing::write_source_file(root, "src/a.rs");
+        testing::write_source_file(root, "examples/demo.rs");
         let project = try_from_start_dir_and_scan_folders(Some(root), None).unwrap();
         assert!(project
             .example_parsed_files
@@ -91,8 +86,8 @@ mod tests {
     fn test_discover_folders_is_aggregated() {
         let base = tempfile::tempdir().unwrap();
         let root = base.path();
-        write_file(root, "src/a.rs");
-        write_file(root, "contract/src/lib.rs");
+        testing::write_source_file(root, "src/a.rs");
+        testing::write_source_file(root, "contract/src/lib.rs");
         let folders = vec![PathBuf::from("src"), PathBuf::from("contract")];
         let project = try_from_start_dir_and_scan_folders(Some(root), Some(&folders)).unwrap();
         assert!(project

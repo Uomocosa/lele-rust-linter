@@ -20,6 +20,8 @@ impl ItemMarker<'_> {
     pub fn is_atomic_delegates(&self) -> bool { self.is_named("atomic_delegates") }
     pub fn is_atomic_delegate(&self) -> bool { self.is_named("atomic_delegate") }
     pub fn is_test(&self) -> bool { self.is_named("test") }
+    pub fn is_rstest(&self) -> bool { self.is_named("rstest") }
+    pub fn is_tokio_test(&self) -> bool { self.path().segments.len() == 2 && self.is_named("test") }
 }
 
 impl ItemMarker<'_> {

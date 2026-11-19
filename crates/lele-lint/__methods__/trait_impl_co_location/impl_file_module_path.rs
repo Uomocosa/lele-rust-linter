@@ -17,17 +17,14 @@ pub fn impl_file_module_path(rel_path: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::impl_file_module_path;
+    use crate::testing;
     use std::path::Path;
-
-    fn path(names: &[&str]) -> Vec<String> {
-        names.iter().map(|name| name.to_string()).collect()
-    }
 
     #[test]
     fn test_usage() {
         assert_eq!(
             impl_file_module_path(Path::new("dial/setup.rs")),
-            path(&["dial", "setup"])
+            testing::strings(&["dial", "setup"])
         );
     }
 
@@ -35,11 +32,11 @@ mod tests {
     fn test_usage_maps_dunder_folders_to_code_module_names() {
         assert_eq!(
             impl_file_module_path(Path::new("stock/__traits__/clock.rs")),
-            path(&["stock", "traits", "clock"])
+            testing::strings(&["stock", "traits", "clock"])
         );
         assert_eq!(
             impl_file_module_path(Path::new("stock/__basic__/structs.rs")),
-            path(&["stock", "basic", "structs"])
+            testing::strings(&["stock", "basic", "structs"])
         );
     }
 
@@ -47,8 +44,11 @@ mod tests {
     fn test_usage_index_files_drop_their_stem() {
         assert_eq!(
             impl_file_module_path(Path::new("stock/mod.rs")),
-            path(&["stock"])
+            testing::strings(&["stock"])
         );
-        assert_eq!(impl_file_module_path(Path::new("lib.rs")), path(&[]));
+        assert_eq!(
+            impl_file_module_path(Path::new("lib.rs")),
+            testing::strings(&[])
+        );
     }
 }

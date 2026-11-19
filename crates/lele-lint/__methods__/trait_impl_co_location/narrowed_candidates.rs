@@ -19,27 +19,19 @@ pub fn narrowed_candidates(files: &BTreeSet<PathBuf>, hints: &[Vec<String>]) -> 
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
     use std::path::PathBuf;
 
     use super::narrowed_candidates;
-
-    fn files(paths: &[&str]) -> BTreeSet<PathBuf> {
-        paths.iter().map(PathBuf::from).collect()
-    }
-
-    fn hints(names: &[&[&str]]) -> Vec<Vec<String>> {
-        names
-            .iter()
-            .map(|hint| hint.iter().map(|segment| segment.to_string()).collect())
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let narrowed = narrowed_candidates(
-            &files(&["discovery/config.rs", "direct_dial/__basic__/resources.rs"]),
-            &hints(&[&["discovery"]]),
+            &testing::path_sorted_set(&[
+                "discovery/config.rs",
+                "direct_dial/__basic__/resources.rs",
+            ]),
+            &testing::nested_strings(&[&["discovery"]]),
         );
         assert_eq!(narrowed, vec![PathBuf::from("discovery/config.rs")]);
     }
@@ -47,7 +39,10 @@ mod tests {
     #[test]
     fn test_usage_without_hints_nothing_is_narrowed() {
         assert_eq!(
-            narrowed_candidates(&files(&["discovery/config.rs"]), &hints(&[]),),
+            narrowed_candidates(
+                &testing::path_sorted_set(&["discovery/config.rs"]),
+                &testing::nested_strings(&[]),
+            ),
             Vec::<PathBuf>::new()
         );
     }
@@ -55,8 +50,8 @@ mod tests {
     #[test]
     fn test_usage_every_hint_contributes_its_candidates() {
         let narrowed = narrowed_candidates(
-            &files(&["a/config.rs", "b/config.rs"]),
-            &hints(&[&["a"], &["b"]]),
+            &testing::path_sorted_set(&["a/config.rs", "b/config.rs"]),
+            &testing::nested_strings(&[&["a"], &["b"]]),
         );
         assert_eq!(
             narrowed,

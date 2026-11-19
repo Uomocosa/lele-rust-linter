@@ -92,32 +92,21 @@ mod tests {
 
     use super::rule_check;
     use crate::rules::no_free_functions::NoFreeFunctions;
+    use crate::testing;
     use crate::EntryPoint;
-    use crate::Project;
-
-    fn project_with(files: &[(&str, &str)]) -> Project {
-        let mut project = Project {
-            root: PathBuf::from("/crate"),
-            src_dir: PathBuf::from("/crate/src"),
-            ..Project::default()
-        };
-        for (path, source) in files {
-            project
-                .parsed_files
-                .insert(PathBuf::from(path), syn::parse_str(source).unwrap());
-        }
-        project
-    }
 
     #[test]
     fn test_usage() {
-        let project = project_with(&[
-            ("player/player.rs", "pub struct Player;"),
-            (
-                "player/heal.rs",
-                "pub fn heal(player: &mut Player, amount: u32) {}",
-            ),
-        ]);
+        let project = testing::parsed_project(
+            testing::crate_project(),
+            &[
+                ("player/player.rs", "pub struct Player;"),
+                (
+                    "player/heal.rs",
+                    "pub fn heal(player: &mut Player, amount: u32) {}",
+                ),
+            ],
+        );
         let violations = rule_check(&NoFreeFunctions, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("impl Player"));
@@ -126,18 +115,21 @@ mod tests {
 
     #[test]
     fn test_return_type_and_two_candidates() {
-        let project = project_with(&[
-            ("a.rs", "pub struct Client; pub struct Config;"),
-            (
-                "connect.rs",
-                "pub fn connect(host: &str) -> Result<Client, E> {}",
-            ),
-            (
-                "make.rs",
-                "pub fn build(config: &Config) -> Option<Client> {}",
-            ),
-            ("split.rs", "pub fn split(bytes: &[u8]) -> Vec<u8> {}"),
-        ]);
+        let project = testing::parsed_project(
+            testing::crate_project(),
+            &[
+                ("a.rs", "pub struct Client; pub struct Config;"),
+                (
+                    "connect.rs",
+                    "pub fn connect(host: &str) -> Result<Client, E> {}",
+                ),
+                (
+                    "make.rs",
+                    "pub fn build(config: &Config) -> Option<Client> {}",
+                ),
+                ("split.rs", "pub fn split(bytes: &[u8]) -> Vec<u8> {}"),
+            ],
+        );
         let messages: Vec<String> = rule_check(&NoFreeFunctions, &project)
             .into_iter()
             .map(|v| v.message)
@@ -156,14 +148,17 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("src")).unwrap();
         std::fs::write(dir.path().join("src/run.rs"), "pub fn run() {}").unwrap();
-        let mut project = project_with(&[
-            ("game/__bevy_systems__/tick.rs", "pub fn tick() {}"),
-            ("main.rs", "pub fn run() {}"),
-            (
-                "run.rs",
-                "pub fn run() {} fn private() {} #[cfg(test)] pub fn t() {}",
-            ),
-        ]);
+        let mut project = testing::parsed_project(
+            testing::crate_project(),
+            &[
+                ("game/__bevy_systems__/tick.rs", "pub fn tick() {}"),
+                ("main.rs", "pub fn run() {}"),
+                (
+                    "run.rs",
+                    "pub fn run() {} fn private() {} #[cfg(test)] pub fn t() {}",
+                ),
+            ],
+        );
         project.root = dir.path().to_path_buf();
         project.src_dir = dir.path().join("src");
         project.entry_points.push(EntryPoint {
@@ -174,39 +169,17 @@ mod tests {
         assert!(rule_check(&NoFreeFunctions, &project).is_empty());
     }
 
-    fn workspace_project(ws: &std::path::Path, entry_file: &str) -> Project {
-        let crate_src = ws.join("crates/a/src");
-        std::fs::create_dir_all(&crate_src).unwrap();
-        std::fs::write(crate_src.join("run.rs"), "pub fn run() {}").unwrap();
-        let mut project = Project {
-            root: ws.join("crates/a"),
-            src_dir: crate_src,
-            config_dir: ws.to_path_buf(),
-            ..Project::default()
-        };
-        project.parsed_files.insert(
-            PathBuf::from("run.rs"),
-            syn::parse_str("pub fn run() {}").unwrap(),
-        );
-        project.entry_points.push(EntryPoint {
-            file: PathBuf::from(entry_file),
-            function: "run".to_string(),
-            reason: "task".to_string(),
-        });
-        project
-    }
-
     #[test]
     fn test_config_relative_entry_matches_in_workspace() {
         let dir = tempfile::tempdir().unwrap();
-        let project = workspace_project(dir.path(), "crates/a/src/run.rs");
+        let project = testing::workspace_project(dir.path(), "crates/a/src/run.rs");
         assert!(rule_check(&NoFreeFunctions, &project).is_empty());
     }
 
     #[test]
     fn test_entry_for_other_crate_is_ignored() {
         let dir = tempfile::tempdir().unwrap();
-        let project = workspace_project(dir.path(), "crates/b/src/run.rs");
+        let project = testing::workspace_project(dir.path(), "crates/b/src/run.rs");
         std::fs::create_dir_all(dir.path().join("crates/b/src")).unwrap();
         std::fs::write(dir.path().join("crates/b/src/run.rs"), "pub fn run() {}").unwrap();
         let messages: Vec<String> = rule_check(&NoFreeFunctions, &project)
@@ -220,7 +193,7 @@ mod tests {
     #[test]
     fn test_missing_entry_file_is_stale() {
         let dir = tempfile::tempdir().unwrap();
-        let project = workspace_project(dir.path(), "crates/a/src/gone.rs");
+        let project = testing::workspace_project(dir.path(), "crates/a/src/gone.rs");
         let messages: Vec<String> = rule_check(&NoFreeFunctions, &project)
             .into_iter()
             .map(|v| v.message)
@@ -233,7 +206,7 @@ mod tests {
     #[test]
     fn test_unmatched_in_crate_entry_is_stale() {
         let dir = tempfile::tempdir().unwrap();
-        let mut project = workspace_project(dir.path(), "crates/a/src/run.rs");
+        let mut project = testing::workspace_project(dir.path(), "crates/a/src/run.rs");
         project.entry_points[0].function = "missing_fn".to_string();
         let messages: Vec<String> = rule_check(&NoFreeFunctions, &project)
             .into_iter()
@@ -244,7 +217,10 @@ mod tests {
 
     #[test]
     fn test_binaries_are_not_exempt() {
-        let project = project_with(&[("bin/tool.rs", "pub fn helper() {}")]);
+        let project = testing::parsed_project(
+            testing::crate_project(),
+            &[("bin/tool.rs", "pub fn helper() {}")],
+        );
         let violations = rule_check(&NoFreeFunctions, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("helper"));

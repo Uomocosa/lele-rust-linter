@@ -42,22 +42,15 @@ mod tests {
     use std::path::Path;
 
     use super::check_hit;
-    use crate::rules::trait_placement::TraitHit;
+    use crate::testing;
     use crate::Project;
-
-    fn hit(line: usize, name: &str) -> TraitHit {
-        TraitHit {
-            line,
-            name: name.to_string(),
-        }
-    }
 
     #[test]
     fn test_usage() {
         let project = Project::default();
         let violations = check_hit(
             Path::new("stock/replicated_state.rs"),
-            &hit(3, "ReplicatedState"),
+            &testing::trait_hit(3, "ReplicatedState"),
             &project,
         );
         assert_eq!(violations.len(), 1);
@@ -72,7 +65,7 @@ mod tests {
         let project = Project::default();
         let violations = check_hit(
             Path::new("stock/__traits__/sessions.rs"),
-            &hit(2, "Sessions"),
+            &testing::trait_hit(2, "Sessions"),
             &project,
         );
         assert!(violations.is_empty());
@@ -83,7 +76,7 @@ mod tests {
         let project = Project::default();
         let violations = check_hit(
             Path::new("stock/__traits__/sessions.rs"),
-            &hit(2, "SessionsTrait"),
+            &testing::trait_hit(2, "SessionsTrait"),
             &project,
         );
         assert_eq!(violations.len(), 1);
@@ -98,7 +91,7 @@ mod tests {
         let project = Project::default();
         let violations = check_hit(
             Path::new("room_sync/customer_prefs.rs"),
-            &hit(5, "CustomerPrefsTrait"),
+            &testing::trait_hit(5, "CustomerPrefsTrait"),
             &project,
         );
         assert_eq!(violations.len(), 1);

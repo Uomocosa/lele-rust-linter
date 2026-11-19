@@ -23,13 +23,12 @@ pub fn rule_check(
 mod tests {
     use std::path::Path;
 
+    use crate::testing;
     use crate::ItemMarker;
     use crate::Project;
 
     use super::rule_check;
     use crate::rules;
-
-    use syn::ItemStruct;
 
     #[test]
     fn test_usage() {
@@ -38,37 +37,35 @@ mod tests {
         assert!(rule_check(&rule, &project).is_empty());
     }
 
-    fn parse(code: &str) -> ItemStruct {
-        syn::parse_str(code).unwrap()
-    }
-
     #[test]
     fn test_usage_detects_deref_derive() {
         assert!(
-            rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(&parse(
-                "#[derive(Deref)] pub struct X(pub u64);"
-            ))
+            rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(
+                &testing::parsed_item_struct("#[derive(Deref)] pub struct X(pub u64);")
+            )
         );
         assert!(
-            rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(&parse(
-                "#[derive(Clone, Deref, DerefMut)] pub struct X(pub u64);"
-            ))
+            rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(
+                &testing::parsed_item_struct(
+                    "#[derive(Clone, Deref, DerefMut)] pub struct X(pub u64);"
+                )
+            )
         );
         assert!(
-            !rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(&parse(
-                "#[derive(Clone)] pub struct X(pub u64);"
-            ))
+            !rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(
+                &testing::parsed_item_struct("#[derive(Clone)] pub struct X(pub u64);")
+            )
         );
         assert!(
-            !rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(&parse(
-                "pub struct X(pub u64);"
-            ))
+            !rules::single_field_newtype::SingleFieldNewtype::has_deref_derive(
+                &testing::parsed_item_struct("pub struct X(pub u64);")
+            )
         );
     }
 
     #[test]
     fn test_usage_single_field_named_is_rejected() {
-        let s = parse("pub struct X { pub value: u64 }");
+        let s = testing::parsed_item_struct("pub struct X { pub value: u64 }");
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);
@@ -77,7 +74,9 @@ mod tests {
 
     #[test]
     fn test_usage_single_named_with_deref_passes() {
-        let s = parse("#[derive(Debug, Clone, Deref)] pub struct X { pub value: Vec<String> }");
+        let s = testing::parsed_item_struct(
+            "#[derive(Debug, Clone, Deref)] pub struct X { pub value: Vec<String> }",
+        );
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert!(violations.is_empty());
@@ -85,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_usage_single_field_without_deref_is_rejected() {
-        let s = parse("pub struct X(pub u64);");
+        let s = testing::parsed_item_struct("pub struct X(pub u64);");
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);
@@ -94,7 +93,7 @@ mod tests {
 
     #[test]
     fn test_usage_single_field_with_deref_passes() {
-        let s = parse("#[derive(Deref)] pub struct X(pub u64);");
+        let s = testing::parsed_item_struct("#[derive(Deref)] pub struct X(pub u64);");
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert!(violations.is_empty());
@@ -109,7 +108,7 @@ mod tests {
             "#[derive(Parser)] struct Args { root: String }",
             "#[derive(Args)] struct Cmd { root: String }",
         ] {
-            let s = parse(code);
+            let s = testing::parsed_item_struct(code);
             assert!(s
                 .attrs
                 .iter()
@@ -124,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_usage_non_shape_single_field_rejected() {
-        let s = parse("#[derive(Clone, Debug)] struct X { value: u64 }");
+        let s = testing::parsed_item_struct("#[derive(Clone, Debug)] struct X { value: u64 }");
         assert!(!s
             .attrs
             .iter()
@@ -136,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_usage_multi_field_tuple_is_rejected() {
-        let s = parse("pub struct X(pub String, pub u32);");
+        let s = testing::parsed_item_struct("pub struct X(pub String, pub u32);");
         let violations =
             rules::single_field_newtype::SingleFieldNewtype::check_struct(&s, Path::new("x.rs"));
         assert_eq!(violations.len(), 1);

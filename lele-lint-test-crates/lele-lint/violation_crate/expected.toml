@@ -389,3 +389,7 @@ code = "LELETEST003"
 [[violations]]
 file = "tests"
 code = "LELETEST002"
+
+[[violations]]
+file = "src/bad_dunder_mount/__traits__/greetable.rs"
+code = "LELETEST005"

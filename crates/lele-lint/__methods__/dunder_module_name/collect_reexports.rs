@@ -72,45 +72,20 @@ pub fn collect_reexports(
 
 #[cfg(test)]
 mod tests {
-    use super::collect_reexports;
     use crate::rules;
+    use crate::testing;
     use crate::DunderPath;
     use crate::Project;
     use std::path::Path;
     use std::path::PathBuf;
     use syn::visit::Visit;
 
-    fn hits(rel_path: &str, source: &str) -> Vec<String> {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        project
-            .parsed_files
-            .insert(PathBuf::from(rel_path), syn::parse_str(source).unwrap());
-        let file = project.get_parsed(Path::new(rel_path)).unwrap().clone();
-        let Some(syn::Item::Use(item_use)) = file.items.first() else {
-            return Vec::new();
-        };
-        let mut hits = Vec::new();
-        let mut reexports = Vec::new();
-        let mut visitor = rules::dunder_module_name::DunderNameVisitor {
-            dunders: &project.dunder_paths,
-            hits: &mut hits,
-            reexports: &mut reexports,
-            domain_prefix: rules::dunder_module_name::DunderModuleName::mount_prefix(
-                Path::new(rel_path),
-                &project,
-            ),
-            methods_mount_name: project.methods_mount_name(),
-        };
-        collect_reexports(&mut visitor, item_use);
-        reexports.iter().map(|hit| hit.suggestion.clone()).collect()
-    }
-
     #[test]
     fn test_usage() {
-        let found = hits("greeting/mod.rs", "pub use traits::Greetable;\n");
+        let found = testing::collect_reexport_suggestions(
+            "greeting/mod.rs",
+            "pub use traits::Greetable;\n",
+        );
         assert_eq!(found, vec!["greeting::traits::Greetable".to_string()]);
     }
 

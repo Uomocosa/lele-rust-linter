@@ -38,34 +38,13 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use super::rule_check;
     use crate::rules::trait_impl_co_location::TraitImplCoLocation;
-    use crate::DunderPath;
-    use crate::Project;
-
-    fn messages(files: &[(&str, &str)]) -> Vec<String> {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        let mut violations = Vec::new();
-        for (path, source) in files {
-            let file: syn::File = syn::parse_str(source).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        for violation in rule_check(&TraitImplCoLocation, &project) {
-            violations.push(violation.message);
-        }
-        violations.sort();
-        violations
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
                     "stock/unix_time.rs",
@@ -82,7 +61,7 @@ mod tests {
 
     #[test]
     fn test_usage_flags_impl_in_separate_file() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("stock/mod.rs", "pub mod clock;\npub mod unix_time;\n"),
             (
                 "stock/unix_time.rs",
@@ -107,7 +86,7 @@ mod tests {
     #[test]
     fn test_usage_same_named_types_impl_in_the_defining_file_is_clean() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("a/mod.rs", "pub mod config;\n"),
                 (
                     "a/config.rs",
@@ -125,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_usage_same_named_types_resolved_through_the_imported_module() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("a/mod.rs", "pub mod config;\n"),
             ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
             ("b/mod.rs", "pub mod config;\n"),
@@ -145,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_usage_same_named_types_without_resolution_is_ambiguous() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("a/mod.rs", "pub mod config;\n"),
             ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
             ("b/mod.rs", "pub mod config;\n"),
@@ -165,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_usage_relative_imports_disambiguate_same_named_types() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("a/mod.rs", "pub mod config;\npub mod setup;\n"),
             ("a/config.rs", "pub struct Config { pub enabled: bool }\n"),
             ("b/mod.rs", "pub mod config;\n"),
@@ -184,17 +163,20 @@ mod tests {
 
     #[test]
     fn test_usage_flags_blanket_impl_outside_trait_file() {
-        let found = messages(&[
-            ("stock/mod.rs", "pub mod blanket;\n"),
-            (
-                "stock/__traits__/clock.rs",
-                "pub trait Clock { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "stock/blanket.rs",
-                "impl<T> Clock for T { fn now(&self) -> u64 { 0 } }\n",
-            ),
-        ]);
+        let found = testing::violation_messages(
+            &TraitImplCoLocation,
+            &[
+                ("stock/mod.rs", "pub mod blanket;\n"),
+                (
+                    "stock/__traits__/clock.rs",
+                    "pub trait Clock { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "stock/blanket.rs",
+                    "impl<T> Clock for T { fn now(&self) -> u64 { 0 } }\n",
+                ),
+            ],
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0],
@@ -204,20 +186,23 @@ mod tests {
 
     #[test]
     fn test_usage_same_named_traits_blanket_impl_resolves_through_the_trait_path() {
-        let found = messages(&[
-            (
-                "a/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "b/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "dial/setup.rs",
-                "impl crate::a::Foo for T { fn now(&self) -> u64 { 0 } }\n",
-            ),
-        ]);
+        let found = testing::violation_messages(
+            &TraitImplCoLocation,
+            &[
+                (
+                    "a/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "b/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "dial/setup.rs",
+                    "impl crate::a::Foo for T { fn now(&self) -> u64 { 0 } }\n",
+                ),
+            ],
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0],
@@ -227,20 +212,23 @@ mod tests {
 
     #[test]
     fn test_usage_same_named_traits_local_trait_impl_resolves_through_the_trait_path() {
-        let found = messages(&[
-            (
-                "a/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "b/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "dial/setup.rs",
-                "impl crate::a::Foo for ForeignAlias { fn now(&self) -> u64 { 0 } }\n",
-            ),
-        ]);
+        let found = testing::violation_messages(
+            &TraitImplCoLocation,
+            &[
+                (
+                    "a/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "b/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "dial/setup.rs",
+                    "impl crate::a::Foo for ForeignAlias { fn now(&self) -> u64 { 0 } }\n",
+                ),
+            ],
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0],
@@ -250,20 +238,23 @@ mod tests {
 
     #[test]
     fn test_usage_same_named_traits_resolved_through_the_imported_trait() {
-        let found = messages(&[
-            (
-                "a/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "b/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "dial/setup.rs",
-                "use crate::b::Foo;\n\nimpl Foo for T { fn now(&self) -> u64 { 0 } }\n",
-            ),
-        ]);
+        let found = testing::violation_messages(
+            &TraitImplCoLocation,
+            &[
+                (
+                    "a/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "b/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "dial/setup.rs",
+                    "use crate::b::Foo;\n\nimpl Foo for T { fn now(&self) -> u64 { 0 } }\n",
+                ),
+            ],
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0],
@@ -273,20 +264,23 @@ mod tests {
 
     #[test]
     fn test_usage_ambiguous_same_named_traits_lists_every_defining_file() {
-        let found = messages(&[
-            (
-                "a/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "b/__traits__/foo.rs",
-                "pub trait Foo { fn now(&self) -> u64; }\n",
-            ),
-            (
-                "dial/setup.rs",
-                "impl Foo for T { fn now(&self) -> u64 { 0 } }\n",
-            ),
-        ]);
+        let found = testing::violation_messages(
+            &TraitImplCoLocation,
+            &[
+                (
+                    "a/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "b/__traits__/foo.rs",
+                    "pub trait Foo { fn now(&self) -> u64; }\n",
+                ),
+                (
+                    "dial/setup.rs",
+                    "impl Foo for T { fn now(&self) -> u64 { 0 } }\n",
+                ),
+            ],
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0],
@@ -297,7 +291,7 @@ mod tests {
     #[test]
     fn test_usage_allows_blanket_impl_in_trait_file() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
                     "stock/__traits__/clock.rs",
@@ -315,7 +309,7 @@ mod tests {
     #[test]
     fn test_usage_std_trait_impl_stays_with_type() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
                     "stock/unix_time.rs",
@@ -329,17 +323,20 @@ mod tests {
     #[test]
     fn test_usage_skips_foreign_trait_and_type() {
         assert_eq!(
-            messages(&[(
-                "stock/foreign.rs",
-                "impl Display for ForeignType { fn fmt(&mut self) {} }\n",
-            )]),
+            testing::violation_messages(
+                &TraitImplCoLocation,
+                &[(
+                    "stock/foreign.rs",
+                    "impl Display for ForeignType { fn fmt(&mut self) {} }\n",
+                )]
+            ),
             Vec::<String>::new()
         );
     }
 
     #[test]
     fn test_usage_unresolvable_type_with_local_trait_follows_the_trait() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("stock/mod.rs", "pub mod unix_time;\n"),
             (
                 "stock/__traits__/clock.rs",
@@ -363,7 +360,7 @@ mod tests {
 
     #[test]
     fn test_usage_flags_impl_for_container_type() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("stock/mod.rs", "pub mod clock;\n"),
             (
                 "stock/__basic__/structs.rs",
@@ -388,7 +385,7 @@ mod tests {
     #[test]
     fn test_usage_container_type_impl_in_same_file_stays_container_placements_call() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod clock;\n"),
                 (
                     "stock/__basic__/structs.rs",
@@ -405,7 +402,7 @@ mod tests {
 
     #[test]
     fn test_usage_reference_self_type_resolves_to_the_type() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("stock/mod.rs", "pub mod unix_time;\n"),
             (
                 "stock/unix_time.rs",
@@ -430,7 +427,7 @@ mod tests {
     #[test]
     fn test_usage_skips_slice_and_tuple_self_types() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
                     "stock/unix_time.rs",
@@ -452,7 +449,7 @@ mod tests {
     #[test]
     fn test_usage_exempts_test_modules() {
         assert_eq!(
-            messages(&[
+            testing::violation_messages(&TraitImplCoLocation, &[
                 ("stock/mod.rs", "pub mod unix_time;\n"),
                 (
                     "stock/unix_time.rs",
@@ -474,23 +471,26 @@ mod tests {
     #[test]
     fn test_usage_exempts_tests_and_build_files() {
         assert_eq!(
-            messages(&[
-                (
-                    "tests/harness.rs",
-                    "pub struct UnixTime;\npub trait Clock {}\nimpl Clock for UnixTime {}\n",
-                ),
-                (
-                    "build.rs",
-                    "pub struct UnixTime;\npub trait Clock {}\nimpl Clock for UnixTime {}\n",
-                ),
-            ]),
+            testing::violation_messages(
+                &TraitImplCoLocation,
+                &[
+                    (
+                        "tests/harness.rs",
+                        "pub struct UnixTime;\npub trait Clock {}\nimpl Clock for UnixTime {}\n",
+                    ),
+                    (
+                        "build.rs",
+                        "pub struct UnixTime;\npub trait Clock {}\nimpl Clock for UnixTime {}\n",
+                    ),
+                ]
+            ),
             Vec::<String>::new()
         );
     }
 
     #[test]
     fn test_usage_impl_inside_plain_mod_is_still_checked() {
-        let found = messages(&[
+        let found = testing::violation_messages(&TraitImplCoLocation, &[
             ("stock/mod.rs", "pub mod unix_time;\n"),
             (
                 "stock/unix_time.rs",

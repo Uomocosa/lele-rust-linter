@@ -19,44 +19,49 @@ pub fn from_fn_body(body: &syn::Block, is_run_imported: bool) -> scan::HarnessCa
 
 #[cfg(test)]
 mod tests {
-    use super::from_fn_body;
-    use crate::scan::HarnessCall;
-
-    fn call(body: &str, is_run_imported: bool) -> HarnessCall {
-        from_fn_body(&syn::parse_str(body).unwrap(), is_run_imported)
-    }
+    use crate::scan;
+    use crate::testing;
 
     #[test]
     fn test_usage_method_form_is_the_harness() {
         assert_eq!(
-            call("{ scene.run(&c).expect(\"preview\"); }", false),
-            HarnessCall::Checked
+            testing::harness_call("{ scene.run(&c).expect(\"preview\"); }", false),
+            scan::HarnessCall::Checked
         );
         assert_eq!(
-            call("{ let _ = scene.run(&c); }", false),
-            HarnessCall::Unchecked
+            testing::harness_call("{ let _ = scene.run(&c); }", false),
+            scan::HarnessCall::Unchecked
         );
-        assert_eq!(call("{ scene.run(&c); }", false), HarnessCall::Unchecked);
+        assert_eq!(
+            testing::harness_call("{ scene.run(&c); }", false),
+            scan::HarnessCall::Unchecked
+        );
     }
 
     #[test]
     fn test_usage() {
         assert_eq!(
-            call(
+            testing::harness_call(
                 "{ lele_bevy_preview::run(&s, &c).expect(\"preview\"); }",
                 false
             ),
-            HarnessCall::Checked
-        );
-        assert_eq!(call("{ run(&s, &c)?; }", true), HarnessCall::Checked);
-        assert_eq!(
-            call("{ let _ = run(&s, &c); }", true),
-            HarnessCall::Unchecked
+            scan::HarnessCall::Checked
         );
         assert_eq!(
-            call("{ run(&s, &c).expect(\"p\"); }", false),
-            HarnessCall::Missing
+            testing::harness_call("{ run(&s, &c)?; }", true),
+            scan::HarnessCall::Checked
         );
-        assert_eq!(call("{ server::run(); }", true), HarnessCall::Missing);
+        assert_eq!(
+            testing::harness_call("{ let _ = run(&s, &c); }", true),
+            scan::HarnessCall::Unchecked
+        );
+        assert_eq!(
+            testing::harness_call("{ run(&s, &c).expect(\"p\"); }", false),
+            scan::HarnessCall::Missing
+        );
+        assert_eq!(
+            testing::harness_call("{ server::run(); }", true),
+            scan::HarnessCall::Missing
+        );
     }
 }

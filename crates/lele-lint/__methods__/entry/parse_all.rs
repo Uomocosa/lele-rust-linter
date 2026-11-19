@@ -33,26 +33,14 @@ pub fn parse_all(entries: &[Entry]) -> (HashMap<PathBuf, syn::File>, Vec<ParseFa
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-    use std::path::PathBuf;
-
     use super::parse_all;
-    use crate::Entry;
-    use crate::EntryKind;
-
-    fn file_entry(dir: &Path, name: &str) -> Entry {
-        Entry {
-            relative_path: PathBuf::from(name),
-            absolute_path: dir.join(name),
-            kind: EntryKind::File,
-        }
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("a.rs"), "pub fn f() {}\n").unwrap();
-        let entries = vec![file_entry(dir.path(), "a.rs")];
+        let entries = vec![testing::file_entry(dir.path(), "a.rs")];
         let (parsed, failures) = parse_all(&entries);
         assert_eq!(parsed.len(), 1);
         assert!(failures.is_empty());
@@ -64,8 +52,8 @@ mod tests {
         std::fs::write(dir.path().join("a.rs"), "pub fn f() {}\n").unwrap();
         std::fs::write(dir.path().join("b.rs"), "pub fn f( {\n").unwrap();
         let entries = vec![
-            file_entry(dir.path(), "a.rs"),
-            file_entry(dir.path(), "b.rs"),
+            testing::file_entry(dir.path(), "a.rs"),
+            testing::file_entry(dir.path(), "b.rs"),
         ];
         let (parsed, failures) = parse_all(&entries);
         assert_eq!(parsed.len(), 1);

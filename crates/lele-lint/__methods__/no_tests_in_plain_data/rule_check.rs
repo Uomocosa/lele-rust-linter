@@ -18,6 +18,9 @@ pub fn rule_check(
             continue;
         }
         for item in &source.file.items {
+            if rules::test_module_items::TestModuleItems::is_testing_fixture_root(item) {
+                continue;
+            }
             let Some(line) = rules::no_dunder_tests::NoDunderTests::cfg_test_line(item) else {
                 continue;
             };
@@ -33,28 +36,13 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use crate::DunderPath;
-    use std::path::PathBuf;
-
     use super::rule_check;
     use crate::rules::no_tests_in_plain_data::NoTestsInPlainData;
-    use crate::Project;
-
-    fn project(files: &[(&str, &str)]) -> Project {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        for (path, source) in files {
-            let file: syn::File = syn::parse_str(source).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        project
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let project = project(&[(
+        let project = testing::parsed_project(testing::dunder_project(), &[(
             "config/settings.rs",
             "pub struct Settings { pub port: u16 }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
         )]);
@@ -65,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_usage_plugin_impl_is_allowed() {
-        let project = project(&[(
+        let project = testing::parsed_project(testing::dunder_project(), &[(
             "config/registry.rs",
             "pub struct RegistryPlugin;\nimpl Plugin for RegistryPlugin { fn build(&self, app: &mut App) {} }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
         )]);
@@ -74,19 +62,31 @@ mod tests {
 
     #[test]
     fn test_usage_systems_file_with_test_is_allowed() {
-        let project = project(&[(
-            "enemy/__bevy_systems__/tick.rs",
-            "pub fn tick() {}\n\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "enemy/__bevy_systems__/tick.rs",
+                "pub fn tick() {}\n\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
+            )],
+        );
         assert!(rule_check(&NoTestsInPlainData, &project).is_empty());
     }
 
     #[test]
     fn test_usage_behaviour_file_is_allowed() {
-        let project = project(&[(
+        let project = testing::parsed_project(testing::dunder_project(), &[(
             "config/guest.rs",
             "pub struct Guest(pub String);\nimpl Guest { pub fn greet(&self) -> String { format!(\"hi\") } }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }",
         )]);
+        assert!(rule_check(&NoTestsInPlainData, &project).is_empty());
+    }
+
+    #[test]
+    fn test_usage_testing_fixture_root_is_allowed() {
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[("lib.rs", "#[cfg(test)]\npub(crate) mod testing;")],
+        );
         assert!(rule_check(&NoTestsInPlainData, &project).is_empty());
     }
 }

@@ -20,16 +20,12 @@ mod tests {
     use super::mount_prefix;
     use crate::Project;
 
-    fn names(segments: &[String]) -> Vec<String> {
-        segments.to_vec()
-    }
-
     #[test]
     fn test_usage() {
         let project = Project::default();
         assert_eq!(
             mount_prefix(Path::new("stock/mod.rs"), &project),
-            names(&["stock".to_string()])
+            vec!["stock".to_string()]
         );
         assert_eq!(
             mount_prefix(Path::new("lib.rs"), &project),
@@ -37,7 +33,7 @@ mod tests {
         );
         assert_eq!(
             mount_prefix(Path::new("stock/guest.rs"), &project),
-            names(&["stock".to_string()])
+            vec!["stock".to_string()]
         );
     }
 
@@ -49,7 +45,7 @@ mod tests {
         };
         assert_eq!(
             mount_prefix(Path::new("src/stock/mod.rs"), &project),
-            names(&["stock".to_string()])
+            vec!["stock".to_string()]
         );
     }
 }

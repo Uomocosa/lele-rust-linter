@@ -54,6 +54,7 @@ pub fn rule_check(
 mod tests {
     use super::rule_check;
     use crate::rules;
+    use crate::testing;
     use crate::Project;
 
     #[test]
@@ -63,14 +64,10 @@ mod tests {
         assert!(rule_check(&rule, &project).is_empty());
     }
 
-    fn parse(src: &str) -> syn::File {
-        syn::parse_str(src).unwrap()
-    }
-
     #[test]
     fn test_usage_flags_missing_reexport() {
-        let lib = parse("pub mod diagnostic;\n");
-        let file = parse("pub struct Diagnostic { pub x: u32 }\n");
+        let lib = testing::parsed_file("pub mod diagnostic;\n");
+        let file = testing::parsed_file("pub struct Diagnostic { pub x: u32 }\n");
         let missing = rules::root_reexport::RootReexport::missing_reexports(
             "diagnostic",
             &file,
@@ -83,8 +80,8 @@ mod tests {
 
     #[test]
     fn test_usage_allows_reexported_type() {
-        let lib = parse("pub mod diagnostic;\npub use diagnostic::Diagnostic;\n");
-        let file = parse("pub struct Diagnostic { pub x: u32 }\n");
+        let lib = testing::parsed_file("pub mod diagnostic;\npub use diagnostic::Diagnostic;\n");
+        let file = testing::parsed_file("pub struct Diagnostic { pub x: u32 }\n");
         let missing = rules::root_reexport::RootReexport::missing_reexports(
             "diagnostic",
             &file,
@@ -95,8 +92,8 @@ mod tests {
 
     #[test]
     fn test_usage_allows_function_modules() {
-        let lib = parse("pub mod discover;\n");
-        let file = parse("pub fn discover() {}\n");
+        let lib = testing::parsed_file("pub mod discover;\n");
+        let file = testing::parsed_file("pub fn discover() {}\n");
         let missing = rules::root_reexport::RootReexport::missing_reexports(
             "discover",
             &file,
@@ -107,8 +104,8 @@ mod tests {
 
     #[test]
     fn test_usage_allows_non_stutter_types() {
-        let lib = parse("pub mod module_info;\n");
-        let file = parse("pub type ModuleInfoMap = u32;\n");
+        let lib = testing::parsed_file("pub mod module_info;\n");
+        let file = testing::parsed_file("pub type ModuleInfoMap = u32;\n");
         let missing = rules::root_reexport::RootReexport::missing_reexports(
             "module_info",
             &file,
@@ -119,14 +116,14 @@ mod tests {
 
     #[test]
     fn test_usage_ignores_private_modules() {
-        let lib = parse("mod config_load;\n");
+        let lib = testing::parsed_file("mod config_load;\n");
         assert!(!rules::root_reexport::RootReexport::public_modules(&lib).contains("config_load"));
     }
 
     #[test]
     fn test_usage_flags_missing_fn_flatten() {
-        let lib = parse("pub mod discover;\n");
-        let file = parse("pub fn discover() {}\n");
+        let lib = testing::parsed_file("pub mod discover;\n");
+        let file = testing::parsed_file("pub fn discover() {}\n");
         let missing =
             rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib);
         assert_eq!(missing.len(), 2);
@@ -136,8 +133,8 @@ mod tests {
 
     #[test]
     fn test_usage_allows_flat_fn() {
-        let lib = parse("mod discover;\npub use discover::discover;\n");
-        let file = parse("pub fn discover() {}\n");
+        let lib = testing::parsed_file("mod discover;\npub use discover::discover;\n");
+        let file = testing::parsed_file("pub fn discover() {}\n");
         assert_eq!(
             rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib).len(),
             0
@@ -146,8 +143,8 @@ mod tests {
 
     #[test]
     fn test_usage_ignores_non_stutter_fn() {
-        let lib = parse("pub mod discover;\n");
-        let file = parse("pub fn run() {}\n");
+        let lib = testing::parsed_file("pub mod discover;\n");
+        let file = testing::parsed_file("pub fn run() {}\n");
         assert_eq!(
             rules::root_reexport::RootReexport::missing_fn_flatten("discover", &file, &lib).len(),
             0

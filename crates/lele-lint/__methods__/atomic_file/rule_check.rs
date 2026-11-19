@@ -38,6 +38,7 @@ mod tests {
 
     use super::rule_check;
     use crate::rules::atomic_file::AtomicFile;
+    use crate::testing;
     use crate::Project;
     use std::path::{Path, PathBuf};
 
@@ -165,22 +166,9 @@ mod tests {
         assert!(violations[0].message.contains("constants.rs"));
     }
 
-    fn shape_project(files: &[(&str, &str)]) -> Project {
-        let mut parsed_files = std::collections::HashMap::new();
-        for (name, code) in files {
-            parsed_files.insert(PathBuf::from(name), syn::parse_str(code).unwrap());
-        }
-        Project {
-            root: PathBuf::from("."),
-            src_dir: PathBuf::from("src"),
-            parsed_files,
-            ..Project::default()
-        }
-    }
-
     #[test]
     fn test_usage_flags_misnamed_free_fn_file() {
-        let project = shape_project(&[
+        let project = testing::parsed_project(testing::relative_project(), &[
             (
                 "project.rs",
                 "pub struct Project;\n#[atomic_delegates]\nimpl Project { pub fn discover() {} }\n",
@@ -201,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_usage_flags_mislocated_delegate_file() {
-        let project = shape_project(&[
+        let project = testing::parsed_project(testing::relative_project(), &[
             (
                 "project.rs",
                 "pub struct Project;\n#[atomic_delegates]\nimpl Project { pub fn discover() {} }\n",
@@ -219,7 +207,10 @@ mod tests {
 
     #[test]
     fn test_usage_type_file_with_underscore_stem_is_clean() {
-        let project = shape_project(&[("player_id.rs", "pub struct PlayerId(pub u64);\n")]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[("player_id.rs", "pub struct PlayerId(pub u64);\n")],
+        );
         let violations = rule_check(&AtomicFile, &project);
         assert!(
             !violations
@@ -231,13 +222,16 @@ mod tests {
 
     #[test]
     fn test_usage_bevy_systems_file_passes() {
-        let project = shape_project(&[
-            ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),
-            (
-                "direct_dial/__bevy_systems__/libp2p_events_to_dial_inputs.rs",
-                "pub fn libp2p_events_to_dial_inputs() {}\n",
-            ),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),
+                (
+                    "direct_dial/__bevy_systems__/libp2p_events_to_dial_inputs.rs",
+                    "pub fn libp2p_events_to_dial_inputs() {}\n",
+                ),
+            ],
+        );
         let violations = rule_check(&AtomicFile, &project);
         assert!(
             violations.is_empty(),
@@ -266,13 +260,16 @@ mod tests {
 
     #[test]
     fn test_usage_non_bevy_systems_lookalike_still_flagged() {
-        let project = shape_project(&[
-            ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),
-            (
-                "direct_dial/libp2p_events_to_dial_inputs.rs",
-                "pub fn libp2p_events_to_dial_inputs() {}\n",
-            ),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),
+                (
+                    "direct_dial/libp2p_events_to_dial_inputs.rs",
+                    "pub fn libp2p_events_to_dial_inputs() {}\n",
+                ),
+            ],
+        );
         let violations = rule_check(&AtomicFile, &project);
         assert!(
             violations

@@ -37,10 +37,10 @@ pub fn rule_check(
 mod tests {
     use std::collections::HashSet;
     use std::path::PathBuf;
-    use syn::visit::Visit;
 
     use super::rule_check;
     use crate::rules;
+    use crate::testing;
     use crate::Project;
 
     #[test]
@@ -50,108 +50,109 @@ mod tests {
         assert!(rule_check(&rule, &project).is_empty());
     }
 
-    struct Collector<'a> {
-        hits: &'a mut Vec<rules::no_stuttered_path::StutterHit>,
-        stems: &'a HashSet<String>,
-    }
-
-    impl<'ast> Visit<'ast> for Collector<'_> {
-        fn visit_path(&mut self, path: &'ast syn::Path) {
-            rules::no_stuttered_path::NoStutteredPath::collect_stutter(path, self.stems, self.hits);
-            syn::visit::visit_path(self, path);
-        }
-    }
-
-    fn stems(names: &[&str]) -> HashSet<String> {
-        names.iter().map(|s| (*s).to_string()).collect()
-    }
-
-    fn hit_paths(src: &str, stems: &HashSet<String>) -> Vec<String> {
-        let file = syn::parse_file(src).unwrap();
-        let mut hits = Vec::new();
-        {
-            let mut visitor = Collector {
-                hits: &mut hits,
-                stems,
-            };
-            visitor.visit_file(&file);
-        }
-        std::mem::take(&mut hits)
-            .into_iter()
-            .map(|hit| hit.path)
-            .collect()
-    }
-
     #[test]
     fn test_usage_flags_diagnostic_stutter() {
-        let stems = stems(&["diagnostic"]);
+        let stems = testing::string_set(&["diagnostic"]);
         let src = "use crate::diagnostic;\npub fn f(d: Vec<diagnostic::Diagnostic>) {}\n";
-        assert_eq!(hit_paths(src, &stems), vec!["diagnostic::Diagnostic"]);
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            vec!["diagnostic::Diagnostic"]
+        );
     }
 
     #[test]
     fn test_usage_flags_type_stutter() {
-        let stems = stems(&["severity"]);
+        let stems = testing::string_set(&["severity"]);
         let src = "fn f(s: severity::Severity) {}\n";
-        assert_eq!(hit_paths(src, &stems), vec!["severity::Severity"]);
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            vec!["severity::Severity"]
+        );
     }
 
     #[test]
     fn test_usage_flags_stutter_prefix_of_longer_path() {
-        let stems = stems(&["entry_kind"]);
+        let stems = testing::string_set(&["entry_kind"]);
         let src = "fn f() { let _ = entry_kind::EntryKind::File; }\n";
-        assert_eq!(hit_paths(src, &stems), vec!["entry_kind::EntryKind::File"]);
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            vec!["entry_kind::EntryKind::File"]
+        );
     }
 
     #[test]
     fn test_usage_allows_std_paths() {
-        let stems = stems(&["error"]);
+        let stems = testing::string_set(&["error"]);
         let src = "fn f(e: &dyn std::error::Error) {}\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn test_usage_allows_distinct_names() {
-        let stems = stems(&["diagnostic"]);
+        let stems = testing::string_set(&["diagnostic"]);
         let src = "use crate::boxes;\nfn f(id: boxes::PlayerId) {}\nfn g(m: module_info::ModuleInfoMap) {}\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn test_usage_allows_subfolder_domain_prefix() {
-        let stems = stems(&["player_id"]);
+        let stems = testing::string_set(&["player_id"]);
         let src = "use crate::player;\nfn f() { let _ = player::Player::new(); }\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn test_usage_flags_root_module_stutter_only() {
         let without = HashSet::new();
         let src = "fn f() { let _ = player::Player::new(); }\n";
-        assert_eq!(hit_paths(src, &without), Vec::<String>::new());
-        let with = stems(&["player"]);
-        assert_eq!(hit_paths(src, &with), vec!["player::Player::new"]);
+        assert_eq!(
+            testing::stutter_hit_paths(src, &without),
+            Vec::<String>::new()
+        );
+        let with = testing::string_set(&["player"]);
+        assert_eq!(
+            testing::stutter_hit_paths(src, &with),
+            vec!["player::Player::new"]
+        );
     }
 
     #[test]
     fn test_usage_allows_function_dispatch() {
-        let stems = stems(&["config_new"]);
+        let stems = testing::string_set(&["config_new"]);
         let src = "fn f() { config_new::new(); }\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn test_usage_allows_external_paths() {
-        let stems = stems(&["toml", "syn"]);
+        let stems = testing::string_set(&["toml", "syn"]);
         let src = "fn f(v: toml::Value) {}\nfn g(item: syn::ItemMod) {}\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn test_usage_allows_use_items_and_crate_paths() {
-        let stems = stems(&["diagnostic"]);
+        let stems = testing::string_set(&["diagnostic"]);
         let src = "use crate::diagnostic::Diagnostic;\nfn f(d: crate::diagnostic::Diagnostic) {}\n";
-        assert_eq!(hit_paths(src, &stems), Vec::<String>::new());
+        assert_eq!(
+            testing::stutter_hit_paths(src, &stems),
+            Vec::<String>::new()
+        );
     }
 
     #[test]

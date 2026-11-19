@@ -190,48 +190,10 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::rule_check;
     use crate::rules;
-    use crate::InlineTraitMethodsEntry;
+    use crate::testing;
     use crate::Project;
-    use crate::RuleViolation;
-
-    fn run_check(src: &str) -> Vec<RuleViolation> {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("foo.rs"), src).unwrap();
-        let mut project = Project {
-            root: dir.path().to_path_buf(),
-            src_dir: dir.path().to_path_buf(),
-            ..Project::default()
-        };
-        project
-            .parsed_files
-            .insert(PathBuf::from("foo.rs"), syn::parse_str(src).unwrap());
-        project.fill_rustfmt_answers().unwrap();
-        rule_check(&rules::atomic_delegates::AtomicDelegates, &project)
-    }
-
-    fn run_check_inline(src: &str, trait_path: &str, methods: &[&str]) -> Vec<RuleViolation> {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("foo.rs"), src).unwrap();
-        let mut project = Project {
-            root: dir.path().to_path_buf(),
-            src_dir: dir.path().to_path_buf(),
-            inline_trait_methods: vec![InlineTraitMethodsEntry {
-                trait_path: trait_path.to_string(),
-                methods: methods.iter().map(|method| (*method).to_string()).collect(),
-                reason: "listed by the test".to_string(),
-            }],
-            ..Project::default()
-        };
-        project
-            .parsed_files
-            .insert(PathBuf::from("foo.rs"), syn::parse_str(src).unwrap());
-        project.fill_rustfmt_answers().unwrap();
-        rule_check(&rules::atomic_delegates::AtomicDelegates, &project)
-    }
 
     #[test]
     fn test_usage() {
@@ -241,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_usage_real_one_liner_requires_skip() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo { fn name(&self) -> &'static str { Self::NAME } }\n",
         );
         assert_eq!(violations.len(), 1);
@@ -250,14 +212,15 @@ mod tests {
 
     #[test]
     fn test_usage_ctor_one_liner_is_exempt() {
-        assert!(
-            run_check("pub struct Foo;\nimpl Foo { pub fn new() -> Self { Self } }\n").is_empty()
-        );
+        assert!(testing::atomic_delegates_violations(
+            "pub struct Foo;\nimpl Foo { pub fn new() -> Self { Self } }\n"
+        )
+        .is_empty());
     }
 
     #[test]
     fn test_usage_ctor_mixed_demands_move_out() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo { pub fn new() -> Self { Self } fn name(&self) -> &'static str { Self::NAME } }\n",
         );
         assert_eq!(violations.len(), 1);
@@ -266,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_usage_fn_shell_block_requires_skip() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo { #[atomic_delegate(Foo)] pub fn run(&self) {} fn name(&self) -> &'static str { Self::NAME } }\n",
         );
         assert_eq!(violations.len(), 1);
@@ -275,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_usage_multiline_delegate_call_demands_one_line() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) {\n        foo_run::run(self)\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -284,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_usage_one_liner_braces_on_own_lines_in_skip_block_is_clean() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) -> u8 {\n        self.0\n    }\n    fn name(&self) -> u8 { self.0 }\n}\n",
         );
         assert!(violations.is_empty());
@@ -292,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_usage_long_chain_on_one_line_in_skip_block_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) -> Vec<u32> { self.items.iter().map(|item| item.value * 2 + item.offset).filter(|v| *v > 10).map(|v| v * 3).collect::<Vec<u32>>() }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -303,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_usage_simple_match_in_plain_block_is_clean() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) -> u8 {\n        match self.0 { 0 => 1, _ => 2 }\n    }\n}\n",
         );
         assert!(violations.is_empty());
@@ -311,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_usage_simple_match_in_skip_block_is_m2() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) -> u8 {\n        match self.0 {\n            0 => 1,\n            _ => 2,\n        }\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -320,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_usage_match_arm_with_two_statements_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) -> u8 {\n        match self.0 { 0 => { let a = 1; a } _ => 2 }\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -331,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_usage_match_arm_with_nested_if_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) -> u8 {\n        match self.0 { 0 => if self.1 { 1 } else { 2 }, _ => 3 }\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -342,7 +305,7 @@ mod tests {
 
     #[test]
     fn test_usage_simple_for_loop_in_plain_block_is_clean() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) {\n        for item in self.items.iter() { println!(\"{}\", item) }\n    }\n}\n",
         );
         assert!(violations.is_empty());
@@ -350,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_usage_for_loop_with_if_in_body_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) {\n        for item in self.items.iter() { if item.ok { println!(\"{}\", item) } }\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -361,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_usage_three_statements_in_skip_block_is_m2() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        a + b + self.0\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -370,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_usage_three_statements_in_plain_block_is_clean() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        a + b + self.0\n    }\n}\n",
         );
         assert!(violations.is_empty());
@@ -378,7 +341,7 @@ mod tests {
 
     #[test]
     fn test_usage_one_liner_with_multi_line_method_in_plain_block_is_m3() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Foo {\n    fn name(&self) -> u8 { self.0 }\n    fn sum(&self) -> u8 {\n        let a = 1;\n        a + self.0\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -387,7 +350,7 @@ mod tests {
 
     #[test]
     fn test_usage_trait_impl_simple_match_in_skip_block_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        match self.0 {\n            0 => 1,\n            _ => 2,\n        }\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -396,7 +359,7 @@ mod tests {
 
     #[test]
     fn test_usage_trait_impl_method_over_three_statements_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        let c = 3;\n        let d = 4;\n        a + b + c + d\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -406,7 +369,7 @@ mod tests {
 
     #[test]
     fn test_usage_trait_impl_method_listed_inline_is_clean() {
-        let violations = run_check_inline(
+        let violations = testing::atomic_delegates_inline_violations(
             "pub struct Foo;\nimpl Rule for Foo {\n    fn run(&self) -> u8 {\n        let a = 1;\n        let b = 2;\n        let c = 3;\n        let d = 4;\n        a + b + c + d\n    }\n}\n",
             "crate::Rule",
             &["run"],
@@ -416,7 +379,7 @@ mod tests {
 
     #[test]
     fn test_usage_single_line_delegate_call_is_clean() {
-        assert!(run_check(
+        assert!(testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn run(&self) { foo_run::run(self) }\n}\n",
         )
         .is_empty());
@@ -424,7 +387,7 @@ mod tests {
 
     #[test]
     fn test_usage_multi_line_tracing_call_in_skip_block_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn log(&self) {\n        tracing::info!(\n            target: \"x\",\n            value,\n            \"hello\"\n        );\n    }\n}\n",
         );
         assert_eq!(violations.len(), 1);
@@ -435,7 +398,7 @@ mod tests {
 
     #[test]
     fn test_usage_over_width_one_line_macro_in_skip_block_is_m1() {
-        let violations = run_check(
+        let violations = testing::atomic_delegates_violations(
             "pub struct Foo;\n#[rustfmt::skip]\nimpl Foo {\n    fn log(&self) { tracing::info!(target: \"discovery\", missed_sends, \"a long message that keeps going for quite a while so the whole statement exceeds the width\"); }\n}\n",
         );
         assert_eq!(violations.len(), 1);

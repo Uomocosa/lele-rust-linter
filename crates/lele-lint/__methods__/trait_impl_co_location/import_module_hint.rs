@@ -15,16 +15,13 @@ pub fn import_module_hint(
 #[cfg(test)]
 mod tests {
     use super::import_module_hint;
-
-    fn prefix(names: &[&str]) -> Vec<String> {
-        names.iter().map(|name| name.to_string()).collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let imported: syn::Ident = syn::parse_str("Config").unwrap();
         assert_eq!(
-            import_module_hint(&prefix(&["crate", "a"]), &imported, "Config", &[]),
+            import_module_hint(&testing::strings(&["crate", "a"]), &imported, "Config", &[]),
             Some(vec!["a".to_string(),])
         );
     }
@@ -33,7 +30,7 @@ mod tests {
     fn test_usage_skips_imports_of_other_names() {
         let imported: syn::Ident = syn::parse_str("Item").unwrap();
         assert_eq!(
-            import_module_hint(&prefix(&["crate", "a"]), &imported, "Config", &[]),
+            import_module_hint(&testing::strings(&["crate", "a"]), &imported, "Config", &[]),
             None
         );
     }
@@ -42,7 +39,7 @@ mod tests {
     fn test_usage_resolves_crate_root_imports_to_the_root() {
         let imported: syn::Ident = syn::parse_str("Config").unwrap();
         assert_eq!(
-            import_module_hint(&prefix(&["crate"]), &imported, "Config", &[]),
+            import_module_hint(&testing::strings(&["crate"]), &imported, "Config", &[]),
             Some(Vec::new())
         );
     }
@@ -52,10 +49,10 @@ mod tests {
         let imported: syn::Ident = syn::parse_str("Config").unwrap();
         assert_eq!(
             import_module_hint(
-                &prefix(&["super", "discovery"]),
+                &testing::strings(&["super", "discovery"]),
                 &imported,
                 "Config",
-                &prefix(&["dial", "setup"])
+                &testing::strings(&["dial", "setup"])
             ),
             Some(vec!["dial".to_string(), "discovery".to_string()])
         );
@@ -66,10 +63,10 @@ mod tests {
         let imported: syn::Ident = syn::parse_str("Config").unwrap();
         assert_eq!(
             import_module_hint(
-                &prefix(&["self", "discovery"]),
+                &testing::strings(&["self", "discovery"]),
                 &imported,
                 "Config",
-                &prefix(&["dial", "setup"])
+                &testing::strings(&["dial", "setup"])
             ),
             Some(vec![
                 "dial".to_string(),

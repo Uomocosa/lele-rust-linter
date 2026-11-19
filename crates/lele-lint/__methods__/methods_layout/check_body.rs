@@ -82,31 +82,8 @@ mod tests {
     use std::path::PathBuf;
 
     use super::check_body;
+    use crate::testing;
     use crate::Project;
-    use crate::RuleViolation;
-
-    fn run_body(src: &str) -> Vec<RuleViolation> {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(dir.path().join("methods/widget")).unwrap();
-        std::fs::write(dir.path().join("methods/widget/spin.rs"), src).unwrap();
-        let file: syn::File = syn::parse_str(src).unwrap();
-        let mut project = Project {
-            root: dir.path().to_path_buf(),
-            methods_dir: Some(dir.path().join("methods")),
-            ..Project::default()
-        };
-        project
-            .methods_parsed_files
-            .insert(PathBuf::from("widget/spin.rs"), file.clone());
-        project.fill_rustfmt_answers().unwrap();
-        check_body(
-            &project,
-            "widget",
-            "spin",
-            Path::new("widget/spin.rs"),
-            &file,
-        )
-    }
 
     #[test]
     fn test_usage() {
@@ -141,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_usage_one_liner_body_is_reported() {
-        let violations = run_body(
+        let violations = testing::methods_body_violations(
             "pub fn spin(w: &mut Widget) { w.spin_once() }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
         );
         assert!(violations
@@ -151,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_usage_simple_match_body_is_reported() {
-        let violations = run_body(
+        let violations = testing::methods_body_violations(
             "pub fn spin(w: &mut Widget) {\n    match w.count {\n        0 => {}\n        _ => {}\n    }\n}\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
         );
         assert!(violations
@@ -161,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_usage_complex_match_body_is_clean() {
-        let violations = run_body(
+        let violations = testing::methods_body_violations(
             "pub fn spin(w: &mut Widget) {\n    match w.count {\n        0 => { let a = 1; a }\n        _ => 2,\n    };\n}\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
         );
         assert!(violations.is_empty());
@@ -169,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_usage_long_chain_body_is_clean() {
-        let violations = run_body(
+        let violations = testing::methods_body_violations(
             "pub fn spin(w: &mut Widget) -> Vec<u32> { w.items.iter().map(|item| item.value * 2 + item.offset).filter(|v| *v > 10).map(|v| v * 3).collect::<Vec<u32>>() }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
         );
         assert!(violations.is_empty());
@@ -177,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_usage_over_width_format_body_is_clean() {
-        let violations = run_body(
+        let violations = testing::methods_body_violations(
             "pub fn spin(w: &mut Widget) -> String { format!(\"the widget named {} carries a long diagnostic message that does not fit on one line of rustfmt output\", w.name) }\n#[cfg(test)] mod tests { #[test] fn test_usage() {} }\n",
         );
         assert!(!violations

@@ -21,27 +21,13 @@ pub fn type_definitions(project: &Project) -> rules::trait_impl_co_location::Def
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
-    use super::type_definitions;
-    use crate::Project;
-
-    fn definitions(files: &[(&str, &str)]) -> BTreeMap<String, Vec<PathBuf>> {
-        let mut project = Project::default();
-        for (path, source) in files {
-            let file: syn::File = syn::parse_str(source).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        type_definitions(&project)
-            .into_iter()
-            .map(|(name, paths)| (name, paths.into_iter().collect()))
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let defined = definitions(&[
+        let defined = testing::type_definitions_map(&[
             (
                 "stock/unix_time.rs",
                 "pub struct UnixTime { pub seconds: u64 }\n",
@@ -70,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_usage_skips_test_modules_and_test_items() {
-        let defined = definitions(&[
+        let defined = testing::type_definitions_map(&[
             (
                 "stock/unix_time.rs",
                 "#[cfg(test)] mod tests { pub struct TestOnly; }\n#[cfg(test)] pub struct TestStruct;\npub struct UnixTime;\n",
@@ -82,7 +68,8 @@ mod tests {
 
     #[test]
     fn test_usage_traits_are_not_types() {
-        let defined = definitions(&[("stock/__traits__/clock.rs", "pub trait Clock {}\n")]);
+        let defined =
+            testing::type_definitions_map(&[("stock/__traits__/clock.rs", "pub trait Clock {}\n")]);
         assert!(defined.is_empty());
     }
 }

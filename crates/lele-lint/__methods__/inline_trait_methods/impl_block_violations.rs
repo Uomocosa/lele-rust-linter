@@ -73,61 +73,34 @@ pub fn impl_block_violations(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
-    use crate::rules;
-    use crate::InlineTraitMethodsEntry;
-    use crate::Project;
-
-    fn violations_for(src: &str, trait_path: &str, methods: &[&str]) -> Vec<String> {
-        let project = Project {
-            inline_trait_methods: vec![InlineTraitMethodsEntry {
-                trait_path: trait_path.to_string(),
-                methods: methods.iter().map(|method| (*method).to_string()).collect(),
-                reason: "listed by the test".to_string(),
-            }],
-            ..Project::default()
-        };
-        let file: syn::File = syn::parse_str(src).unwrap();
-        let mut violations = Vec::new();
-        for item in &file.items {
-            if let syn::Item::Impl(impl_block) = item {
-                violations.extend(
-                    rules::inline_trait_methods::InlineTraitMethods::impl_block_violations(
-                        &project,
-                        Path::new("foo.rs"),
-                        &file,
-                        impl_block,
-                    ),
-                );
-            }
-        }
-        violations
-            .into_iter()
-            .map(|violation| violation.message)
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let shell_call = "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn build(&self) {} }\nimpl Plugin for Foo { fn build(&self) { self.build() } }\n";
-        let messages = violations_for(shell_call, "Plugin", &["build"]);
+        let messages = testing::inline_trait_impl_block_messages(shell_call, "Plugin", &["build"]);
         assert_eq!(messages.len(), 1);
         assert!(messages[0].contains("must stay inline"));
         assert!(messages[0].contains("foo/build.rs"));
         let inline = "pub struct Foo;\nimpl Plugin for Foo { fn build(&self) { self.run(); } }\n";
         assert_eq!(
-            violations_for(inline, "Plugin", &["build"]),
+            testing::inline_trait_impl_block_messages(inline, "Plugin", &["build"]),
             Vec::<String>::new()
         );
         let other_trait = "pub struct Foo;\nimpl Other for Foo { fn build(&self) {} }\n";
         assert_eq!(
-            violations_for(other_trait, "Plugin", &["build"]),
+            testing::inline_trait_impl_block_messages(other_trait, "Plugin", &["build"]),
             Vec::<String>::new()
         );
         let empty_body = "pub struct Foo;\nimpl Plugin for Foo { fn build(&self) {} }\n";
-        assert_eq!(violations_for(empty_body, "Plugin", &["build"]).len(), 1);
+        assert_eq!(
+            testing::inline_trait_impl_block_messages(empty_body, "Plugin", &["build"]).len(),
+            1
+        );
         let annotated = "pub struct Foo;\nimpl Plugin for Foo { #[atomic_delegate(Foo, Plugin)] fn build(&self) { self.run(); } }\n";
-        assert_eq!(violations_for(annotated, "Plugin", &["build"]).len(), 1);
+        assert_eq!(
+            testing::inline_trait_impl_block_messages(annotated, "Plugin", &["build"]).len(),
+            1
+        );
     }
 }

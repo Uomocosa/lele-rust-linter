@@ -27,25 +27,14 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use super::rule_check;
     use crate::rules;
-    use lele_lint::Project;
-    use std::path::PathBuf;
-
-    fn messages(source: &str) -> Vec<String> {
-        let mut project = Project::default();
-        project
-            .parsed_files
-            .insert(PathBuf::from("ui/root.rs"), syn::parse_str(source).unwrap());
-        rule_check(&rules::preview_routing::PreviewRouting, &project)
-            .into_iter()
-            .map(|violation| violation.message)
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let found = messages(
+        let found = testing::messages_of(
+            &rules::preview_routing::PreviewRouting,
+            "ui/root.rs",
             "#[cfg(test)]
              mod tests {
                  #[test]
@@ -58,7 +47,9 @@ mod tests {
 
     #[test]
     fn test_usage_discarded_result_and_missing_test_attr() {
-        let found = messages(
+        let found = testing::messages_of(
+            &rules::preview_routing::PreviewRouting,
+            "ui/root.rs",
             "#[cfg(test)]
              mod tests {
                  use lele_bevy_preview::run;
@@ -72,7 +63,9 @@ mod tests {
 
     #[test]
     fn test_usage_checked_test_is_clean() {
-        let found = messages(
+        let found = testing::messages_of(
+            &rules::preview_routing::PreviewRouting,
+            "ui/root.rs",
             "#[cfg(test)]
              mod tests {
                  #[test]

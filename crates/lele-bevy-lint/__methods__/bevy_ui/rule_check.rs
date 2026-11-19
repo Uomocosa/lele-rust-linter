@@ -52,29 +52,25 @@ pub fn rule_check(_self: &rules::bevy_ui::BevyUi, project: &Project) -> Vec<Rule
 
 #[cfg(test)]
 mod tests {
-    use super::rule_check;
     use crate::rules;
-    use lele_lint::Project;
-    use std::path::PathBuf;
-
-    fn violations(source: &str) -> Vec<lele_lint::RuleViolation> {
-        let mut project = Project::default();
-        project
-            .parsed_files
-            .insert(PathBuf::from("ui/root.rs"), syn::parse_str(source).unwrap());
-        rule_check(&rules::bevy_ui::BevyUi, &project)
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let found = violations("pub fn setup(s: &mut S) { s.spawn((Node,)); }");
+        let found = testing::violations_of(
+            &rules::bevy_ui::BevyUi,
+            "ui/root.rs",
+            "pub fn setup(s: &mut S) { s.spawn((Node,)); }",
+        );
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].code, rules::bevy_ui::BevyUi::CODE);
     }
 
     #[test]
     fn test_usage_preview_of_the_real_spawner_is_clean() {
-        let found = violations(
+        let found = testing::violations_of(
+            &rules::bevy_ui::BevyUi,
+            "ui/root.rs",
             "pub fn setup(s: &mut S) { s.spawn((Node,)); }
              #[cfg(test)]
              mod tests {
@@ -92,7 +88,9 @@ mod tests {
 
     #[test]
     fn test_usage_preview_of_a_copy_is_flagged() {
-        let found = violations(
+        let found = testing::violations_of(
+            &rules::bevy_ui::BevyUi,
+            "ui/root.rs",
             "pub fn setup(s: &mut S) { s.spawn((Node,)); }
              #[cfg(test)]
              mod tests {

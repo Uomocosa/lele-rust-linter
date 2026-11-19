@@ -60,19 +60,7 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use super::rule_check;
-    use crate::rules::error_message_omits_source::ErrorMessageOmitsSource;
-    use crate::Project;
-
-    fn count(src: &str) -> usize {
-        let mut project = Project::default();
-        project
-            .parsed_files
-            .insert(PathBuf::from("error.rs"), syn::parse_str(src).unwrap());
-        rule_check(&ErrorMessageOmitsSource, &project).len()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
@@ -80,8 +68,8 @@ mod tests {
                    #[error(\"i/o error: {0}\")]\n    Io(#[from] std::io::Error),\n}\n";
         let good = "#[derive(Debug, thiserror::Error)]\npub enum Error {\n    \
                     #[error(\"i/o error\")]\n    Io(#[from] std::io::Error),\n}\n";
-        assert_eq!(count(bad), 1);
-        assert_eq!(count(good), 0);
+        assert_eq!(testing::error_message_violation_count(bad), 1);
+        assert_eq!(testing::error_message_violation_count(good), 0);
     }
 
     #[test]
@@ -89,7 +77,7 @@ mod tests {
         let src = "#[derive(Debug, Error)]\npub enum Error {\n    \
                    #[error(\"read {path}: {source}\")]\n    Read { path: String, source: std::io::Error },\n    \
                    #[error(\"parse: {}\", .0)]\n    Parse(#[source] std::num::ParseIntError),\n}\n";
-        assert_eq!(count(src), 2);
+        assert_eq!(testing::error_message_violation_count(src), 2);
     }
 
     #[test]
@@ -98,7 +86,7 @@ mod tests {
                    #[error(transparent)]\n    Io(#[from] std::io::Error),\n    \
                    #[error(\"bad port {0}\")]\n    Port(u16),\n    \
                    #[error(\"read {path}\")]\n    Read { path: String, #[source] cause: std::io::Error },\n}\n";
-        assert_eq!(count(src), 0);
+        assert_eq!(testing::error_message_violation_count(src), 0);
     }
 }
 

@@ -74,22 +74,14 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use super::rule_check;
     use crate::rules;
-    use lele_lint::Project;
-    use std::path::PathBuf;
-
-    fn violations(source: &str) -> Vec<lele_lint::RuleViolation> {
-        let mut project = Project::default();
-        project
-            .parsed_files
-            .insert(PathBuf::from("ui/gate.rs"), syn::parse_str(source).unwrap());
-        rule_check(&rules::bevy_ui_restyle::BevyUiRestyle, &project)
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let found = violations(
+        let found = testing::violations_of(
+            &rules::bevy_ui_restyle::BevyUiRestyle,
+            "ui/gate.rs",
             "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }",
         );
@@ -99,8 +91,10 @@ mod tests {
 
     #[test]
     fn test_usage_two_states_is_clean() {
-        let found = violations(
-            "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }
+        let found = testing::violations_of(
+            &rules::bevy_ui_restyle::BevyUiRestyle,
+            "ui/gate.rs",
+                    "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }
              #[cfg(test)]
              mod tests {
@@ -120,8 +114,10 @@ mod tests {
 
     #[test]
     fn test_usage_one_state_is_flagged() {
-        let found = violations(
-            "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }
+        let found = testing::violations_of(
+            &rules::bevy_ui_restyle::BevyUiRestyle,
+            "ui/gate.rs",
+                    "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }
              #[cfg(test)]
              mod tests {
@@ -142,8 +138,10 @@ mod tests {
 
     #[test]
     fn test_usage_time_driven_needs_mp4() {
-        let found = violations(
-            "pub fn gate(time: Res<Time>, button: Query<&mut BackgroundColor>) { let _ = (time.delta_secs(), button); }
+        let found = testing::violations_of(
+            &rules::bevy_ui_restyle::BevyUiRestyle,
+            "ui/gate.rs",
+                    "pub fn gate(time: Res<Time>, button: Query<&mut BackgroundColor>) { let _ = (time.delta_secs(), button); }
              pub fn build(app: &mut App) { app.add_systems(Update, gate); }
              #[cfg(test)]
              mod tests {

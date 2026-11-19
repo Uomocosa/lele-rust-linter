@@ -95,59 +95,31 @@ pub fn module_hints(
 #[cfg(test)]
 mod tests {
     use std::path::Path;
-    use std::path::PathBuf;
 
     use super::module_hints;
-    use crate::rules;
-    use crate::Project;
-
-    fn hit(type_path: &[&str]) -> rules::trait_impl_co_location::ImplHit {
-        rules::trait_impl_co_location::ImplHit {
-            line: 3,
-            trait_name: "Default".to_string(),
-            trait_path: Some(vec!["Default".to_string()]),
-            type_name: Some(type_path.last().unwrap_or(&"").to_string()),
-            type_path: (!type_path.is_empty()).then(|| {
-                type_path
-                    .iter()
-                    .map(|segment| segment.to_string())
-                    .collect()
-            }),
-            is_blanket: false,
-        }
-    }
-
-    fn project_with(source: &str) -> Project {
-        let mut project = Project::default();
-        project.parsed_files.insert(
-            PathBuf::from("dial/setup.rs"),
-            syn::parse_str::<syn::File>(source).unwrap(),
-        );
-        project
-    }
-
-    fn path_strings(hints: &[Vec<String>]) -> Vec<Vec<String>> {
-        let mut hints = hints.to_vec();
-        hints.sort();
-        hints
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let project = project_with("use crate::discovery::Config;\n\nimpl Default for Config {}\n");
-        let hit = hit(&["Config"]);
+        let project = testing::dial_setup_project(
+            "use crate::discovery::Config;\n\nimpl Default for Config {}\n",
+        );
+        let hit = testing::named_impl_hit(3, "Default", "Config");
         let hints = module_hints(
             Path::new("dial/setup.rs"),
             hit.type_name.as_deref().unwrap_or_default(),
             hit.type_path.as_deref(),
             &project,
         );
-        assert_eq!(path_strings(&hints), vec![vec!["discovery".to_string()]]);
+        assert_eq!(
+            testing::sorted_hints(&hints),
+            vec![vec!["discovery".to_string()]]
+        );
     }
 
     #[test]
     fn test_usage_hints_from_the_named_item_path_target_a_module() {
-        let project = project_with("use std::fmt;\n\nimpl Default for Config {}\n");
+        let project = testing::dial_setup_project("use std::fmt;\n\nimpl Default for Config {}\n");
         let hints = module_hints(
             Path::new("dial/setup.rs"),
             "Config",
@@ -163,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_usage_grouped_and_renamed_imports_are_matched() {
-        let project = project_with(
+        let project = testing::dial_setup_project(
             "use crate::a::{Config, Item};\nuse crate::b::Config as Alias;\n\nimpl Default for Config {}\n",
         );
         let hints = module_hints(
@@ -173,22 +145,25 @@ mod tests {
             &project,
         );
         assert_eq!(
-            path_strings(&hints),
+            testing::sorted_hints(&hints),
             vec![vec!["a".to_string()], vec!["b".to_string()]]
         );
     }
 
     #[test]
     fn test_usage_super_grouped_and_renamed_imports_hint_the_anchor_module() {
-        let project =
-            project_with("use super::x::{Foo as Bar, Item};\n\nimpl Default for Foo {}\n");
+        let project = testing::dial_setup_project(
+            "use super::x::{Foo as Bar, Item};\n\nimpl Default for Foo {}\n",
+        );
         let hints = module_hints(Path::new("dial/setup.rs"), "Foo", None, &project);
         assert_eq!(hints, vec![vec!["dial".to_string(), "x".to_string()]]);
     }
 
     #[test]
     fn test_usage_super_imports_hint_the_anchor_relative_module() {
-        let project = project_with("use super::discovery::Config;\n\nimpl Default for Config {}\n");
+        let project = testing::dial_setup_project(
+            "use super::discovery::Config;\n\nimpl Default for Config {}\n",
+        );
         let hints = module_hints(Path::new("dial/setup.rs"), "Config", None, &project);
         assert_eq!(
             hints,
@@ -198,7 +173,9 @@ mod tests {
 
     #[test]
     fn test_usage_qualified_paths_and_imports_pile_up() {
-        let project = project_with("use crate::discovery::Config;\n\nimpl Default for Config {}\n");
+        let project = testing::dial_setup_project(
+            "use crate::discovery::Config;\n\nimpl Default for Config {}\n",
+        );
         let hints = module_hints(
             Path::new("dial/setup.rs"),
             "Config",
@@ -210,14 +187,14 @@ mod tests {
             &project,
         );
         assert_eq!(
-            path_strings(&hints),
+            testing::sorted_hints(&hints),
             vec![vec!["discovery".to_string()], vec!["discovery".to_string()]]
         );
     }
 
     #[test]
     fn test_usage_files_without_a_match_hint_nothing() {
-        let project = project_with("use std::fmt;\n\nimpl Default for Dial {}\n");
+        let project = testing::dial_setup_project("use std::fmt;\n\nimpl Default for Dial {}\n");
         let hints = module_hints(
             Path::new("dial/setup.rs"),
             "Config",
@@ -229,7 +206,8 @@ mod tests {
 
     #[test]
     fn test_usage_hints_work_for_traits_through_the_trait_path() {
-        let project = project_with("use crate::a::Foo;\n\nimpl crate::a::Foo for T {}\n");
+        let project =
+            testing::dial_setup_project("use crate::a::Foo;\n\nimpl crate::a::Foo for T {}\n");
         let hints = module_hints(
             Path::new("dial/setup.rs"),
             "Foo",
@@ -237,7 +215,7 @@ mod tests {
             &project,
         );
         assert_eq!(
-            path_strings(&hints),
+            testing::sorted_hints(&hints),
             vec![vec!["a".to_string()], vec!["a".to_string()]]
         );
     }

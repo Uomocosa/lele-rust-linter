@@ -57,3 +57,6 @@ pub mod raw_code;
 pub use raw_code::RawCode;
 pub mod rule_violation;
 pub use rule_violation::RuleViolation;
+
+#[cfg(test)]
+pub(crate) mod testing;

@@ -11,23 +11,8 @@ impl<T> Clock for Vec<T> {
 mod tests {
     use super::Clock;
 
-    struct Demo {
-        seconds: u64,
-        ticks: u32,
-    }
-
-    impl Clock for Demo {
-        fn now(&self) -> u64 {
-            self.seconds + u64::from(self.ticks)
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let demo = Demo {
-            seconds: 6,
-            ticks: 1,
-        };
-        assert_eq!(demo.now(), 7);
+        assert_eq!(vec![1_u8, 2_u8, 3_u8].now(), 3);
     }
 }

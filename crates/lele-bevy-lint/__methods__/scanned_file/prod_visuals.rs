@@ -29,13 +29,10 @@ pub fn prod_visuals(file: &scan::ScannedFile, extra: &BTreeSet<String>) -> Vec<s
 #[cfg(test)]
 mod tests {
     use crate::scan;
+    use crate::testing;
     use std::collections::BTreeSet;
 
     use super::prod_visuals;
-
-    fn none() -> BTreeSet<String> {
-        BTreeSet::new()
-    }
 
     #[test]
     fn test_usage() {
@@ -46,7 +43,7 @@ mod tests {
              mod tests { fn test_usage() { spawner.spawn((Node,)); } }",
         )
         .unwrap();
-        let found = prod_visuals(&scan::ScannedFile(&file), &none());
+        let found = prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].visual, "Node");
         assert_eq!(found[0].owner, "setup");
@@ -55,7 +52,10 @@ mod tests {
     #[test]
     fn test_usage_camera_only_is_not_a_visual() {
         let file = syn::parse_str("pub fn setup(c: &mut S) { c.spawn((Camera2d,)); }").unwrap();
-        assert_eq!(prod_visuals(&scan::ScannedFile(&file), &none()).len(), 0);
+        assert_eq!(
+            prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals()).len(),
+            0
+        );
     }
 
     #[test]
@@ -64,7 +64,7 @@ mod tests {
             "pub fn setup(s: &mut S) { s.spawn((Root, children![Text::new(\"x\")])); }",
         )
         .unwrap();
-        let found = prod_visuals(&scan::ScannedFile(&file), &none());
+        let found = prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].visual, "Text");
     }
@@ -72,14 +72,17 @@ mod tests {
     #[test]
     fn test_usage_button_alone_is_a_visual() {
         let file = syn::parse_str("pub fn setup(s: &mut S) { s.spawn((Button,)); }").unwrap();
-        assert_eq!(prod_visuals(&scan::ScannedFile(&file), &none()).len(), 1);
+        assert_eq!(
+            prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals()).len(),
+            1
+        );
     }
 
     #[test]
     fn test_usage_insert_of_a_visual_counts() {
         let file =
             syn::parse_str("pub fn setup(s: &mut S) { s.entity(e).insert((Node,)); }").unwrap();
-        let found = prod_visuals(&scan::ScannedFile(&file), &none());
+        let found = prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].visual, "Node");
     }
@@ -87,7 +90,10 @@ mod tests {
     #[test]
     fn test_usage_with_child_bundle_counts() {
         let file = syn::parse_str("pub fn setup(s: &mut S) { s.with_child((Node,)); }").unwrap();
-        assert_eq!(prod_visuals(&scan::ScannedFile(&file), &none()).len(), 1);
+        assert_eq!(
+            prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals()).len(),
+            1
+        );
     }
 
     #[test]
@@ -97,7 +103,7 @@ mod tests {
              pub fn setup(s: &mut S) { s.spawn(row()); }",
         )
         .unwrap();
-        let found = prod_visuals(&scan::ScannedFile(&file), &none());
+        let found = prod_visuals(&scan::ScannedFile(&file), &testing::no_visuals());
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].owner, "setup");
     }

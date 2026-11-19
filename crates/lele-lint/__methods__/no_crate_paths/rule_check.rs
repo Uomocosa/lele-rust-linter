@@ -37,8 +37,8 @@ pub fn rule_check(
 mod tests {
     use super::rule_check;
     use crate::rules;
+    use crate::testing;
     use crate::Project;
-    use syn::visit::Visit;
 
     #[test]
     fn test_usage() {
@@ -47,43 +47,30 @@ mod tests {
         assert!(rule_check(&rule, &project).is_empty());
     }
 
-    fn hit_lines(src: &str) -> Vec<usize> {
-        let file = syn::parse_file(src).unwrap();
-        let mut hits = Vec::new();
-        {
-            let mut visitor = rules::no_crate_paths::CratePathVisitor(&mut hits);
-            visitor.visit_file(&file);
-        }
-        std::mem::take(&mut hits)
-            .into_iter()
-            .map(|hit| hit.line)
-            .collect()
-    }
-
     #[test]
     fn test_usage_flags_inline_crate_path() {
         let src = r"
             use crate::boxes;
             pub fn connect(own_id: crate::boxes::PlayerId) {}
         ";
-        assert_eq!(hit_lines(src), vec![3]);
+        assert_eq!(testing::crate_path_hit_lines(src), vec![3]);
     }
 
     #[test]
     fn test_usage_allows_top_level_use() {
         let src = "use crate::boxes;\nfn f() -> boxes::PlayerId { boxes::PlayerId::default() }\n";
-        assert_eq!(hit_lines(src), Vec::<usize>::new());
+        assert_eq!(testing::crate_path_hit_lines(src), Vec::<usize>::new());
     }
 
     #[test]
     fn test_usage_allows_pub_crate_visibility() {
         let src = "pub(crate) mod boxes;\npub(crate) use boxes::PlayerId;\n";
-        assert_eq!(hit_lines(src), Vec::<usize>::new());
+        assert_eq!(testing::crate_path_hit_lines(src), Vec::<usize>::new());
     }
 
     #[test]
     fn test_usage_allows_super_and_self() {
         let src = "use super::player;\nfn f() { super::player::Player::default(); }\n";
-        assert_eq!(hit_lines(src), Vec::<usize>::new());
+        assert_eq!(testing::crate_path_hit_lines(src), Vec::<usize>::new());
     }
 }

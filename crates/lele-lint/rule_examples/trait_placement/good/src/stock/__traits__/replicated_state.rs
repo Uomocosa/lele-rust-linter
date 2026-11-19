@@ -2,27 +2,17 @@ pub trait ReplicatedState {
     fn replica_id(&self) -> u64;
 }
 
+#[rustfmt::skip]
+impl ReplicatedState for u64 {
+    fn replica_id(&self) -> u64 { *self }
+}
+
 #[cfg(test)]
 mod tests {
     use super::ReplicatedState;
 
-    struct Demo {
-        replica: u64,
-        owner: u32,
-    }
-
-    impl ReplicatedState for Demo {
-        fn replica_id(&self) -> u64 {
-            self.replica + u64::from(self.owner)
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let demo = Demo {
-            replica: 6,
-            owner: 1,
-        };
-        assert_eq!(demo.replica_id(), 7);
+        assert_eq!(7_u64.replica_id(), 7);
     }
 }

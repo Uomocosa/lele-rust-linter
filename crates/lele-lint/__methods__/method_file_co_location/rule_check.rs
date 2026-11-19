@@ -81,22 +81,19 @@ mod tests {
 
     use super::rule_check;
     use crate::rules::method_file_co_location::MethodFileCoLocation;
-    use crate::Project;
-
-    fn known_stems(dirs: &HashMap<String, Vec<PathBuf>>) -> HashSet<String> {
-        dirs.keys().cloned().collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let mut dirs = HashMap::new();
         dirs.insert("freenet_client".to_string(), vec![PathBuf::from("freenet")]);
         dirs.insert("config".to_string(), vec![PathBuf::from("clicker")]);
+        let known: HashSet<String> = dirs.keys().cloned().collect();
 
         assert_eq!(
             rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
                 "freenet_client_connect",
-                &known_stems(&dirs),
+                &known,
                 &dirs
             ),
             Some(vec![PathBuf::from("freenet")])
@@ -104,7 +101,7 @@ mod tests {
         assert_eq!(
             rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
                 "config_new",
-                &known_stems(&dirs),
+                &known,
                 &dirs
             ),
             Some(vec![PathBuf::from("clicker")])
@@ -112,7 +109,7 @@ mod tests {
         assert_eq!(
             rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
                 "bevy_systems",
-                &known_stems(&dirs),
+                &known,
                 &dirs
             ),
             None
@@ -124,9 +121,10 @@ mod tests {
         let mut dirs = HashMap::new();
         dirs.insert("freenet".to_string(), vec![PathBuf::from("freenet")]);
         dirs.insert("freenet_client".to_string(), vec![PathBuf::from("freenet")]);
+        let known: HashSet<String> = dirs.keys().cloned().collect();
 
         assert_eq!(
-            Identifier("freenet_client_connect").longest_type_prefix(&known_stems(&dirs)),
+            Identifier("freenet_client_connect").longest_type_prefix(&known),
             Some("freenet_client")
         );
     }
@@ -138,11 +136,12 @@ mod tests {
             "plugin".to_string(),
             vec![PathBuf::from("boxes"), PathBuf::from("roster")],
         );
+        let known: HashSet<String> = dirs.keys().cloned().collect();
 
         assert_eq!(
             rules::method_file_co_location::MethodFileCoLocation::find_parent_type(
                 "plugin_build",
-                &known_stems(&dirs),
+                &known,
                 &dirs
             ),
             Some(vec![PathBuf::from("boxes"), PathBuf::from("roster")])
@@ -159,27 +158,15 @@ mod tests {
         );
     }
 
-    fn orphan_project(files: &[(&str, &str)]) -> Project {
-        let mut parsed_files = std::collections::HashMap::new();
-        for (name, code) in files {
-            parsed_files.insert(PathBuf::from(name), syn::parse_str(code).unwrap());
-        }
-        Project {
-            root: PathBuf::from("."),
-            src_dir: PathBuf::from("src"),
-            entries: Vec::new(),
-            module_info: std::collections::HashMap::default(),
-            parsed_files,
-            ..Project::default()
-        }
-    }
-
     #[test]
     fn test_usage_orphan_method_file_flagged() {
-        let project = orphan_project(&[
-            ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
-            ("config_load.rs", "pub fn load() {}"),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
+                ("config_load.rs", "pub fn load() {}"),
+            ],
+        );
         let violations = rule_check(&MethodFileCoLocation, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("orphan method file"));
@@ -187,23 +174,29 @@ mod tests {
 
     #[test]
     fn test_usage_plain_free_function_passes() {
-        let project = orphan_project(&[
-            ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
-            ("load.rs", "pub fn load() {}"),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("lele_config.rs", "pub struct LeleConfig { pub x: u8 }"),
+                ("load.rs", "pub fn load() {}"),
+            ],
+        );
         let violations = rule_check(&MethodFileCoLocation, &project);
         assert!(violations.is_empty());
     }
 
     #[test]
     fn test_usage_bevy_systems_file_passes() {
-        let project = orphan_project(&[
-            ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
-            (
-                "direct_dial/__bevy_systems__/libp2p_events_to_dial_inputs.rs",
-                "pub fn libp2p_events_to_dial_inputs() {}",
-            ),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
+                (
+                    "direct_dial/__bevy_systems__/libp2p_events_to_dial_inputs.rs",
+                    "pub fn libp2p_events_to_dial_inputs() {}",
+                ),
+            ],
+        );
         let violations = rule_check(&MethodFileCoLocation, &project);
         assert!(
             violations.is_empty(),
@@ -213,13 +206,16 @@ mod tests {
 
     #[test]
     fn test_usage_non_bevy_systems_misplaced_file_still_flagged() {
-        let project = orphan_project(&[
-            ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
-            (
-                "direct_dial/libp2p_events_to_dial_inputs.rs",
-                "pub fn libp2p_events_to_dial_inputs() {}",
-            ),
-        ]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[
+                ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
+                (
+                    "direct_dial/libp2p_events_to_dial_inputs.rs",
+                    "pub fn libp2p_events_to_dial_inputs() {}",
+                ),
+            ],
+        );
         let violations = rule_check(&MethodFileCoLocation, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("is not next to"));
@@ -227,10 +223,13 @@ mod tests {
 
     #[test]
     fn test_usage_exact_match_multi_underscore_passes() {
-        let project = orphan_project(&[(
-            "to_snake_case.rs",
-            "pub fn to_snake_case(input: &str) -> String { input.to_string() }",
-        )]);
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[(
+                "to_snake_case.rs",
+                "pub fn to_snake_case(input: &str) -> String { input.to_string() }",
+            )],
+        );
         let violations = rule_check(&MethodFileCoLocation, &project);
         assert!(violations.is_empty());
     }

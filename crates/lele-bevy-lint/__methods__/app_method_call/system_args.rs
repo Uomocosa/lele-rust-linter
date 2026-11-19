@@ -20,31 +20,24 @@ pub fn system_args(node: &scan::AppMethodCall) -> Option<Vec<String>> {
 mod tests {
     use super::system_args;
     use crate::scan;
-
-    fn method_call(source: &str) -> syn::ExprMethodCall {
-        let expr: syn::Expr = syn::parse_str(source).unwrap();
-        let syn::Expr::MethodCall(call) = expr else {
-            panic!("expected a method call");
-        };
-        call
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         assert_eq!(
-            system_args(&scan::AppMethodCall(&method_call(
+            system_args(&scan::AppMethodCall(&testing::method_call(
                 "app.add_systems(Update, (tick, sync))"
             ))),
             Some(vec!["tick".to_string(), "sync".to_string()])
         );
         assert_eq!(
-            system_args(&scan::AppMethodCall(&method_call(
+            system_args(&scan::AppMethodCall(&testing::method_call(
                 "app.add_systems(Startup, setup)"
             ))),
             Some(vec!["setup".to_string()])
         );
         assert!(
-            system_args(&scan::AppMethodCall(&method_call(
+            system_args(&scan::AppMethodCall(&testing::method_call(
                 "app.add_plugins((a, b))"
             )))
             .is_none()

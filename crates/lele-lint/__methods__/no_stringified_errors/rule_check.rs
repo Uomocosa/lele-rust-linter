@@ -42,43 +42,18 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use super::rule_check;
-    use crate::rules::no_stringified_errors::NoStringifiedErrors;
-    use crate::Location;
-    use crate::Project;
-
-    const ERROR_ENUM: &str = "#[derive(Debug, thiserror::Error)]\npub enum Error {\n    #[error(\"x\")]\n    Io(String),\n}\n";
-
-    fn lines(src: &str) -> Vec<usize> {
-        let mut project = Project::default();
-        project.parsed_files.insert(
-            PathBuf::from("error.rs"),
-            syn::parse_str(ERROR_ENUM).unwrap(),
-        );
-        project
-            .parsed_files
-            .insert(PathBuf::from("probe.rs"), syn::parse_str(src).unwrap());
-        let mut found: Vec<usize> = rule_check(&NoStringifiedErrors, &project)
-            .into_iter()
-            .map(|violation| match violation.location {
-                Location::Site { line, .. } => line,
-                Location::File => 0,
-            })
-            .collect();
-        found.sort_unstable();
-        found
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         assert_eq!(
-            lines("fn f() { a().map_err(|e| Error::Io(e.to_string())); }\n"),
+            testing::no_stringified_error_lines(
+                "fn f() { a().map_err(|e| Error::Io(e.to_string())); }\n"
+            ),
             vec![1]
         );
         assert_eq!(
-            lines("fn f() { a().map_err(|e| Error::Io(e)); }\n"),
+            testing::no_stringified_error_lines("fn f() { a().map_err(|e| Error::Io(e)); }\n"),
             Vec::<usize>::new()
         );
     }
@@ -87,7 +62,7 @@ mod tests {
     fn test_usage_flags_format_and_inline_args() {
         let src = "fn f() {\n    a().map_err(|e| Error::Io(format!(\"bad: {}\", e)));\n    \
                    b().map_err(|error| Error::Io(format!(\"bad: {error}\")));\n}\n";
-        assert_eq!(lines(src), vec![2, 3]);
+        assert_eq!(testing::no_stringified_error_lines(src), vec![2, 3]);
     }
 
     #[test]
@@ -95,7 +70,7 @@ mod tests {
         let src = "impl From<std::io::Error> for Error {\n    \
                    fn from(e: std::io::Error) -> Self { Self::Io(e.to_string()) }\n}\n\
                    fn io(error: &std::io::Error) -> Error { Error::Io(format!(\"{error}\")) }\n";
-        assert_eq!(lines(src), vec![2, 4]);
+        assert_eq!(testing::no_stringified_error_lines(src), vec![2, 4]);
     }
 
     #[test]
@@ -104,7 +79,10 @@ mod tests {
             "fn parse(v: &str) -> Result<u8, String> { v.parse().map_err(|e| format!(\"{e}\")) }\n\
                    fn refused(name: &str) -> Error { Error::Io(format!(\"{name}\")) }\n\
                    fn g() { a().map_err(|e| Other::X(e.to_string())); }\n";
-        assert_eq!(lines(src), Vec::<usize>::new());
+        assert_eq!(
+            testing::no_stringified_error_lines(src),
+            Vec::<usize>::new()
+        );
     }
 }
 

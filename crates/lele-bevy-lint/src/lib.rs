@@ -8,3 +8,5 @@ pub mod scan;
 
 #[path = "../__methods__/mod.rs"]
 mod methods;
+
+pub(crate) mod testing;

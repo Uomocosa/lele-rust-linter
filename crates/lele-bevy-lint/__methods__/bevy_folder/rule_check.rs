@@ -80,25 +80,9 @@ pub fn rule_check(_self: &rules::bevy_folder::BevyFolder, project: &Project) -> 
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use lele_lint::DunderPath;
-    use lele_lint::Project;
-
     use super::rule_check;
     use crate::rules;
-
-    fn project_with(sources: &[(&str, &str)]) -> Project {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        for (path, code) in sources {
-            let file: syn::File = syn::parse_str(code).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        project
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
@@ -178,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_usage_reports_literal_bevy_systems_folder() {
-        let project = project_with(&[(
+        let project = testing::bevy_project(&[(
             "enemy/bevy_systems/despawn.rs",
             "pub struct Query;\n\npub fn despawn(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, despawn);\n}\n",
         )]);
@@ -194,7 +178,7 @@ mod tests {
 
     #[test]
     fn test_usage_systems_files_in_dunder_folder_pass() {
-        let project = project_with(&[(
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/despawn.rs",
             "pub struct Query;\n\npub fn despawn(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, despawn);\n}\n",
         )]);
@@ -203,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_usage_registered_system_outside_folder_flagged() {
-        let project = project_with(&[(
+        let project = testing::bevy_project(&[(
             "enemy/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, tick_enemies);\n}\n",
         )]);

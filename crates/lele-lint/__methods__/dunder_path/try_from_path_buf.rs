@@ -18,29 +18,23 @@ pub fn try_from_path_buf(path: PathBuf) -> Result<DunderPath, Error> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
-    use crate::DunderPath;
-
-    fn parses(raw: &str) -> bool {
-        DunderPath::try_from(PathBuf::from(raw)).is_ok()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        assert!(parses("__basic__"));
-        assert!(parses("__prelude__.rs"));
-        assert!(parses("__notes__.md"));
-        assert!(parses("src/__basic__"));
+        assert!(testing::parses_as_dunder("__basic__"));
+        assert!(testing::parses_as_dunder("__prelude__.rs"));
+        assert!(testing::parses_as_dunder("__notes__.md"));
+        assert!(testing::parses_as_dunder("src/__basic__"));
     }
 
     #[test]
     fn test_usage_rejects_non_dunder_names() {
-        assert!(!parses("basic"));
-        assert!(!parses("__basic"));
-        assert!(!parses("basic__"));
-        assert!(!parses("____"));
-        assert!(!parses("____.rs"));
-        assert!(!parses("__basic__/enums.rs"));
+        assert!(!testing::parses_as_dunder("basic"));
+        assert!(!testing::parses_as_dunder("__basic"));
+        assert!(!testing::parses_as_dunder("basic__"));
+        assert!(!testing::parses_as_dunder("____"));
+        assert!(!testing::parses_as_dunder("____.rs"));
+        assert!(!testing::parses_as_dunder("__basic__/enums.rs"));
     }
 }

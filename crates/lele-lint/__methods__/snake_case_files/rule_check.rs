@@ -18,6 +18,12 @@ pub fn rule_check(
             if rules::snake_case_files::SnakeCaseFiles::is_allowed_dunder(project, name) {
                 continue;
             }
+            if entry.kind == EntryKind::Directory
+                && rules::testing_layout::TestingLayout::is_testing_path(&entry.relative_path)
+                && rules::testing_layout::TESTING_ROLES.contains(&name)
+            {
+                continue;
+            }
             if !rules::snake_case_files::SnakeCaseFiles::is_snake_case(name) {
                 let kind = if entry.kind == EntryKind::Directory {
                     "directory"

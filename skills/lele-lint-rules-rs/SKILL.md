@@ -136,6 +136,10 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need no test and no opt-out — delete a stray opt-out there.
 - **LELETEST004 `no_tests_in_plain_data`**: No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
   - Fix: Delete the `#[cfg(test)]` block from the plain-data file and test the method or function that uses the type instead.
+- **LELETEST005 `test_module_items`**: A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
+  - Fix: Move the item to `src/testing/__fixtures__/` (an app builder → `__app__/`, a world query → `__queries__/`, a fake → `__fakes__/`) and import it, or delete it if the test no longer needs it.
+- **LELETEST006 `testing_layout`**: `src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+  - Fix: Move the file into `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
 
 ## Style
 

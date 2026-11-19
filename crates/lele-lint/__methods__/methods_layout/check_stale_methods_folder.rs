@@ -39,26 +39,12 @@ pub fn check_stale_methods_folder(project: &Project) -> Vec<RuleViolation> {
 #[cfg(test)]
 mod tests {
     use super::check_stale_methods_folder;
+    use crate::testing;
     use crate::Project;
-
-    fn project_with_methods_root(methods_root: Option<&str>) -> (tempfile::TempDir, Project) {
-        let dir = tempfile::tempdir().unwrap();
-        let folder = dir.path().join(super::STALE_FOLDER_NAME);
-        std::fs::create_dir_all(&folder).unwrap();
-        std::fs::write(folder.join("mod.rs"), "pub mod player;\n").unwrap();
-        let mut project = Project {
-            root: dir.path().to_path_buf(),
-            ..Project::default()
-        };
-        if let Some(methods_root) = methods_root {
-            project.methods_dir = Some(dir.path().join(methods_root));
-        }
-        (dir, project)
-    }
 
     #[test]
     fn test_usage() {
-        let (_dir, project) = project_with_methods_root(None);
+        let (_dir, project) = testing::stale_methods_project(None);
         let violations = check_stale_methods_folder(&project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].file.ends_with(super::STALE_FOLDER_NAME));
@@ -70,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_usage_skip_when_folder_is_the_configured_methods_root() {
-        let (_dir, project) = project_with_methods_root(Some(super::STALE_FOLDER_NAME));
+        let (_dir, project) = testing::stale_methods_project(Some(super::STALE_FOLDER_NAME));
         assert!(check_stale_methods_folder(&project).is_empty());
     }
 

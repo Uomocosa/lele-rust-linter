@@ -63,26 +63,16 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use super::rule_check;
     use crate::rules;
-    use lele_lint::Project;
-    use std::path::PathBuf;
-
-    fn messages(source: &str) -> Vec<String> {
-        let mut project = Project::default();
-        project.parsed_files.insert(
-            PathBuf::from("net/snapshot.rs"),
-            syn::parse_str(source).unwrap(),
-        );
-        rule_check(&rules::no_serialized_entity::NoSerializedEntity, &project)
-            .into_iter()
-            .map(|violation| violation.message)
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let found = messages("#[derive(Serialize)] pub struct Snapshot { pub owner: Entity }");
+        let found = testing::messages_of(
+            &rules::no_serialized_entity::NoSerializedEntity,
+            "net/snapshot.rs",
+            "#[derive(Serialize)] pub struct Snapshot { pub owner: Entity }",
+        );
         assert_eq!(found.len(), 1);
         assert!(found[0].contains("PeerId"));
     }
@@ -97,13 +87,24 @@ mod tests {
             "#[derive(Serialize)] pub struct E { pub members: [Entity; 4] }",
             "#[derive(Serialize)] pub struct F { pub owner: bevy::ecs::entity::Entity }",
         ] {
-            assert_eq!(messages(code).len(), 1, "{code}");
+            assert_eq!(
+                testing::messages_of(
+                    &rules::no_serialized_entity::NoSerializedEntity,
+                    "net/snapshot.rs",
+                    code
+                )
+                .len(),
+                1,
+                "{code}"
+            );
         }
     }
 
     #[test]
     fn test_usage_enum_variant_entity_is_violation() {
-        let found = messages(
+        let found = testing::messages_of(
+            &rules::no_serialized_entity::NoSerializedEntity,
+            "net/snapshot.rs",
             "#[derive(Serialize, Deserialize)] pub enum Delta { Joined { owner: Entity }, Left }",
         );
         assert_eq!(found.len(), 1);
@@ -111,14 +112,21 @@ mod tests {
 
     #[test]
     fn test_usage_unserialized_entity_is_clean() {
-        let found = messages("pub struct Live { pub owner: Entity }");
+        let found = testing::messages_of(
+            &rules::no_serialized_entity::NoSerializedEntity,
+            "net/snapshot.rs",
+            "pub struct Live { pub owner: Entity }",
+        );
         assert_eq!(found, Vec::<String>::new());
     }
 
     #[test]
     fn test_usage_serialized_without_entity_is_clean() {
-        let found =
-            messages("#[derive(Serialize, Deserialize)] pub struct Snapshot { pub owner: PeerId }");
+        let found = testing::messages_of(
+            &rules::no_serialized_entity::NoSerializedEntity,
+            "net/snapshot.rs",
+            "#[derive(Serialize, Deserialize)] pub struct Snapshot { pub owner: PeerId }",
+        );
         assert_eq!(found, Vec::<String>::new());
     }
 }

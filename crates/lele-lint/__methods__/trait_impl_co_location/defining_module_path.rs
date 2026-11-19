@@ -32,20 +32,17 @@ pub fn defining_module_path(qualifier: &[String], anchor: &[String]) -> Option<V
 #[cfg(test)]
 mod tests {
     use super::defining_module_path;
-
-    fn path(names: &[&str]) -> Vec<String> {
-        names.iter().map(|name| name.to_string()).collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         assert_eq!(
-            defining_module_path(&path(&["crate", "discovery"]), &[]),
-            Some(path(&["discovery"]))
+            defining_module_path(&testing::strings(&["crate", "discovery"]), &[]),
+            Some(testing::strings(&["discovery"]))
         );
         assert_eq!(
-            defining_module_path(&path(&["discovery"]), &[]),
-            Some(path(&["discovery"]))
+            defining_module_path(&testing::strings(&["discovery"]), &[]),
+            Some(testing::strings(&["discovery"]))
         );
         assert_eq!(defining_module_path(&[], &[]), Some(Vec::new()));
     }
@@ -53,11 +50,11 @@ mod tests {
     #[test]
     fn test_usage_drops_the_leading_crate_keyword() {
         assert_eq!(
-            defining_module_path(&path(&["crate", "direct_dial"]), &[]),
-            Some(path(&["direct_dial"]))
+            defining_module_path(&testing::strings(&["crate", "direct_dial"]), &[]),
+            Some(testing::strings(&["direct_dial"]))
         );
         assert_eq!(
-            defining_module_path(&path(&["crate"]), &[]),
+            defining_module_path(&testing::strings(&["crate"]), &[]),
             Some(Vec::new())
         );
     }
@@ -65,20 +62,29 @@ mod tests {
     #[test]
     fn test_usage_anchors_super_at_the_impl_file_module() {
         assert_eq!(
-            defining_module_path(&path(&["super", "config"]), &path(&["stock", "clock"])),
-            Some(path(&["stock", "config"]))
+            defining_module_path(
+                &testing::strings(&["super", "config"]),
+                &testing::strings(&["stock", "clock"])
+            ),
+            Some(testing::strings(&["stock", "config"]))
         );
         assert_eq!(
-            defining_module_path(&path(&["super"]), &path(&["stock", "clock"])),
-            Some(path(&["stock"]))
+            defining_module_path(
+                &testing::strings(&["super"]),
+                &testing::strings(&["stock", "clock"])
+            ),
+            Some(testing::strings(&["stock"]))
         );
     }
 
     #[test]
     fn test_usage_self_imports_anchor_at_the_impl_file() {
         assert_eq!(
-            defining_module_path(&path(&["self", "config"]), &path(&["stock", "clock"])),
-            Some(path(&["stock", "clock", "config"]))
+            defining_module_path(
+                &testing::strings(&["self", "config"]),
+                &testing::strings(&["stock", "clock"])
+            ),
+            Some(testing::strings(&["stock", "clock", "config"]))
         );
     }
 
@@ -86,20 +92,26 @@ mod tests {
     fn test_usage_nested_super_super_walks_up_two_modules() {
         assert_eq!(
             defining_module_path(
-                &path(&["super", "super", "config"]),
-                &path(&["stock", "inner", "clock"])
+                &testing::strings(&["super", "super", "config"]),
+                &testing::strings(&["stock", "inner", "clock"])
             ),
-            Some(path(&["stock", "config"]))
+            Some(testing::strings(&["stock", "config"]))
         );
     }
 
     #[test]
     fn test_usage_super_above_the_crate_root_stays_unresolvable() {
         assert_eq!(
-            defining_module_path(&path(&["super", "super", "config"]), &path(&["stock"])),
+            defining_module_path(
+                &testing::strings(&["super", "super", "config"]),
+                &testing::strings(&["stock"])
+            ),
             None
         );
-        assert_eq!(defining_module_path(&path(&["super", "config"]), &[]), None);
+        assert_eq!(
+            defining_module_path(&testing::strings(&["super", "config"]), &[]),
+            None
+        );
     }
 }
 

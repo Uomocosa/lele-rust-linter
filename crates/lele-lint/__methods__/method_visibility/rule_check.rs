@@ -70,15 +70,8 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use crate::Identifier;
+    use crate::testing;
     use std::collections::HashSet;
-
-    fn method_struct(file_name: &str, struct_names: &HashSet<String>) -> Option<String> {
-        file_name
-            .strip_suffix(".rs")
-            .and_then(|stem| Identifier(stem).longest_type_prefix(struct_names))
-            .map(str::to_string)
-    }
 
     #[test]
     fn test_usage() {
@@ -88,13 +81,16 @@ mod tests {
         struct_names.insert("freenet_client".to_string());
 
         assert_eq!(
-            method_struct("player_new.rs", &struct_names),
+            testing::method_struct("player_new.rs", &struct_names),
             Some("player".to_string())
         );
         assert_eq!(
-            method_struct("freenet_client_connect.rs", &struct_names),
+            testing::method_struct("freenet_client_connect.rs", &struct_names),
             Some("freenet_client".to_string())
         );
-        assert_eq!(method_struct("bevy_systems.rs", &struct_names), None);
+        assert_eq!(
+            testing::method_struct("bevy_systems.rs", &struct_names),
+            None
+        );
     }
 }

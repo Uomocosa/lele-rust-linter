@@ -16,6 +16,9 @@ pub fn rule_check(
         let rel_path = source.relative_path;
         let file = source.file;
         let file_path = project.absolute_path(source.origin, rel_path);
+        if rules::testing_layout::TestingLayout::is_testing_path(rel_path) {
+            continue;
+        }
         if project.is_in_dunder_dir(rel_path) {
             violations.extend(
                 rules::container_placement::ContainerPlacement::check_container_file(
@@ -37,31 +40,21 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
-    use crate::DunderPath;
     use std::path::PathBuf;
 
     use super::rule_check;
     use crate::rules::container_placement::ContainerPlacement;
-    use crate::Project;
-
-    fn project(files: &[(&str, &str)]) -> Project {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        for (path, source) in files {
-            let file: syn::File = syn::parse_str(source).unwrap();
-            project.parsed_files.insert(PathBuf::from(path), file);
-        }
-        project
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let project = project(&[(
-            "discovery/game.rs",
-            "#[derive(Debug)] pub struct Game(pub String);\n",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "discovery/game.rs",
+                "#[derive(Debug)] pub struct Game(pub String);\n",
+            )],
+        );
         let violations = rule_check(&ContainerPlacement, &project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].message.contains("newtypes.rs"));
@@ -70,17 +63,20 @@ mod tests {
 
     #[test]
     fn test_usage_allows_container_item() {
-        let project = project(&[(
-            "discovery/__basic__/newtypes.rs",
-            "#[derive(Debug, Clone)] pub struct Game(pub String);\n",
-        )]);
+        let project = testing::parsed_project(
+            testing::dunder_project(),
+            &[(
+                "discovery/__basic__/newtypes.rs",
+                "#[derive(Debug, Clone)] pub struct Game(pub String);\n",
+            )],
+        );
         let violations = rule_check(&ContainerPlacement, &project);
         assert!(violations.is_empty());
     }
 
     #[test]
     fn test_usage_flags_behavior_in_container() {
-        let project = project(&[(
+        let project = testing::parsed_project(testing::dunder_project(), &[(
             "discovery/__basic__/newtypes.rs",
             "#[derive(Debug)] pub struct Game(pub String);\nimpl Game { pub fn name(&self) -> &str { \"\" } }\n",
         )]);

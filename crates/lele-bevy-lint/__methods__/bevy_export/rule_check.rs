@@ -35,32 +35,17 @@ pub fn rule_check(_self: &rules::bevy_export::BevyExport, project: &Project) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::rule_check;
-    use lele_lint::DunderPath;
-    use lele_lint::Project;
-    use std::path::PathBuf;
-
     use crate::rules::bevy_export::BevyExport;
-
-    fn messages(source: &str) -> Vec<String> {
-        let mut project = Project {
-            dunder_paths: DunderPath::defaults(),
-            ..Project::default()
-        };
-        project.parsed_files.insert(
-            PathBuf::from("inventory/mod.rs"),
-            syn::parse_str(source).unwrap(),
-        );
-        rule_check(&BevyExport, &project)
-            .into_iter()
-            .map(|violation| violation.message)
-            .collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let found = messages(
-            "#[path = \"__bevy_systems__/mod.rs\"]\npub mod bevy_systems;\n\npub use bevy_systems::poll_inv;\n",
+        let found = testing::rule_messages(
+            &BevyExport,
+            &testing::bevy_project(&[(
+                "inventory/mod.rs",
+                "#[path = \"__bevy_systems__/mod.rs\"]\npub mod bevy_systems;\n\npub use bevy_systems::poll_inv;\n",
+            )]),
         );
         assert_eq!(found.len(), 1);
         assert_eq!(
@@ -72,7 +57,13 @@ mod tests {
     #[test]
     fn test_usage_ignores_trait_mounts_and_private_uses() {
         assert_eq!(
-            messages("pub use traits::Greetable;\nuse bevy_systems::poll_inv;\n"),
+            testing::rule_messages(
+                &BevyExport,
+                &testing::bevy_project(&[(
+                    "inventory/mod.rs",
+                    "pub use traits::Greetable;\nuse bevy_systems::poll_inv;\n",
+                )]),
+            ),
             Vec::<String>::new()
         );
     }

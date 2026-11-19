@@ -17,29 +17,18 @@ pub fn require_preview(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
-    use lele_lint::Origin;
-    use lele_lint::Project;
-
     use super::require_preview;
     use crate::scan;
-
-    fn missing() -> lele_lint::RuleViolation {
-        let project = Project::default();
-        scan::BevyProject(&project).violation(
-            Origin::Src,
-            Path::new("a.rs"),
-            1,
-            "X",
-            String::from("no preview"),
-        )
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         let file = syn::parse_str("pub fn setup() {}").unwrap();
-        let found = require_preview(&scan::ScannedFile(&file), scan::PreviewKind::Png, missing);
+        let found = require_preview(
+            &scan::ScannedFile(&file),
+            scan::PreviewKind::Png,
+            testing::preview_violation,
+        );
         assert_eq!(found.map(|violation| violation.code), Some("X"));
     }
 
@@ -53,7 +42,12 @@ mod tests {
         )
         .unwrap();
         assert!(
-            require_preview(&scan::ScannedFile(&file), scan::PreviewKind::Png, missing).is_none()
+            require_preview(
+                &scan::ScannedFile(&file),
+                scan::PreviewKind::Png,
+                testing::preview_violation
+            )
+            .is_none()
         );
     }
 }

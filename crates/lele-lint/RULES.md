@@ -730,28 +730,18 @@ pub trait CustomerPrefs {
     fn prefs_path(&self) -> String;
 }
 
+#[rustfmt::skip]
+impl CustomerPrefs for String {
+    fn prefs_path(&self) -> String { format!("prefs/{self}") }
+}
+
 #[cfg(test)]
 mod tests {
     use super::CustomerPrefs;
 
-    struct Demo {
-        suffix: String,
-        created_on: u64,
-    }
-
-    impl CustomerPrefs for Demo {
-        fn prefs_path(&self) -> String {
-            format!("prefs/{}-{}", self.suffix, self.created_on)
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let demo = Demo {
-            suffix: "house".to_string(),
-            created_on: 4,
-        };
-        assert_eq!(demo.prefs_path(), "prefs/house-4");
+        assert_eq!("house".to_string().prefs_path(), "prefs/house");
     }
 }
 ```
@@ -772,28 +762,18 @@ pub trait ReplicatedState {
     fn replica_id(&self) -> u64;
 }
 
+#[rustfmt::skip]
+impl ReplicatedState for u64 {
+    fn replica_id(&self) -> u64 { *self }
+}
+
 #[cfg(test)]
 mod tests {
     use super::ReplicatedState;
 
-    struct Demo {
-        replica: u64,
-        owner: u32,
-    }
-
-    impl ReplicatedState for Demo {
-        fn replica_id(&self) -> u64 {
-            self.replica + u64::from(self.owner)
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let demo = Demo {
-            replica: 6,
-            owner: 1,
-        };
-        assert_eq!(demo.replica_id(), 7);
+        assert_eq!(7_u64.replica_id(), 7);
     }
 }
 ```
@@ -940,24 +920,9 @@ impl<T> Clock for Vec<T> {
 mod tests {
     use super::Clock;
 
-    struct Demo {
-        seconds: u64,
-        ticks: u32,
-    }
-
-    impl Clock for Demo {
-        fn now(&self) -> u64 {
-            self.seconds + u64::from(self.ticks)
-        }
-    }
-
     #[test]
     fn test_usage() {
-        let demo = Demo {
-            seconds: 6,
-            ticks: 1,
-        };
-        assert_eq!(demo.now(), 7);
+        assert_eq!(vec![1_u8, 2_u8, 3_u8].now(), 3);
     }
 }
 ```
@@ -4477,6 +4442,8 @@ pub use error::Error;
 - [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
 - [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
+- [LELETEST005 `test_module_items`](#leletest005-test_module_items): A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
+- [LELETEST006 `testing_layout`](#leletest006-testing_layout): `src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
 
 ### LELETEST001 `no_dunder_tests`
 
@@ -4860,6 +4827,220 @@ mod tests {
         assert_eq!(RetryPolicy::new(0).attempts, 1);
     }
 }
+```
+
+### LELETEST005 `test_module_items`
+
+A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
+
+**Why:** Every other item is a test helper; it belongs in the crate's `src/testing/` (LELETEST006) so the next test reuses it instead of copying it (RATIONALE §17, SMELLS S9).
+
+**Fix:** Move the item to `src/testing/__fixtures__/` (an app builder → `__app__/`, a world query → `__queries__/`, a fake → `__fakes__/`) and import it, or delete it if the test no longer needs it.
+
+**Bad** (reports LELETEST005):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/guest.rs`
+
+```rust
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    fn make_guest() -> Guest {
+        Guest("Ada".to_string())
+    }
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(make_guest().greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/stock/mod.rs`
+
+```rust
+mod guest;
+
+pub use guest::Guest;
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+
+#[cfg(test)]
+pub(crate) mod testing;
+```
+
+`src/stock/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::testing;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(testing::guest().greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/stock/mod.rs`
+
+```rust
+mod guest;
+
+pub use guest::Guest;
+```
+
+`src/testing/mod.rs`
+
+```rust
+#[path = "__fixtures__/mod.rs"]
+pub mod fixtures;
+
+pub use fixtures::guest::guest;
+```
+
+`src/testing/__fixtures__/guest.rs`
+
+```rust
+use crate::stock;
+
+pub fn guest() -> stock::Guest {
+    stock::Guest("Ada".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::guest;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(guest().greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/testing/__fixtures__/mod.rs`
+
+```rust
+pub mod guest;
+```
+
+### LELETEST006 `testing_layout`
+
+`src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+
+**Why:** One place per kind of test helper means the next test finds the app builder, the world query, the fixture or the fake instead of copying it (RATIONALE §17).
+
+**Fix:** Move the file into `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
+
+**Bad** (reports LELETEST006):
+
+`src/lib.rs`
+
+```rust
+pub mod testing;
+```
+
+`src/testing/mod.rs`
+
+```rust
+pub mod harness;
+```
+
+`src/testing/harness/lobby_setup.rs`
+
+```rust
+pub fn lobby_setup() -> String {
+    String::from("lobby")
+}
+```
+
+`src/testing/harness/mod.rs`
+
+```rust
+pub mod lobby_setup;
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod testing;
+```
+
+`src/testing/mod.rs`
+
+```rust
+#[path = "__fixtures__/mod.rs"]
+pub mod fixtures;
+
+pub use fixtures::lobby_row::LobbyRow;
+```
+
+`src/testing/__fixtures__/lobby_row.rs`
+
+```rust
+pub struct LobbyRow {
+    pub name: String,
+    pub occupants: usize,
+}
+
+#[rustfmt::skip]
+impl LobbyRow {
+    pub fn is_full(&self) -> bool { self.occupants >= 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LobbyRow;
+
+    #[test]
+    fn test_usage() {
+        let row = LobbyRow {
+            name: "alpha".to_string(),
+            occupants: 2,
+        };
+        assert!(row.is_full());
+    }
+}
+```
+
+`src/testing/__fixtures__/mod.rs`
+
+```rust
+pub mod lobby_row;
 ```
 
 ## Style

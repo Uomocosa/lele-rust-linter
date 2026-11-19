@@ -12,21 +12,18 @@ pub fn imports_harness_run(file: &scan::ScannedFile) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::imports_harness_run;
-    use crate::scan;
-
-    fn imports(source: &str) -> bool {
-        imports_harness_run(&scan::ScannedFile(&syn::parse_str(source).unwrap()))
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        assert!(imports("use lele_bevy_preview::run;"));
-        assert!(imports(
+        assert!(testing::harness_run_imported("use lele_bevy_preview::run;"));
+        assert!(testing::harness_run_imported(
             "mod tests { use lele_bevy_preview::{run, scene::Scene}; }"
         ));
-        assert!(imports("use lele_bevy_preview::*;"));
-        assert!(!imports("use lele_bevy_preview::scene::Scene;"));
-        assert!(!imports("use crate::server::run;"));
+        assert!(testing::harness_run_imported("use lele_bevy_preview::*;"));
+        assert!(!testing::harness_run_imported(
+            "use lele_bevy_preview::scene::Scene;"
+        ));
+        assert!(!testing::harness_run_imported("use crate::server::run;"));
     }
 }

@@ -41,20 +41,17 @@ pub fn candidate_defines_module_path(candidate: &Path, module_path: &[String]) -
 #[cfg(test)]
 mod tests {
     use super::candidate_defines_module_path;
-
-    fn module(names: &[&str]) -> Vec<String> {
-        names.iter().map(|name| name.to_string()).collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
         assert!(candidate_defines_module_path(
             std::path::Path::new("discovery/config.rs"),
-            &module(&["discovery"]),
+            &testing::strings(&["discovery"]),
         ));
         assert!(!candidate_defines_module_path(
             std::path::Path::new("discovery/config.rs"),
-            &module(&["direct_dial"]),
+            &testing::strings(&["direct_dial"]),
         ));
     }
 
@@ -62,7 +59,7 @@ mod tests {
     fn test_usage_dunder_dirs_are_invisible_to_code_paths() {
         assert!(candidate_defines_module_path(
             std::path::Path::new("direct_dial/__basic__/resources.rs"),
-            &module(&["direct_dial"]),
+            &testing::strings(&["direct_dial"]),
         ));
     }
 
@@ -70,19 +67,19 @@ mod tests {
     fn test_usage_dunder_mount_module_names_match_candidates() {
         assert!(candidate_defines_module_path(
             std::path::Path::new("stock/__traits__/clock.rs"),
-            &module(&["stock", "traits"]),
+            &testing::strings(&["stock", "traits"]),
         ));
         assert!(candidate_defines_module_path(
             std::path::Path::new("stock/__traits__/clock.rs"),
-            &module(&["stock", "traits", "clock"]),
+            &testing::strings(&["stock", "traits", "clock"]),
         ));
         assert!(candidate_defines_module_path(
             std::path::Path::new("stock/__basic__/structs.rs"),
-            &module(&["stock", "basic"]),
+            &testing::strings(&["stock", "basic"]),
         ));
         assert!(!candidate_defines_module_path(
             std::path::Path::new("stock/__traits__/clock.rs"),
-            &module(&["other", "traits"]),
+            &testing::strings(&["other", "traits"]),
         ));
     }
 
@@ -90,15 +87,15 @@ mod tests {
     fn test_usage_dunder_stripped_matching_is_unchanged() {
         assert!(candidate_defines_module_path(
             std::path::Path::new("direct_dial/__basic__/resources.rs"),
-            &module(&["direct_dial"]),
+            &testing::strings(&["direct_dial"]),
         ));
         assert!(candidate_defines_module_path(
             std::path::Path::new("a/__traits__/foo.rs"),
-            &module(&["a"]),
+            &testing::strings(&["a"]),
         ));
         assert!(!candidate_defines_module_path(
             std::path::Path::new("a/__traits__/foo.rs"),
-            &module(&["traits"]),
+            &testing::strings(&["traits"]),
         ));
     }
 
@@ -106,11 +103,11 @@ mod tests {
     fn test_usage_nested_modules_do_not_match_root_modules() {
         assert!(!candidate_defines_module_path(
             std::path::Path::new("a/b/config.rs"),
-            &module(&["b"]),
+            &testing::strings(&["b"]),
         ));
         assert!(candidate_defines_module_path(
             std::path::Path::new("a/b/config.rs"),
-            &module(&["a", "b"]),
+            &testing::strings(&["a", "b"]),
         ));
     }
 
@@ -118,15 +115,15 @@ mod tests {
     fn test_usage_qualified_files_match_their_module_path() {
         assert!(candidate_defines_module_path(
             std::path::Path::new("a/b.rs"),
-            &module(&["a", "b"]),
+            &testing::strings(&["a", "b"]),
         ));
         assert!(candidate_defines_module_path(
             std::path::Path::new("discovery/config.rs"),
-            &module(&["discovery", "config"]),
+            &testing::strings(&["discovery", "config"]),
         ));
         assert!(!candidate_defines_module_path(
             std::path::Path::new("discovery/config.rs"),
-            &module(&["discovery", "other"]),
+            &testing::strings(&["discovery", "other"]),
         ));
     }
 

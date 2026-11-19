@@ -33,35 +33,33 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
-    use crate::rules;
     use std::path::PathBuf;
 
     use super::rule_check;
     use crate::rules::no_super_imports::NoSuperImports;
+    use crate::testing;
     use crate::Project;
-    use syn::visit::Visit;
-
-    fn hit_lines(src: &str) -> Vec<usize> {
-        let file = syn::parse_file(src).unwrap();
-        let mut hits = Vec::new();
-        {
-            let mut visitor = rules::no_super_imports::SuperPathVisitor(&mut hits);
-            visitor.visit_file(&file);
-        }
-        hits.into_iter().map(|hit| hit.line).collect()
-    }
 
     #[test]
     fn test_usage() {
-        assert_eq!(hit_lines("use super::config_load;\n"), vec![1]);
-        assert_eq!(hit_lines("use super::super::Event;\n"), vec![1]);
-        assert_eq!(hit_lines("fn f() { super::a::b(); }\n"), vec![1]);
+        assert_eq!(
+            testing::super_path_hit_lines("use super::config_load;\n"),
+            vec![1]
+        );
+        assert_eq!(
+            testing::super_path_hit_lines("use super::super::Event;\n"),
+            vec![1]
+        );
+        assert_eq!(
+            testing::super_path_hit_lines("fn f() { super::a::b(); }\n"),
+            vec![1]
+        );
     }
 
     #[test]
     fn test_usage_allows_super_in_cfg_test_mod() {
         assert_eq!(
-            hit_lines("#[cfg(test)]\nmod tests { use super::drain_events; }\n"),
+            testing::super_path_hit_lines("#[cfg(test)]\nmod tests { use super::drain_events; }\n"),
             Vec::<usize>::new()
         );
     }
@@ -69,7 +67,7 @@ mod tests {
     #[test]
     fn test_usage_allows_super_in_cfg_test_fn() {
         assert_eq!(
-            hit_lines("#[cfg(test)]\nfn helper() { super::a::b(); }\n"),
+            testing::super_path_hit_lines("#[cfg(test)]\nfn helper() { super::a::b(); }\n"),
             Vec::<usize>::new()
         );
     }

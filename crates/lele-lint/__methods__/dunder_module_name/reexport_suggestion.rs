@@ -25,16 +25,18 @@ pub fn reexport_suggestion(
 #[cfg(test)]
 mod tests {
     use super::reexport_suggestion;
-
-    fn names(segments: &[&str]) -> Vec<String> {
-        segments.iter().map(|segment| segment.to_string()).collect()
-    }
+    use crate::testing;
 
     #[test]
     fn test_usage() {
-        let prefix = names(&["greeting"]);
+        let prefix = testing::strings(&["greeting"]);
         assert_eq!(
-            reexport_suggestion(&prefix, &names(&["traits", "Greetable"]), false, "traits"),
+            reexport_suggestion(
+                &prefix,
+                &testing::strings(&["traits", "Greetable"]),
+                false,
+                "traits"
+            ),
             "greeting::traits::Greetable"
         );
     }
@@ -44,7 +46,7 @@ mod tests {
         assert_eq!(
             reexport_suggestion(
                 &[],
-                &names(&["crate", "stock", "traits", "Clock"]),
+                &testing::strings(&["crate", "stock", "traits", "Clock"]),
                 false,
                 "traits"
             ),
@@ -57,25 +59,30 @@ mod tests {
         assert_eq!(
             reexport_suggestion(
                 &[],
-                &names(&["other_crate", "domain", "traits", "X"]),
+                &testing::strings(&["other_crate", "domain", "traits", "X"]),
                 false,
                 "traits"
             ),
             "other_crate::domain::traits::X"
         );
         assert_eq!(
-            reexport_suggestion(&[], &names(&["stock", "traits", "Clock"]), false, "traits"),
+            reexport_suggestion(
+                &[],
+                &testing::strings(&["stock", "traits", "Clock"]),
+                false,
+                "traits"
+            ),
             "stock::traits::Clock"
         );
     }
 
     #[test]
     fn test_usage_self_paths_get_the_prefix() {
-        let prefix = names(&["stock"]);
+        let prefix = testing::strings(&["stock"]);
         assert_eq!(
             reexport_suggestion(
                 &prefix,
-                &names(&["self", "traits", "Clock"]),
+                &testing::strings(&["self", "traits", "Clock"]),
                 false,
                 "traits"
             ),
@@ -85,9 +92,9 @@ mod tests {
 
     #[test]
     fn test_usage_globs_get_a_star_suffix() {
-        let prefix = names(&["greeting"]);
+        let prefix = testing::strings(&["greeting"]);
         assert_eq!(
-            reexport_suggestion(&prefix, &names(&["traits"]), true, "traits"),
+            reexport_suggestion(&prefix, &testing::strings(&["traits"]), true, "traits"),
             "greeting::traits::*"
         );
     }

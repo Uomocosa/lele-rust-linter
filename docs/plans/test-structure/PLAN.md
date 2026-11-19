@@ -111,3 +111,30 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - Open for user: rendezvous_preview_dial cannot leave __bevy_systems__/ as a free fn (LELE034 no_free_functions; owner types PeerId/RoomMember/Room are foreign). Options: method on shared_types Room, newtype owner, stay (untested), entry_points exemption. Move + 5 restored tests saved in p2p .local-run/orchestrator/2026-11-19-open-items/change4-moved.patch.
 - 2026-11-19 rendezvous_preview_dial: user chose `Room::rendezvous_preview_dial(&self, me)` in lobby-room shared_types; p2p e31f055 (5 tests restored). EfficientWorker muse-spark-1.3-contributor#low, ~$0.01. Open question closed.
 - 2026-11-19 D10 revised (user): rstest-only-extras lint dropped; honest corner cases -> #[rstest] is skill guidance (RATIONALE §18). Phase 4 = LELETEST007 only.
+- 2026-11-19 P3 start: preflight clean (7 repos). Step P3-L0 read-only linter plan: SmartWorker deepseek-v4.1-flash#low --agent plan (judgement: LELE038 dunder mounts + existing testing/ trees with harness/__bevy_systems__).
+- P3-L0 plan done (ses_e0d07c, $0.05). Decisions: .local-run p3-linter-decisions.md. P3a rules job: SmartWorker (AST rule logic).
+- P3a done uncommitted (ses_e0cfdb, $0.09): rules + examples + docs, 915 tests green; +snake_case_files role-dir exemption under testing/ (accepted). P3b lele-lint self-lint: SmartWorker.
+- P3b done uncommitted (ses_e0cefc, $0.22): 78 hits -> 58 testing/ items, 973 tests. P3c: cfg(test) mod testing fix + lele-bevy-lint self-lint + commit/push. SmartWorker.
+- P3c done: a94e93e pushed (ses p3c $0.09; lele-bevy-lint 15 testing items, 991 tests). Linter P3 total ~$0.45. Fleet count: harness 7x005; p2p core 184x005+59x006, lobby-room 185x005+20x006, contract/shared 7/7, common 1; state-machine 36x005+2x006; release 14; telegram 5 + preview 91; taxonomy 0. Small repos: 4 parallel SmartWorker jobs (p3-small-brief.md).
+- P3 small: harness 9cd82f3 ($0.06), release 26e927c ($0.06). p2p plan ($0.05) -> p2p .local-run p3-p2p-plan.md + p3-decisions.md; 20 sequential SmartWorker jobs T1,T2,C1-C10,L1-L6,S; one commit at end. T1 waits for state-machine (path dep).
+- P3 small done: state-machine 8dd8395 ($0.07, 19->26 tests), telegram 4390c38 ($0.12, 217->246). Taxonomy 0 hits. p2p T1 running.
+- p2p T1 done uncommitted ($0.16): TestApp/find_entity/... + 59 files re-homed, core 0x006, 156x005 left. traits at __fakes__/test_doubles/__traits__ (LELE041 workaround, accepted).
+- p2p T2 done ($0.07): lobby 0x006. Orchestrator: touched-filter.sh maps __app__/__fakes__/__fixtures__/__queries__.
+- p2p C1 ($0.07): core 147x005.
+- p2p C2 ($0.14 + fix): core 126x005; one send-back (LELE019 from testing/ using domain const). Brief tightened.
+- p2p C3 ($0.07): core 110x005; FakeReplica/CapturedOutputs generic.
+- p2p C4 ($0.06): core 103x005.
+- p2p C5 ($0.09): core 86x005.
+- p2p C6 ($0.06): core 69x005.
+- p2p C7 ($0.07): core 49x005.
+- p2p C8 ($0.09): core 20x005; spectator swarm tests now on TestApp ManualDuration (watch for flakes in full run).
+- p2p C9 ($0.04): core 12x005.
+- p2p C10 ($0.12): core 0 errors. Core C1-C10 total ~$0.84.
+- p2p L1 ($0.08): lobby 166x005.
+- p2p L2 ($0.11): lobby 144x005.
+- p2p L3 ($0.07): lobby 127x005; drive_virtual_seconds uses sleep under paused time (advance needs test-util dev-dep).
+- p2p L4 ($0.13): lobby 107x005.
+- p2p L5 ($0.19): lobby 38x005; previews pixel-identical.
+- p2p L6 ($0.14, extended +10 missed files): lobby 0 errors.
+- p2p S (\$0.06): S1-S3 crates clean. Full suite 1396 passed / 31 skipped, 246s (P2: 1208 / 269s). p2p commit 9bc8b5a (prek gate green). PHASE 3 DONE fleet-wide.
+- P3 cost: linter ~\$0.45, small repos ~\$0.31, p2p plan+20 jobs ~\$1.85. All SmartWorker deepseek-v4.1-flash#low. 1 send-back (C2 LELE019). Lesson: plan's per-file counts missed 10 single-hit lobby files: always re-list remaining hits before the last job of a crate.

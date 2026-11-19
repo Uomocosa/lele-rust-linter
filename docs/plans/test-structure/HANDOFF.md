@@ -17,20 +17,13 @@ Run as orchestrator with `/opencode-orchestrator` + the `lele-linter-change-rs` 
 - p2p numbers: 1554 tests before -> 1208 after (all green, 31 skipped). Suite ~269 s test time,
   dominated by mp4/scene previews and multi-swarm plugin tests.
 
-## Next: Phase 3 (phase-3.md)
-Order is fixed: (1) linter worker: LELETEST005 (test module holds only test fns + use + const),
-LELETEST006 (testing/ items only in __app__/ __queries__/ __fixtures__/ __fakes__/). No usage-count
-rule (D5 removed 2026-11-19): reuse existing testing/ items first, single-use helpers still go in
-testing/ (skill: lele-syntax-rs RATIONALE §17, SMELLS S9). (2) ONE p2p worker builds the testing/
-scaffolding in freenet-libp2p-bevy-core/src/testing/ (TestApp, world queries, fixtures, re-home the
-existing testing files). (3) fleet workers replace private helpers.
-Known phase-3 targets: spectator_plugin.rs tests (~30 helpers moved in from the old
-spectator_fake_network.rs), p2p_plugin.rs tests (8 helpers + Node/TestPayload from
-runner_config_tests), plus the ~1,186 test-module helpers counted at the start (many now gone with
-deleted system tests - recount first).
-Do a fleet count (step 3 of lele-linter-change-rs) BEFORE splitting work; Phase 3 is likely the
-biggest phase in p2p.
+## Phase 3: DONE (2026-11-19)
+LELETEST005/006 in lele-lint a94e93e. Fleet: harness 9cd82f3, release 26e927c, state-machine 8dd8395,
+telegram 4390c38, p2p 9bc8b5a (1396 tests / 246 s). Taxonomy had 0 hits. See PLAN.md log.
+Phase-3 tooling (p2p .local-run): p3-p2p-plan.md, p3-decisions.md, p3-fleet-brief.md, launch3.sh JOB,
+check3.sh JOB; linter .local-run: p3-small-brief.md, launch-small3.sh, read-job.sh.
 
+## Next: Phase 4
 Then Phase 4 (phase-4.md): LELETEST007 (one test_usage per file calling the primary item); the
 rstest rule was dropped (D10 = guidance). Pre-existing second test modules exist
 (`build_plugin_tests` in core p2p_plugin.rs, lobby discovery/plugin.rs, ui/direct_dial/

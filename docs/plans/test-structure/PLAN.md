@@ -22,13 +22,16 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | D2 | No statement/line cap on `test_usage` |
 | D3 | Plugin tests (`*_plugin.rs`) have free names |
 | D4 | Primary item = existing atomic-file detection (table below) |
-| D5 | `testing/` items must be used by >=2 test modules; cross-crate use counts |
+| D5 | (revised 2026-11-19, user) REMOVED: no usage-count rule on `testing/` items (the linter sees one repo, and some `testing/` modules exist for other repos). Private helpers move into the crate's `testing/` dunders even when used once; reuse an existing `testing/` item first (skill guidance, lele-syntax-rs RATIONALE §17 / SMELLS S9) |
 | D6 | `LELEBEVYTEST*` in lele-bevy-lint; `LELETEST*` in lele-lint |
 | D7 | Clean rename, no aliases for old codes |
 | D8 | Constants are tuned in `constants.rs`, never asserted in tests |
 | D9 | Honesty-based (MIR taxonomy) test rules deferred; skill guidance only |
 | D10 | Extra tests in a `__methods__/` file must be `#[rstest]` (default, user may veto) |
 | D12 | (user, 2026-11-18) LELEBEVYTEST001 allows a test module in a `__bevy_systems__/` file only if it holds nothing but preview tests (`*_ui_png_preview` / mp4 previews, as the UI rules detect them); previews are the visual usage of a UI system and stay colocated. UI rules unchanged |
+| D13 | (user, 2026-11-19) Preview authoring tools (`scene::Clock`, `Scene::hover::<C>`) are public API of `lele-bevy-preview`, not `testing/` items |
+| D14 | (user, 2026-11-19) `PeekedRoomFriends` stays: read by examples/starboard `draw_friend_highlights` (the phase-2 "dead code" report missed examples) |
+| D15 | (user, 2026-11-19) `examples/` stay outside lint scope for now |
 | D11 | `just t-touched` runs only tests colocated with touched files (+ owning plugin for a touched `__bevy_systems__` file); NOT reverse dependents |
 
 ### D4: what each file tests
@@ -50,10 +53,9 @@ Orchestrator log + worker files: `<repo>/.local-run/orchestrator/2026-11-18-test
 | LELETEST004 | lele-lint | 2 | no tests in plain-data / trivial-constructor files |
 | LELEBEVYTEST001 | lele-bevy-lint | 2 | no `#[cfg(test)]` under `__bevy_systems__/` |
 | LELETEST005 | lele-lint | 3 | test module holds only test fns, `use`, `const` (no other fn/struct/enum/impl) |
-| LELETEST006 | lele-lint | 3 | each `testing/` item used by >=2 test modules (D5) |
-| LELETEST007 | lele-lint | 3 | `testing/` items only in `__app__/ __queries__/ __fixtures__/ __fakes__/`; test helpers only from `crate::testing::..` or a dependency's `testing` |
-| LELETEST008 | lele-lint | 4 | one `test_usage` (D1); calls the primary item (D4); >=1 `assert*!` on a value derived from that call |
-| LELETEST009 | lele-lint | 4 | extra tests in `__methods__/` files are `#[rstest]` (D10) |
+| LELETEST006 | lele-lint | 3 | (was 007) `testing/` items only in `__app__/ __queries__/ __fixtures__/ __fakes__/`; test helpers only from `crate::testing::..` or a dependency's `testing` |
+| LELETEST007 | lele-lint | 4 | (was 008) one `test_usage` (D1); calls the primary item (D4); >=1 `assert*!` on a value derived from that call |
+| LELETEST008 | lele-lint | 4 | (was 009) extra tests in `__methods__/` files are `#[rstest]` (D10) |
 
 Every new rule gets `rule_examples`; `just docs` regenerates RULES.md + `lele-lint-rules-rs`.
 
@@ -105,3 +107,4 @@ Every fleet repo lint-clean, gate green on the branch; p2p test count + time rec
 - P2 p2p: clippy cleanup job (too_many_lines in 2 previews via consts, 9 core opt-outs); orchestrator removed 4 missed opt-outs in contract/shared_types/common_types. Full suite: 1208 passed / 31 skipped (baseline 1554 tests); test time 269s vs 242s baseline (previews + moved multi-swarm plugin tests dominate; machine loaded).
 - P2 p2p commit 1341a60 (single commit: prek stashes unstaged changes and lints the staged tree, so per-area commits cannot pass while intermediate states fail lint). PHASE 2 DONE fleet-wide.
 - Lesson for phases 3/4: plan fleet commits as one commit per repo, or order jobs so each staged state is lint-clean.
+- 2026-11-19 open items decided with user: D5 removed (rules renumbered: phase-3 LELETEST006 = testing/ dunders; phase-4 LELETEST007/008), D13-D15; rendezvous_preview_dial -> non-optional `me` + moved to peek/rendezvous_preview_dial.rs; previews restored via lele-bevy-preview `scene::Clock` + `Scene::hover`; clippy too_many_lines left as is. Work dir: lele-rust-linter/.local-run/orchestrator/2026-11-19-open-items/.

@@ -17,8 +17,9 @@ Run as orchestrator with `/opencode-orchestrator` + the `lele-linter-change-rs` 
 
 ## Next: Phase 3 (phase-3.md)
 Order is fixed: (1) linter worker: LELETEST005 (test module holds only test fns + use + const),
-LELETEST006 (testing/ items used by >=2 test modules, cross-crate), LELETEST007 (testing/ items only
-in __app__/ __queries__/ __fixtures__/ __fakes__/). (2) ONE p2p worker builds the testing/
+LELETEST006 (testing/ items only in __app__/ __queries__/ __fixtures__/ __fakes__/). No usage-count
+rule (D5 removed 2026-11-19): reuse existing testing/ items first, single-use helpers still go in
+testing/ (skill: lele-syntax-rs RATIONALE §17, SMELLS S9). (2) ONE p2p worker builds the testing/
 scaffolding in freenet-libp2p-bevy-core/src/testing/ (TestApp, world queries, fixtures, re-home the
 existing testing files). (3) fleet workers replace private helpers.
 Known phase-3 targets: spectator_plugin.rs tests (~30 helpers moved in from the old
@@ -28,21 +29,13 @@ deleted system tests - recount first).
 Do a fleet count (step 3 of lele-linter-change-rs) BEFORE splitting work; Phase 3 is likely the
 biggest phase in p2p.
 
-Then Phase 4 (phase-4.md): LELETEST008 (one test_usage per file calling the primary item) and
-LELETEST009 (extra tests in __methods__/ are #[rstest]). Pre-existing second test modules exist
+Then Phase 4 (phase-4.md): LELETEST007 (one test_usage per file calling the primary item) and
+LELETEST008 (extra tests in __methods__/ are #[rstest]). Pre-existing second test modules exist
 (`build_plugin_tests` in core p2p_plugin.rs, lobby discovery/plugin.rs, ui/direct_dial/
-friends_ui_plugin.rs; `png_tests` in layout_stream_panel.rs) - LELETEST008 must decide on them.
+friends_ui_plugin.rs; `png_tests` in layout_stream_panel.rs) - LELETEST007 must decide on them.
 
 ## Open decisions for the USER (ask before acting)
-1. Previews that lost content because D12 forbids test-only helpers in system files: telegram
-   `center_roots` (before/after now centred/centred), lobby `drive_roll_machines` mp4
-   (widget-vs-plain-text pair gone). Restore via phase-3 testing/__fixtures__?
-2. Hover previews `refresh_roster_tooltip`, `refresh_spectator_tooltip` now fake hover with
-   `PointerCaptureMap::capture(.., const SYNTHETIC_HIT)`: bless, or replace with a fixture?
-3. Dead code: `PeekedRoomFriends` (written by `sync_peeked_room_friends`) has no reader.
-4. `rendezvous_preview_dial(me: Option<&PeerId>)`: None branch unreachable; make non-optional?
-5. `examples/` (starboard, lobby_room) are not lint targets, so their tests were not touched
-   (e.g. starboard track_pointer.rs has 16 tests). Bring them into scope?
+Items 1-5 of 2026-11-18 decided on 2026-11-19 (PLAN.md D5 revised, D13-D15, log). Remaining:
 6. D10 (rstest-only extras in __methods__/) was an orchestrator default; user never vetoed.
 
 ## Tooling (local, gitignored) - p2p `.local-run/orchestrator/2026-11-18-test-structure/`

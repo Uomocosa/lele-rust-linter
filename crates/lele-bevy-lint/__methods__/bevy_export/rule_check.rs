@@ -40,6 +40,17 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "inventory/mod.rs",
+            "#[path = \"__bevy_systems__/mod.rs\"]\npub mod bevy_systems;\n\npub use bevy_systems::poll_inv;\n",
+        )]);
+        let violations = super::rule_check(&BevyExport, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, BevyExport::CODE);
+    }
+
+    #[test]
+    fn test_usage_messages_name_the_domain_fix() {
         let found = testing::rule_messages(
             &BevyExport,
             &testing::bevy_project(&[(

@@ -32,6 +32,20 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "ui/root.rs",
+            "#[cfg(test)]\nmod tests {\n    #[test]\n    fn spawn_root_ui_png_preview() { assert!(true); }\n}",
+        )]);
+        let violations = super::rule_check(&rules::preview_routing::PreviewRouting, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].code,
+            rules::preview_routing::PreviewRouting::CODE
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_a_preview_without_a_harness_call() {
         let found = testing::messages_of(
             &rules::preview_routing::PreviewRouting,
             "ui/root.rs",

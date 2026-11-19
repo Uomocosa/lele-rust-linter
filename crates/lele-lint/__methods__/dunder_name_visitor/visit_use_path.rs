@@ -10,9 +10,33 @@ mod tests {
     use syn::visit::Visit;
 
     use super::DunderNameVisitor;
+    use crate::DunderPath;
 
     #[test]
     fn test_usage() {
+        let dunders = DunderPath::defaults();
+        let mut hits = Vec::new();
+        let mut reexports = Vec::new();
+        let mut visitor = DunderNameVisitor {
+            dunders: &dunders,
+            hits: &mut hits,
+            reexports: &mut reexports,
+            domain_prefix: Vec::new(),
+            methods_mount_name: String::new(),
+        };
+        let tree: syn::UseTree = syn::parse_str("__basic__::enums").unwrap();
+        let syn::UseTree::Path(path) = tree else {
+            panic!("expected a use path");
+        };
+        let produced = {
+            super::visit_use_path(&mut visitor, &path);
+            visitor.hits.len()
+        };
+        assert_eq!(produced, 1);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut hits = Vec::new();
         let mut reexports = Vec::new();
         let mut visitor = DunderNameVisitor {

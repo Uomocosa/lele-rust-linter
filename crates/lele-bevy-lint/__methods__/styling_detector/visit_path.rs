@@ -19,6 +19,19 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let aliases: std::collections::HashSet<String> =
+            std::iter::once("BackgroundColor".to_string()).collect();
+        let mut visitor = StylingDetector {
+            aliases: &aliases,
+            found: false,
+        };
+        let path: syn::Path = syn::parse_str("BackgroundColor").unwrap();
+        super::visit_path(&mut visitor, &path);
+        assert!(visitor.found);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let aliases = std::collections::HashSet::new();
         let mut visitor = StylingDetector {
             aliases: &aliases,

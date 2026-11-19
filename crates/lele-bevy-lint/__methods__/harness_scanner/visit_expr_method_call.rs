@@ -19,9 +19,22 @@ mod tests {
     use syn::visit::Visit;
 
     use super::HarnessScanner;
+    use crate::testing;
 
     #[test]
     fn test_usage() {
+        let mut visitor = HarnessScanner {
+            is_run_imported: false,
+            is_called: false,
+            is_checked: false,
+        };
+        let call = testing::method_call("scene.run(&c).expect(\"preview\")");
+        super::visit_expr_method_call(&mut visitor, &call);
+        assert!(visitor.is_checked);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut visitor = HarnessScanner {
             is_run_imported: false,
             is_called: false,

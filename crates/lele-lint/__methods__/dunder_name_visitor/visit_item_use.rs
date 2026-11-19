@@ -14,9 +14,30 @@ mod tests {
     use syn::visit::Visit;
 
     use super::DunderNameVisitor;
+    use crate::DunderPath;
 
     #[test]
     fn test_usage() {
+        let dunders = DunderPath::defaults();
+        let mut hits = Vec::new();
+        let mut reexports = Vec::new();
+        let mut visitor = DunderNameVisitor {
+            dunders: &dunders,
+            hits: &mut hits,
+            reexports: &mut reexports,
+            domain_prefix: Vec::new(),
+            methods_mount_name: String::new(),
+        };
+        let item: syn::ItemUse = syn::parse_str("pub use traits::Greetable;").unwrap();
+        let produced = {
+            super::visit_item_use(&mut visitor, &item);
+            visitor.reexports.len()
+        };
+        assert_eq!(produced, 1);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut hits = Vec::new();
         let mut reexports = Vec::new();
         let mut visitor = DunderNameVisitor {

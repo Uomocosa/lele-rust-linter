@@ -167,6 +167,10 @@ file = "src/bad_logging/reporter.rs"
 code = "LELE034"
 
 [[violations]]
+file = "src/bad_logging/reporter.rs"
+code = "LELETEST007"
+
+[[violations]]
 file = "src/bad_method_vis/mod.rs"
 code = "LELE031"
 
@@ -235,6 +239,10 @@ file = "src/bad_positional/positional_new.rs"
 code = "LELE034"
 
 [[violations]]
+file = "src/bad_positional/positional_new.rs"
+code = "LELETEST007"
+
+[[violations]]
 file = "src/bad_positional/positional.rs"
 code = "LELE010"
 
@@ -265,6 +273,10 @@ code = "LELE013"
 [[violations]]
 file = "src/bad_single_caller/consumer.rs"
 code = "LELE034"
+
+[[violations]]
+file = "src/bad_single_caller/consumer.rs"
+code = "LELETEST007"
 
 [[violations]]
 file = "src/bad_single_caller/msg.rs"
@@ -325,6 +337,10 @@ code = "LELE001"
 [[violations]]
 file = "src/bad_test_inline/data.rs"
 code = "LELE034"
+
+[[violations]]
+file = "src/bad_test_inline/data.rs"
+code = "LELETEST007"
 
 [[violations]]
 file = "src/bad_test_inline/tests"

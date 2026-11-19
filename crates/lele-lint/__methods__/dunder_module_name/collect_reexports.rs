@@ -82,6 +82,23 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let dunders = DunderPath::defaults();
+        let mut hits = Vec::new();
+        let mut reexports = Vec::new();
+        let mut visitor = rules::dunder_module_name::DunderNameVisitor {
+            dunders: &dunders,
+            hits: &mut hits,
+            reexports: &mut reexports,
+            domain_prefix: Vec::new(),
+            methods_mount_name: String::new(),
+        };
+        let item: syn::ItemUse = syn::parse_str("pub use traits::Greetable;").unwrap();
+        super::collect_reexports(&mut visitor, &item);
+        assert_eq!(visitor.reexports.len(), 1);
+    }
+
+    #[test]
+    fn collect_reexport_suggestions_reports_traits_mount() {
         let found = testing::collect_reexport_suggestions(
             "greeting/mod.rs",
             "pub use traits::Greetable;\n",

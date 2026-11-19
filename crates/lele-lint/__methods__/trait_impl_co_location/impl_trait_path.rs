@@ -17,6 +17,15 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let item: syn::ItemImpl = syn::parse_str("impl Clock for UnixTime {}").unwrap();
+        assert_eq!(
+            super::impl_trait_path(&item),
+            Some(vec!["Clock".to_string()])
+        );
+    }
+
+    #[test]
+    fn resolves_a_single_segment_trait_path() {
         assert_eq!(
             testing::impl_trait_path_of("impl Clock for UnixTime {}"),
             Some(vec!["Clock".to_string()])

@@ -40,6 +40,15 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let body: syn::Block = syn::parse_quote! {{
+            scene.run(&c).expect("preview");
+        }};
+        let call = super::from_fn_body(&body, false);
+        assert_eq!(call, scan::HarnessCall::Checked);
+    }
+
+    #[test]
+    fn test_usage_path_forms_and_imports() {
         assert_eq!(
             testing::harness_call(
                 "{ lele_bevy_preview::run(&s, &c).expect(\"preview\"); }",

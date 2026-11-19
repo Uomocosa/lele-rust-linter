@@ -65,6 +65,8 @@ pub mod stringified_error_visitor;
 pub mod test_inline;
 pub mod test_module_items;
 pub mod test_usage;
+pub mod test_usage_calls;
+pub mod test_usage_shape;
 pub mod testing_layout;
 pub mod trait_impl_co_location;
 pub mod trait_placement;

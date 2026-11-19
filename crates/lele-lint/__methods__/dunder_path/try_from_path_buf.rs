@@ -19,9 +19,16 @@ pub fn try_from_path_buf(path: PathBuf) -> Result<DunderPath, Error> {
 #[cfg(test)]
 mod tests {
     use crate::testing;
+    use std::path::PathBuf;
 
     #[test]
     fn test_usage() {
+        let parsed = super::try_from_path_buf(PathBuf::from("__basic__")).unwrap();
+        assert_eq!(parsed.module_name(), "basic");
+    }
+
+    #[test]
+    fn parses_dunder_stems() {
         assert!(testing::parses_as_dunder("__basic__"));
         assert!(testing::parses_as_dunder("__prelude__.rs"));
         assert!(testing::parses_as_dunder("__notes__.md"));

@@ -26,20 +26,23 @@ mod tests {
     use crate::rules::no_positional::NoPositional;
     use crate::testing;
 
+    use super::rule_check;
+
     #[test]
     fn test_usage() {
-        let violations = testing::violation_messages(
-            &NoPositional,
+        let project = testing::parsed_project(
+            testing::relative_project(),
             &[(
                 "probe.rs",
                 "pub struct Pos(pub String, pub u32);\npub fn f(p: &Pos) -> &String { &p.0 }\n",
             )],
         );
+        let violations = rule_check(&NoPositional, &project);
         assert_eq!(violations.len(), 1);
     }
 
     #[test]
-    fn test_usage_catches_nested_access() {
+    fn nested_positional_access_is_flagged() {
         let violations = testing::violation_messages(
             &NoPositional,
             &[(

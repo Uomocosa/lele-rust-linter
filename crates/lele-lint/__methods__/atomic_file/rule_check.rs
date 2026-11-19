@@ -43,7 +43,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     #[test]
-    fn test_usage() {
+    fn collect_pub_items_names_exposed_items() {
         let file: syn::File =
             syn::parse_str("pub struct AtomicFile;\npub fn helper() {}\nfn private() {}").unwrap();
         let items = rules::atomic_file::AtomicFile::collect_pub_items(&file);
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_flags_misnamed_free_fn_file() {
+    fn test_usage() {
         let project = testing::parsed_project(testing::relative_project(), &[
             (
                 "project.rs",

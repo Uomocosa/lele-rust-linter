@@ -54,10 +54,35 @@ pub fn sync_methods(project: &Project) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use crate::testing;
     use crate::Project;
+
+    use super::sync_methods;
 
     #[test]
     fn test_usage() {
+        let dir = tempfile::tempdir().unwrap();
+        let methods_dir = dir.path().join("__methods__");
+        std::fs::create_dir_all(&methods_dir).unwrap();
+        let mut project = testing::parsed_project(
+            Project::default(),
+            &[(
+                "counter.rs",
+                "pub struct Counter;\n\n#[atomic_delegates]\nimpl Counter { pub fn increment(&mut self) {} }\n",
+            )],
+        );
+        project.root = dir.path().to_path_buf();
+        project.src_dir = dir.path().join("src");
+        project.methods_dir = Some(methods_dir.clone());
+        let produced = {
+            sync_methods(&project).unwrap();
+            std::fs::read_to_string(methods_dir.join("mod.rs")).unwrap()
+        };
+        assert!(produced.contains("pub mod counter;"));
+    }
+
+    #[test]
+    fn write_if_changed_rewrites_only_on_difference() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("mod.rs");
         Project::write_if_changed(&path, "pub mod a;\n").unwrap();

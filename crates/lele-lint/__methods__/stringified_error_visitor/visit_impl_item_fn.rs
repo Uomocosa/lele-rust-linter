@@ -13,6 +13,27 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let error_enums = std::collections::HashSet::from(["Failure".to_string()]);
+        let mut hits = Vec::new();
+        let mut visitor = StringifiedErrorVisitor {
+            error_enums: &error_enums,
+            impl_self: None,
+            is_from_impl_for_error_enum: false,
+            hits: &mut hits,
+        };
+        let item: syn::ImplItemFn = syn::parse_str(
+            "fn wrap(err: &std::io::Error) -> Failure { Failure::Io(err.to_string()) }",
+        )
+        .unwrap();
+        let produced = {
+            super::visit_impl_item_fn(&mut visitor, &item);
+            visitor.hits.len()
+        };
+        assert_eq!(produced, 1);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let error_enums = std::collections::HashSet::new();
         let mut hits = Vec::new();
         let mut visitor = StringifiedErrorVisitor {

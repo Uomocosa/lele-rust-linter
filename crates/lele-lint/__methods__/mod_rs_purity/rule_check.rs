@@ -38,10 +38,24 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
+    use crate::rules;
     use crate::testing;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[("player/mod.rs", "use crate::rule;\n")],
+        );
+        let violations = rule_check(&rules::mod_rs_purity::ModRsPurity, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("private `use` import"));
+    }
+
+    #[test]
+    fn violation_message_classifies_mod_items() {
         assert!(testing::mod_rs_violation_message("mod player;").is_none());
         assert!(testing::mod_rs_violation_message("pub use player::Player;").is_none());
         assert!(testing::mod_rs_violation_message("use crate::rule;").is_some());

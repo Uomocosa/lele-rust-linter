@@ -30,8 +30,24 @@ mod tests {
     use crate::testing;
     use std::path::Path;
 
+    use super::rule_check;
+
     #[test]
     fn test_usage() {
+        let project = testing::parsed_project(
+            testing::relative_project(),
+            &[(
+                "example_names.rs",
+                "pub struct ExampleNames(pub Vec<String>);\n",
+            )],
+        );
+        let violations = rule_check(&rules::no_collection_newtype::NoCollectionNewtype, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("Vec<ExampleName>"));
+    }
+
+    #[test]
+    fn newtype_over_vec_is_rejected() {
         let s = testing::parsed_item_struct("pub struct ExampleNames(pub Vec<String>);");
         let violations =
             rules::no_collection_newtype::NoCollectionNewtype::check_struct(&s, Path::new("x.rs"));

@@ -68,9 +68,28 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::Project;
 
     #[test]
     fn test_usage() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("Cargo.toml"),
+            "[package]\nname = \"probe\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
+        let project = Project {
+            root: dir.path().to_path_buf(),
+            ..Project::default()
+        };
+        let violations =
+            super::rule_check(&rules::clippy_config_cargo::ClippyConfigCargo, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("missing [lints.clippy]"));
+    }
+
+    #[test]
+    fn deny_with_priority_accepts_deny_levels() {
         let deny_str = toml::Value::String("deny".to_string());
         assert!(
             rules::clippy_config_cargo::ClippyConfigCargo::is_deny_with_priority(&deny_str, false)

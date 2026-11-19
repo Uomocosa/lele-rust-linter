@@ -4444,6 +4444,7 @@ pub use error::Error;
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 - [LELETEST005 `test_module_items`](#leletest005-test_module_items): A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
 - [LELETEST006 `testing_layout`](#leletest006-testing_layout): `src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+- [LELETEST007 `test_usage_shape`](#leletest007-test_usage_shape): A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
 
 ### LELETEST001 `no_dunder_tests`
 
@@ -5041,6 +5042,79 @@ mod tests {
 
 ```rust
 pub mod lobby_row;
+```
+
+### LELETEST007 `test_usage_shape`
+
+A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
+
+**Why:** One usage test per file is the file's documentation (D1); a `test_usage` that never calls the item, or asserts nothing, proves nothing (D4).
+
+**Fix:** Keep one `test_usage`: construct the type / call the method / add the plugin, bind the result and `assert*!` on it (or on its receiver/arguments when it returns `()`). Rename the other tests for their corner case; `#[rstest]` for honest ones.
+
+**Bad** (reports LELETEST007):
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_usage() {
+        assert!(true);
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
+```
+
+**Good:**
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        let guest = Guest("Ada".to_string());
+        assert_eq!(guest.greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
 ```
 
 ## Style

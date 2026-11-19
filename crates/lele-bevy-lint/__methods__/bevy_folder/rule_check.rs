@@ -86,6 +86,17 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "enemy/bevy_systems/despawn.rs",
+            "pub struct Query;\n\npub fn despawn(_q: Query) {}\n\npub fn register() {\n    let app = App;\n    app.add_systems(Update, despawn);\n}\n",
+        )]);
+        let violations = rule_check(&rules::bevy_folder::BevyFolder, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(violations[0].code, rules::bevy_folder::BevyFolder::CODE);
+    }
+
+    #[test]
+    fn test_usage_helpers_flag_systems_and_registrations() {
         let file: syn::File = syn::parse_str(
             "pub fn tick(mut q: Query<&Foo>, cmds: Commands) {}
              pub fn helper(x: u32) {}",

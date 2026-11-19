@@ -34,7 +34,7 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn test_usage() {
+    fn dunder_reexport_suggestions_reports_traits_mount() {
         let found =
             testing::dunder_reexport_suggestions("greeting/mod.rs", "pub use traits::Greetable;\n");
         assert_eq!(found, vec!["greeting::traits::Greetable".to_string()]);
@@ -59,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_records_mount_item_and_raw() {
+    fn test_usage() {
         let mut project = Project {
             dunder_paths: DunderPath::defaults(),
             ..Project::default()

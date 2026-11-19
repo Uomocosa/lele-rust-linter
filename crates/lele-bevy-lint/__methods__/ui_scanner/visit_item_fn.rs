@@ -25,6 +25,27 @@ mod tests {
             module_fns: &module_fns,
             extra: &extra,
         };
+        let item: syn::Item =
+            syn::parse_str("pub fn setup(s: &mut S) { s.spawn((Node,)); }").unwrap();
+        let syn::Item::Fn(function) = item else {
+            panic!("expected a fn");
+        };
+        super::visit_item_fn(&mut visitor, &function);
+        assert_eq!(visitor.found.len(), 1);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
+        let mut found = Vec::new();
+        let mut owner = String::new();
+        let module_fns = std::collections::HashMap::new();
+        let extra = std::collections::BTreeSet::new();
+        let mut visitor = UiScanner {
+            found: &mut found,
+            owner: &mut owner,
+            module_fns: &module_fns,
+            extra: &extra,
+        };
         let file: syn::File = syn::parse_str("mod m { pub fn f() {} }\npub(crate) trait T { fn t(&self); }\nuse a::b::c;\nuse a::d as e;\n#[allow(dead_code)]\npub(crate) fn f(x: &u8) -> u8 { let y = g(1, 2); let s = S { a: 1 }; let z = x.to_string(); let w = y.m(); vec![1]; crate::a::b(); let q = w?; self::m(); let u = a::b::c; q }\nimpl X { fn g(&self) {} }\nimpl T for X { fn t(&self) { self.g(); Self::g(self); } }\n").unwrap();
         visitor.visit_file(&file);
     }

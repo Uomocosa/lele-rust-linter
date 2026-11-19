@@ -37,6 +37,18 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let source = testing::preview_source("System", "app.add_systems(Startup, spawn_rows);");
+        let project = testing::bevy_project(&[("ui/root.rs", source.as_str())]);
+        let violations = super::rule_check(&rules::preview_centered::PreviewCentered, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].code,
+            rules::preview_centered::PreviewCentered::CODE
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_an_uncentered_preview() {
         let found = testing::messages_of(
             &rules::preview_centered::PreviewCentered,
             "ui/root.rs",

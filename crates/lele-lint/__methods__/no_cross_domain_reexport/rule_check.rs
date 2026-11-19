@@ -49,10 +49,38 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::ModuleInfo;
+    use crate::Project;
+    use crate::Reexport;
     use std::path::Path;
+    use std::path::PathBuf;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let mut project = Project::default();
+        project.module_info.insert(
+            PathBuf::from("player/mod.rs"),
+            ModuleInfo {
+                rel_path: PathBuf::from("player/mod.rs"),
+                declarations: Vec::new(),
+                reexports: vec![Reexport {
+                    segments: vec!["crate".into(), "stock".into(), "Item".into()],
+                    is_glob: false,
+                }],
+            },
+        );
+        let violations = rule_check(
+            &rules::no_cross_domain_reexport::NoCrossDomainReexport,
+            &project,
+        );
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("cross-domain re-export"));
+    }
+
+    #[test]
+    fn reexport_target_domain_reads_crate_segment() {
         assert_eq!(
             rules::no_cross_domain_reexport::NoCrossDomainReexport::reexport_target_domain(&[
                 "crate".into(),

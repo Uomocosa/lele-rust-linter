@@ -14,9 +14,19 @@ mod tests {
     use syn::visit::Visit;
 
     use super::InputScanner;
+    use crate::testing;
 
     #[test]
     fn test_usage() {
+        let mut out = Vec::new();
+        let mut visitor = InputScanner(&mut out);
+        let call = testing::method_call("input.Interaction()");
+        super::visit_expr_method_call(&mut visitor, &call);
+        assert!(visitor.contains(&"Interaction".to_string()));
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut out = Vec::new();
         let mut visitor = InputScanner(&mut out);
         let file: syn::File = syn::parse_str("mod m { pub fn f() {} }\npub(crate) trait T { fn t(&self); }\nuse a::b::c;\nuse a::d as e;\n#[allow(dead_code)]\npub(crate) fn f(x: &u8) -> u8 { let y = g(1, 2); let s = S { a: 1 }; let z = x.to_string(); let w = y.m(); vec![1]; crate::a::b(); let q = w?; self::m(); let u = a::b::c; q }\nimpl X { fn g(&self) {} }\nimpl T for X { fn t(&self) { self.g(); Self::g(self); } }\n").unwrap();

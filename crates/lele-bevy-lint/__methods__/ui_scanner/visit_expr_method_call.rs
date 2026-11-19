@@ -35,9 +35,27 @@ mod tests {
     use syn::visit::Visit;
 
     use super::UiScanner;
+    use crate::testing;
 
     #[test]
     fn test_usage() {
+        let mut found = Vec::new();
+        let mut owner = String::new();
+        let module_fns = std::collections::HashMap::new();
+        let extra = std::collections::BTreeSet::new();
+        let mut visitor = UiScanner {
+            found: &mut found,
+            owner: &mut owner,
+            module_fns: &module_fns,
+            extra: &extra,
+        };
+        let call = testing::method_call("s.spawn((Node,))");
+        super::visit_expr_method_call(&mut visitor, &call);
+        assert_eq!(visitor.found.len(), 1);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut found = Vec::new();
         let mut owner = String::new();
         let module_fns = std::collections::HashMap::new();

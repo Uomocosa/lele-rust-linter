@@ -13,6 +13,22 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let error_enums = std::collections::HashSet::from(["Error".to_string()]);
+        let mut scan = CaughtErrorScan {
+            error_name: String::from("Error"),
+            error_enums: &error_enums,
+            impl_self: None,
+            built_variant: None,
+            is_stringified: false,
+            is_kept: false,
+        };
+        let item: syn::ExprStruct = syn::parse_str("Error::Io { cause }").unwrap();
+        super::visit_expr_struct(&mut scan, &item);
+        assert_eq!(scan.built_variant.as_deref(), Some("Error::Io"));
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let error_enums = std::collections::HashSet::new();
         let mut visitor = CaughtErrorScan {
             error_name: String::from("Error"),

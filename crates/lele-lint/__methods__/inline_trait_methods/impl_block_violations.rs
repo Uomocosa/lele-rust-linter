@@ -74,9 +74,35 @@ pub fn impl_block_violations(
 #[cfg(test)]
 mod tests {
     use crate::testing;
+    use crate::InlineTraitMethodsEntry;
+    use crate::Project;
+    use std::path::Path;
+
+    use super::impl_block_violations;
 
     #[test]
     fn test_usage() {
+        let project = Project {
+            inline_trait_methods: vec![InlineTraitMethodsEntry {
+                trait_path: "Plugin".to_string(),
+                methods: vec!["build".to_string()],
+                reason: "listed by the test".to_string(),
+            }],
+            ..Project::default()
+        };
+        let file: syn::File =
+            syn::parse_str("pub struct Foo;\nimpl Plugin for Foo { fn build(&self) {} }\n")
+                .unwrap();
+        let block = match file.items.get(1) {
+            Some(syn::Item::Impl(block)) => block,
+            _ => panic!("expected an impl block"),
+        };
+        let violations = impl_block_violations(&project, Path::new("foo.rs"), &file, block);
+        assert_eq!(violations.len(), 1);
+    }
+
+    #[test]
+    fn shell_calls_and_empty_bodies_must_stay_inline() {
         let shell_call = "pub struct Foo;\n#[atomic_delegates]\nimpl Foo { pub fn build(&self) {} }\nimpl Plugin for Foo { fn build(&self) { self.build() } }\n";
         let messages = testing::inline_trait_impl_block_messages(shell_call, "Plugin", &["build"]);
         assert_eq!(messages.len(), 1);

@@ -50,10 +50,35 @@ pub fn rule_check(_self: &rules::test_inline::TestInline, project: &Project) -> 
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::Entry;
+    use crate::EntryKind;
+    use crate::Project;
     use std::path::Path;
+    use std::path::PathBuf;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = Project {
+            root: dir.path().to_path_buf(),
+            entries: vec![Entry {
+                relative_path: PathBuf::from("player/tests"),
+                absolute_path: dir.path().join("player/tests"),
+                kind: EntryKind::Directory,
+            }],
+            ..Project::default()
+        };
+        let violations = rule_check(&rules::test_inline::TestInline, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0]
+            .message
+            .contains("unit tests are in a separate file"));
+    }
+
+    #[test]
+    fn tests_component_detection() {
         assert!(rules::test_inline::TestInline::has_tests_component(
             Path::new("player/tests")
         ));

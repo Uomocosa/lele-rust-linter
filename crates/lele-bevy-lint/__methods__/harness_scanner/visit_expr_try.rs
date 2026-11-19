@@ -17,6 +17,21 @@ mod tests {
     #[test]
     fn test_usage() {
         let mut visitor = HarnessScanner {
+            is_run_imported: true,
+            is_called: false,
+            is_checked: false,
+        };
+        let expr: syn::Expr = syn::parse_str("run(&s, &c)?").unwrap();
+        let syn::Expr::Try(try_expr) = expr else {
+            panic!("expected a try expression");
+        };
+        super::visit_expr_try(&mut visitor, &try_expr);
+        assert!(visitor.is_checked);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
+        let mut visitor = HarnessScanner {
             is_run_imported: false,
             is_called: false,
             is_checked: false,

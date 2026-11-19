@@ -82,7 +82,7 @@ mod tests {
     const VALID_CLIPPY_TOML: &str = "allow-unwrap-in-tests = true\nallow-expect-in-tests = true\nallow-panic-in-tests = true\nallow-indexing-slicing-in-tests = true\n";
 
     #[test]
-    fn test_usage() {
+    fn valid_clippy_toml_is_a_table_of_allow_flags() {
         let content = r"
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
@@ -94,7 +94,7 @@ allow-indexing-slicing-in-tests = true
     }
 
     #[test]
-    fn test_parent_clippy_toml_is_used() {
+    fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("clippy.toml"), VALID_CLIPPY_TOML).unwrap();
         let child = dir.path().join("member");

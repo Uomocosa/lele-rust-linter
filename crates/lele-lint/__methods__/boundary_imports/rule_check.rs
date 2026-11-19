@@ -42,10 +42,37 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::testing;
+    use crate::BoundaryEntry;
+    use crate::Project;
     use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let project = Project {
+            boundaries: vec![BoundaryEntry {
+                name: "core".to_string(),
+                why: "pure".to_string(),
+                folders: vec![PathBuf::from("src")],
+                cannot_use: vec!["std::time".to_string()],
+                require: None,
+            }],
+            ..testing::parsed_project(
+                testing::relative_project(),
+                &[("core/clock.rs", "use std::time::Instant;\n")],
+            )
+        };
+        let violations = rule_check(&rules::boundary_imports::BoundaryImports, &project);
+        assert!(violations
+            .iter()
+            .any(|violation| violation.message.contains("std::time")));
+    }
+
+    #[test]
+    fn local_paths_and_hit_matching() {
         assert!(rules::boundary_imports::BoundaryImports::is_local(
             "crate::foo"
         ));

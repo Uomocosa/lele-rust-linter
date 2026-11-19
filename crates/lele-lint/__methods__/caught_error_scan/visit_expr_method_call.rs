@@ -17,6 +17,22 @@ mod tests {
     #[test]
     fn test_usage() {
         let error_enums = std::collections::HashSet::new();
+        let mut scan = CaughtErrorScan {
+            error_name: String::from("Error"),
+            error_enums: &error_enums,
+            impl_self: None,
+            built_variant: None,
+            is_stringified: false,
+            is_kept: false,
+        };
+        let call: syn::ExprMethodCall = syn::parse_str("Error.to_string()").unwrap();
+        super::visit_expr_method_call(&mut scan, &call);
+        assert!(scan.is_stringified);
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
+        let error_enums = std::collections::HashSet::new();
         let mut visitor = CaughtErrorScan {
             error_name: String::from("Error"),
             error_enums: &error_enums,

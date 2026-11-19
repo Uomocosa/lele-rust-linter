@@ -45,9 +45,30 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::Entry;
+    use crate::EntryKind;
+    use crate::Project;
+    use std::path::PathBuf;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let project = Project {
+            entries: vec![Entry {
+                relative_path: PathBuf::from("BadName.rs"),
+                absolute_path: PathBuf::from("BadName.rs"),
+                kind: EntryKind::File,
+            }],
+            ..Project::default()
+        };
+        let violations = rule_check(&rules::snake_case_files::SnakeCaseFiles, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("not snake_case"));
+    }
+
+    #[test]
+    fn snake_case_detection() {
         assert!(rules::snake_case_files::SnakeCaseFiles::is_snake_case(
             "snake_case"
         ));

@@ -68,6 +68,21 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "net/snapshot.rs",
+            "#[derive(Serialize)] pub struct Snapshot { pub owner: Entity }",
+        )]);
+        let violations =
+            super::rule_check(&rules::no_serialized_entity::NoSerializedEntity, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].code,
+            rules::no_serialized_entity::NoSerializedEntity::CODE
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_a_serialized_entity() {
         let found = testing::messages_of(
             &rules::no_serialized_entity::NoSerializedEntity,
             "net/snapshot.rs",

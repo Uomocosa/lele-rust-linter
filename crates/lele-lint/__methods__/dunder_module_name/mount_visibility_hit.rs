@@ -52,9 +52,18 @@ pub fn mount_visibility_hit(
 #[cfg(test)]
 mod tests {
     use crate::testing;
+    use crate::DunderPath;
 
     #[test]
     fn test_usage() {
+        let dunders = DunderPath::defaults();
+        let public: syn::Visibility = syn::parse_quote! { pub };
+        let found = super::mount_visibility_hit(&dunders, "methods", "basic", &public);
+        assert!(found.is_some());
+    }
+
+    #[test]
+    fn basic_mount_must_be_private() {
         let public: syn::Visibility = syn::parse_quote! { pub };
         let found = testing::mount_visibility_hit_for("methods", "basic", &public);
         assert_eq!(

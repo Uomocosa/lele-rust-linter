@@ -41,6 +41,7 @@ pub(crate) mod snake_case_files;
 pub(crate) mod test_inline;
 pub(crate) mod test_module_items;
 pub(crate) mod test_usage;
+pub(crate) mod test_usage_shape;
 pub(crate) mod testing_layout;
 pub(crate) mod trait_impl_co_location;
 pub(crate) mod trait_placement;

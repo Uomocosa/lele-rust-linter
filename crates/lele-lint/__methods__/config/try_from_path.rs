@@ -19,6 +19,15 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("lele.toml");
         std::fs::write(&path, "[lele.lint]\n").unwrap();
+        let config = super::try_from_path(&path).unwrap();
+        assert!(config.as_ref().is_some());
+    }
+
+    #[test]
+    fn config_try_from_accepts_empty_lint_section() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("lele.toml");
+        std::fs::write(&path, "[lele.lint]\n").unwrap();
         assert!(Config::try_from(path.as_path()).unwrap().as_ref().is_some());
     }
 

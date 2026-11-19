@@ -21,9 +21,23 @@ mod tests {
     use syn::visit::Visit;
 
     use super::CallCollector;
+    use crate::testing;
 
     #[test]
     fn test_usage() {
+        let mut calls = Vec::new();
+        let mut systems = Vec::new();
+        let mut visitor = CallCollector {
+            calls: &mut calls,
+            systems: &mut systems,
+        };
+        let call = testing::method_call("app.add_systems(Update, tick)");
+        super::visit_expr_method_call(&mut visitor, &call);
+        assert!(visitor.systems.contains(&"tick".to_string()));
+    }
+
+    #[test]
+    fn visit_file_walks_every_item() {
         let mut calls = Vec::new();
         let mut systems = Vec::new();
         let mut visitor = CallCollector {

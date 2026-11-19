@@ -84,7 +84,7 @@ mod tests {
     use crate::testing;
 
     #[test]
-    fn test_usage() {
+    fn find_parent_type_resolves_prefixes() {
         let mut dirs = HashMap::new();
         dirs.insert("freenet_client".to_string(), vec![PathBuf::from("freenet")]);
         dirs.insert("config".to_string(), vec![PathBuf::from("clicker")]);
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_orphan_method_file_flagged() {
+    fn test_usage() {
         let project = testing::parsed_project(
             testing::relative_project(),
             &[

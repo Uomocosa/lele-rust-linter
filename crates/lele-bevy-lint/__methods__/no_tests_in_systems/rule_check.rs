@@ -80,6 +80,20 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "enemy/__bevy_systems__/tick_enemies.rs",
+            "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn test_usage() {}\n}\n",
+        )]);
+        let violations = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].code,
+            rules::no_tests_in_systems::NoTestsInSystems::CODE
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_a_test_module_in_a_systems_file() {
         let found = testing::violations_of(
             &rules::no_tests_in_systems::NoTestsInSystems,
             "enemy/__bevy_systems__/tick_enemies.rs",

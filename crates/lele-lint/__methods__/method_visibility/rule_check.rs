@@ -70,11 +70,55 @@ pub fn rule_check(
 
 #[cfg(test)]
 mod tests {
+    use crate::rules::method_visibility::MethodVisibility;
     use crate::testing;
+    use crate::Entry;
+    use crate::EntryKind;
+    use crate::ModuleInfo;
+    use crate::Project;
     use std::collections::HashSet;
+    use std::path::PathBuf;
+
+    use super::rule_check;
 
     #[test]
     fn test_usage() {
+        let dir = tempfile::tempdir().unwrap();
+        let mod_abs = dir.path().join("mod.rs");
+        std::fs::write(&mod_abs, "pub mod player_new;\n").unwrap();
+        let entries = vec![
+            Entry {
+                relative_path: PathBuf::from("player/player.rs"),
+                absolute_path: PathBuf::from("player/player.rs"),
+                kind: EntryKind::File,
+            },
+            Entry {
+                relative_path: PathBuf::from("player/player_new.rs"),
+                absolute_path: PathBuf::from("player/player_new.rs"),
+                kind: EntryKind::File,
+            },
+            Entry {
+                relative_path: PathBuf::from("player/mod.rs"),
+                absolute_path: mod_abs,
+                kind: EntryKind::File,
+            },
+        ];
+        let mut project = testing::parsed_project(
+            Project::default(),
+            &[
+                ("player/player.rs", "pub struct Player;"),
+                ("player/player_new.rs", "pub fn new() {}"),
+            ],
+        );
+        project.module_info = ModuleInfo::build(&entries);
+        project.entries = entries;
+        let violations = rule_check(&MethodVisibility, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("declared `pub mod`"));
+    }
+
+    #[test]
+    fn method_stem_resolves_the_longest_type_prefix() {
         let mut struct_names = HashSet::new();
         struct_names.insert("player".to_string());
         struct_names.insert("config".to_string());

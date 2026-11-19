@@ -79,6 +79,20 @@ mod tests {
 
     #[test]
     fn test_usage() {
+        let project = testing::bevy_project(&[(
+            "ui/gate.rs",
+            "pub fn gate(button: Query<&mut BackgroundColor>) { let _ = button; }\n             pub fn build(app: &mut App) { app.add_systems(Update, gate); }",
+        )]);
+        let violations = super::rule_check(&rules::bevy_ui_restyle::BevyUiRestyle, &project);
+        assert_eq!(violations.len(), 1);
+        assert_eq!(
+            violations[0].code,
+            rules::bevy_ui_restyle::BevyUiRestyle::CODE
+        );
+    }
+
+    #[test]
+    fn test_usage_flags_a_restyle_without_preview() {
         let found = testing::violations_of(
             &rules::bevy_ui_restyle::BevyUiRestyle,
             "ui/gate.rs",

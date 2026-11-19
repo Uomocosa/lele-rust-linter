@@ -1,17 +1,19 @@
-# HANDOFF: test-structure refactor (state at end of 2026-11-18)
+# HANDOFF: test-structure refactor (state at end of 2026-11-19)
 
-Read this first, then PLAN.md (decisions D1-D12, rule table, log) and phase-3.md / phase-4.md.
+Read this first, then PLAN.md (decisions D1-D15, rule table, log) and phase-3.md / phase-4.md.
 Run as orchestrator with `/opencode-orchestrator` + the `lele-linter-change-rs` flow.
 
 ## Where we are
-- Branch `feature/test-structure` in all 7 fleet repos; every tree clean; all pushed
-  (p2p `1341a60` push was running at handoff: check `git -C freenet-libp2p-bevy-plugin status -sb`
-  shows no `[ahead`; if it is ahead, `git push` it - pre-push runs the full suite, ~6 min).
+- Branch `feature/test-structure` in all 7 fleet repos; every tree clean; all pushed.
 - Phase 0 (nextest tooling), Phase 1 (rename LELE006/007/009 -> LELETEST001-003) and Phase 2
   (LELETEST002 ext, LELETEST004, LELEBEVYTEST001, D12 preview exemption) are DONE fleet-wide.
   Every lint target of every repo is clean.
-- `~/.config/opencode` has 1 unpushed commit `86cbea6` (bridge skill code rename) and the user's
-  own uncommitted changes (orchestrator-core, ui-sketch-rs): never touch those.
+- 2026-11-19: all phase-2 open items decided and done (PLAN.md log): telegram-bot-helper 1c64193
+  (lele-bevy-preview `scene::Clock`, `Scene::hover::<C>`), p2p 3a746c2 (previews restored on
+  Clock/hover) + e31f055 (`Room::rendezvous_preview_dial`). D5 removed (no usage-count rule),
+  D10 = guidance only; phase 3/4 codes renumbered (phase 3: LELETEST005-006, phase 4: LELETEST007).
+- `~/.config/opencode` (skills) is pushed (05048a7). The user's own uncommitted changes
+  (orchestrator-core, ui-sketch-rs) are still there: never touch those.
 - p2p numbers: 1554 tests before -> 1208 after (all green, 31 skipped). Suite ~269 s test time,
   dominated by mp4/scene previews and multi-swarm plugin tests.
 

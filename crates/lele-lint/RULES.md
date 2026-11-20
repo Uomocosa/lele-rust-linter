@@ -4443,7 +4443,7 @@ pub use error::Error;
 - [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 - [LELETEST005 `test_module_items`](#leletest005-test_module_items): A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
-- [LELETEST006 `testing_layout`](#leletest006-testing_layout): `src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+- [LELETEST006 `testing_layout`](#leletest006-testing_layout): `src/testing/` holds only `mod.rs`, `__basic__/` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
 - [LELETEST007 `test_usage_shape`](#leletest007-test_usage_shape): A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
 
 ### LELETEST001 `no_dunder_tests`
@@ -4959,11 +4959,11 @@ pub mod guest;
 
 ### LELETEST006 `testing_layout`
 
-`src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+`src/testing/` holds only `mod.rs`, `__basic__/` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
 
-**Why:** One place per kind of test helper means the next test finds the app builder, the world query, the fixture or the fake instead of copying it (RATIONALE §17).
+**Why:** One place per kind of test helper means the next test finds the app builder, the world query, the fixture, the fake or the shared behaviour-free item instead of copying it (RATIONALE §17).
 
-**Fix:** Move the file into `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
+**Fix:** Move the file into `src/testing/__basic__/` (a behaviour-free item shared by two or more roles), `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
 
 **Bad** (reports LELETEST006):
 
@@ -5007,7 +5007,27 @@ pub mod testing;
 #[path = "__fixtures__/mod.rs"]
 pub mod fixtures;
 
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::enums::Occupancy;
 pub use fixtures::lobby_row::LobbyRow;
+```
+
+`src/testing/__basic__/enums.rs`
+
+```rust
+pub enum Occupancy {
+    Empty,
+    Partial,
+    Full,
+}
+```
+
+`src/testing/__basic__/mod.rs`
+
+```rust
+pub mod enums;
 ```
 
 `src/testing/__fixtures__/lobby_row.rs`

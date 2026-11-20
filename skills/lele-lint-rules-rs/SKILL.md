@@ -138,8 +138,8 @@ A fix for one rule must not break another. Before saving, check the file against
   - Fix: Delete the `#[cfg(test)]` block from the plain-data file and test the method or function that uses the type instead.
 - **LELETEST005 `test_module_items`**: A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
   - Fix: Move the item to `src/testing/__fixtures__/` (an app builder → `__app__/`, a world query → `__queries__/`, a fake → `__fakes__/`) and import it, or delete it if the test no longer needs it.
-- **LELETEST006 `testing_layout`**: `src/testing/` holds only `mod.rs` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
-  - Fix: Move the file into `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
+- **LELETEST006 `testing_layout`**: `src/testing/` holds only `mod.rs`, `__basic__/` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
+  - Fix: Move the file into `src/testing/__basic__/` (a behaviour-free item shared by two or more roles), `src/testing/__app__/` (an app builder), `src/testing/__queries__/` (a world query), `src/testing/__fixtures__/` (plain data) or `src/testing/__fakes__/` (a fake), or keep `src/testing/mod.rs` as the re-export.
 - **LELETEST007 `test_usage_shape`**: A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
   - Fix: Keep one `test_usage`: construct the type / call the method / add the plugin, bind the result and `assert*!` on it (or on its receiver/arguments when it returns `()`). Rename the other tests for their corner case; `#[rstest]` for honest ones.
 

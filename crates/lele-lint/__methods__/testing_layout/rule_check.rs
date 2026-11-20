@@ -21,7 +21,7 @@ pub fn rule_check(
             project.absolute_path(source.origin, source.relative_path),
             rules::testing_layout::TestingLayout::CODE,
             format!(
-                "`src/testing/{component}` is outside the four testing roles — `src/testing/` holds only `mod.rs` and `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`; move it into one of the four"
+                "`src/testing/{component}` is outside the testing layout — `src/testing/` holds only `mod.rs`, `__basic__/` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`; move it into `__basic__/` or one of the four"
             ),
         ));
     }
@@ -43,6 +43,7 @@ mod tests {
             &[
                 ("testing/mod.rs", "pub mod fixtures;"),
                 ("testing/__fixtures__/row.rs", "pub struct Row;"),
+                ("testing/__basic__/enums.rs", "pub enum Kind { A }"),
                 ("testing/harness/lobby.rs", "pub struct Lobby;"),
             ],
         );
@@ -71,6 +72,7 @@ mod tests {
             Project::default(),
             &[
                 ("testing/mod.rs", "pub mod app;"),
+                ("testing/__basic__/enums.rs", ""),
                 ("testing/__app__/harness/checkpoint_board.rs", ""),
                 ("testing/__queries__/find_one.rs", ""),
                 ("testing/__fixtures__/__basic__/structs.rs", ""),

@@ -10,7 +10,10 @@ pub fn offending_component(rel_path: &Path) -> Option<&str> {
     }
     let second = components.next()?;
     let name = second.as_os_str().to_str()?;
-    if name == "mod.rs" || rules::testing_layout::TESTING_ROLES.contains(&name) {
+    if name == "mod.rs"
+        || name == "__basic__"
+        || rules::testing_layout::TESTING_ROLES.contains(&name)
+    {
         return None;
     }
     Some(name)
@@ -31,7 +34,11 @@ mod tests {
             None
         );
         assert_eq!(
-            offending_component(Path::new("testing/__app__/harness/mod.rs")),
+            offending_component(Path::new("testing/__fakes__/__traits__/kit.rs")),
+            None
+        );
+        assert_eq!(
+            offending_component(Path::new("testing/__basic__/enums.rs")),
             None
         );
         assert_eq!(

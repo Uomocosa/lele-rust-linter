@@ -348,7 +348,7 @@ mod tests {
 
 A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 
-**Why:** Constants placed too high leak across domains; placed too low they get duplicated.
+**Why:** Constants placed too high leak across domains; placed too low they get duplicated. Usages inside `#[cfg(test)]` modules never count.
 
 **Fix:** Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.
 

@@ -1,3 +1,4 @@
+use crate::ItemMarker;
 use std::collections::HashSet;
 use syn::visit::Visit;
 
@@ -7,6 +8,13 @@ pub(crate) struct ConstUseVisitor<'a> {
 }
 
 impl<'ast> Visit<'ast> for ConstUseVisitor<'_> {
+    fn visit_item_mod(&mut self, item: &'ast syn::ItemMod) {
+        if item.attrs.iter().any(|attr| ItemMarker(attr).is_cfg_test()) {
+            return;
+        }
+        syn::visit::visit_item_mod(self, item);
+    }
+
     fn visit_path(&mut self, path: &'ast syn::Path) {
         if let Some(last) = path.segments.last() {
             let name = last.ident.to_string();

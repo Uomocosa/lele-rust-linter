@@ -250,4 +250,54 @@ mod tests {
             1
         );
     }
+
+    #[test]
+    fn test_usage_test_only_usage_across_dirs_stays_clean() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    (
+                        "foo/constants.rs",
+                        "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                    ),
+                    (
+                        "foo/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                    (
+                        "bar/user.rs",
+                        "#[cfg(test)] mod tests { #[test] fn test_usage() { assert_eq!(crate::foo::basic::constants::ACRONYMS.len(), 1); } }\n",
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_non_test_usage_across_dirs_still_lifts() {
+        let found = testing::violation_messages(
+            &rules::constants_placement::ConstantsPlacement,
+            &[
+                (
+                    "foo/constants.rs",
+                    "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                ),
+                (
+                    "foo/user.rs",
+                    testing::constant_user_source("ACRONYMS").as_str(),
+                ),
+                (
+                    "bar/user.rs",
+                    testing::constant_user_source("ACRONYMS").as_str(),
+                ),
+            ],
+        );
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "const `ACRONYMS` is used across top-level dirs but lives in `foo/constants.rs` — lift it to `src/__basic__/constants.rs`"
+        );
+    }
 }

@@ -51,6 +51,7 @@ impl ConstantsPlacement {
 
 #[atomic_delegates]
 impl ConstantsPlacement {
+    pub(crate) fn clamp_flat_dir(ancestor: &Path, project: &Project) -> PathBuf {}
     pub(crate) fn collect_defined_consts(
         parsed_files: &HashMap<PathBuf, syn::File>,
     ) -> HashMap<String, PathBuf> {

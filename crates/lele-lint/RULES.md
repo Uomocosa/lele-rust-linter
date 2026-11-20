@@ -21,6 +21,7 @@ every **Good** example reports nothing at all.
 - [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 - [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file (relative `super::`/`self::` qualifiers resolve against the impl file's own module, and dunder-mounted modules match by their code name, `stock::traits` → `stock/__traits__/`), and an unresolved ambiguity lists every defining file.
+- [LELE044 `flat_dir`](#lele044-flat_dir): A `[[lele.flat_dir]]` dir holds only files, no subdirectories.
 
 ### LELE001 `atomic_file`
 
@@ -932,6 +933,140 @@ mod tests {
 ```rust
 mod clock;
 pub use clock::Clock;
+```
+
+### LELE044 `flat_dir`
+
+A `[[lele.flat_dir]]` dir holds only files, no subdirectories.
+
+**Why:** A flat dir holds one file per item with shared items at the crate root; a subdirectory hides files from that layout and invites the nesting the flat layout forbids.
+
+**Fix:** Move the nested files up into the flat dir itself, or delete the `[[lele.flat_dir]]` entry if the dir is meant to nest.
+
+**Bad** (reports LELE044):
+
+`lele.toml`
+
+```toml
+[[lele.flat_dir]]
+path = "src/flat"
+reason = "one file per item"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod flat;
+```
+
+`src/flat/entry.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Entry(pub u64);
+
+#[rustfmt::skip]
+impl Entry {
+    pub fn bump(&self) -> u64 { self.wrapping_add(1) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Entry;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Entry(41).bump(), 42);
+    }
+}
+```
+
+`src/flat/mod.rs`
+
+```rust
+mod entry;
+mod sub;
+pub use entry::Entry;
+```
+
+`src/flat/sub/mod.rs`
+
+```rust
+mod nested;
+pub use nested::Nested;
+```
+
+`src/flat/sub/nested.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Nested(pub u64);
+
+#[rustfmt::skip]
+impl Nested {
+    pub fn bump(&self) -> u64 { self.wrapping_add(1) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Nested;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Nested(41).bump(), 42);
+    }
+}
+```
+
+**Good:**
+
+`lele.toml`
+
+```toml
+[[lele.flat_dir]]
+path = "src/flat"
+reason = "one file per item"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod flat;
+```
+
+`src/flat/entry.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Entry(pub u64);
+
+#[rustfmt::skip]
+impl Entry {
+    pub fn bump(&self) -> u64 { self.wrapping_add(1) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Entry;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Entry(41).bump(), 42);
+    }
+}
+```
+
+`src/flat/mod.rs`
+
+```rust
+mod entry;
+pub use entry::Entry;
 ```
 
 ## Delegates: shells and `__methods__/`

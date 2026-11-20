@@ -15,6 +15,7 @@ use crate::DunderPath;
 use crate::Entry;
 use crate::EntryPoint;
 use crate::Error;
+use crate::FlatDirEntry;
 use crate::InlineTraitMethodsEntry;
 use crate::ModuleInfoMap;
 use crate::NoDelegatesEntry;
@@ -47,6 +48,7 @@ pub struct Project {
     pub example_entries: Vec<Entry>,
     pub example_parsed_files: HashMap<PathBuf, syn::File>,
     pub boundaries: Vec<BoundaryEntry>,
+    pub flat_dirs: Vec<FlatDirEntry>,
     pub parse_failures: Vec<ParseFailure>,
     pub rustfmt_one_liners: BTreeMap<RustfmtKey, bool>,
 }

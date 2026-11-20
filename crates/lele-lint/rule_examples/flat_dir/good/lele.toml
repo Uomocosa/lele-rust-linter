@@ -1,0 +1,3 @@
+[[lele.flat_dir]]
+path = "src/flat"
+reason = "one file per item"

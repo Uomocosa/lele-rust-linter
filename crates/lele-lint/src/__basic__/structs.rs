@@ -13,6 +13,8 @@ pub struct LeleSection {
     #[serde(default)]
     pub boundary: Vec<BoundaryEntry>,
     #[serde(default)]
+    pub flat_dir: Vec<FlatDirEntry>,
+    #[serde(default)]
     pub config: ConfigSection,
     #[serde(default)]
     pub layout: LayoutSection,
@@ -51,6 +53,13 @@ pub struct BoundaryEntry {
     pub cannot_use: Vec<String>,
     #[serde(default)]
     pub require: Option<Requirement>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct FlatDirEntry {
+    pub path: std::path::PathBuf,
+    pub reason: String,
 }
 
 #[derive(Deserialize, Debug, Default)]

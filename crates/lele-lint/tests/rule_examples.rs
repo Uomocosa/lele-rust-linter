@@ -162,7 +162,7 @@ fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn codes_are_contiguous_in_registration_order() {
     const RETIRED: [u32; 3] = [6, 7, 9];
-    const MAX_LELE: u32 = 43;
+    const MAX_LELE: u32 = 44;
     let expected_lele: Vec<String> = (1..=MAX_LELE)
         .filter(|n| !RETIRED.contains(n))
         .map(|n| format!("LELE{n:03}"))

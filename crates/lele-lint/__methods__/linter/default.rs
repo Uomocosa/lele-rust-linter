@@ -52,6 +52,7 @@ pub fn default() -> Linter {
     rules::trait_placement::TraitPlacement::register(&mut rules);
     rules::trait_impl_co_location::TraitImplCoLocation::register(&mut rules);
     rules::inline_trait_methods::InlineTraitMethods::register(&mut rules);
+    rules::flat_dir::FlatDir::register(&mut rules);
     Linter {
         rules,
         error_format: ErrorFormat::Clippy,

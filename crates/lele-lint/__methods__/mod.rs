@@ -21,6 +21,7 @@ pub mod dunder_path;
 pub mod entry;
 pub mod error;
 pub mod error_message_omits_source;
+pub mod flat_dir;
 pub mod fn_body;
 pub mod helpers_are_methods;
 pub mod identifier;

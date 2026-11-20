@@ -22,6 +22,7 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
             .e2e_test_dirs
             .clone_from(&section.config.e2e_test_dirs);
         project.boundaries.clone_from(&section.boundary);
+        project.flat_dirs.clone_from(&section.flat_dir);
     }
 
     let roots = config.layout_roots();

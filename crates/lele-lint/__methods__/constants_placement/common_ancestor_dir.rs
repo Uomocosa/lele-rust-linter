@@ -13,7 +13,10 @@ pub fn common_ancestor_dir(users: &HashSet<PathBuf>, project: &Project) -> PathB
         let other_dir = rules::constants_placement::ConstantsPlacement::parent_dir(other);
         prefix = rules::constants_placement::ConstantsPlacement::common_prefix(&prefix, &other_dir);
     }
-    rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(&prefix, project)
+    let ancestor = rules::constants_placement::ConstantsPlacement::strip_trailing_code_dunders(
+        &prefix, project,
+    );
+    rules::constants_placement::ConstantsPlacement::clamp_flat_dir(&ancestor, project)
 }
 
 // no test_usage necessary

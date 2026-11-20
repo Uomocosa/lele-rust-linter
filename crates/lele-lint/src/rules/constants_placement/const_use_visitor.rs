@@ -18,7 +18,7 @@ impl<'ast> Visit<'ast> for ConstUseVisitor<'_> {
     fn visit_path(&mut self, path: &'ast syn::Path) {
         if let Some(last) = path.segments.last() {
             let name = last.ident.to_string();
-            if self.defined.contains(&name) && path.segments.len() >= 2 {
+            if self.defined.contains(&name) {
                 self.found.push(name);
             }
         }

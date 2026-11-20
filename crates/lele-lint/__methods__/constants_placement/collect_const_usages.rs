@@ -9,6 +9,9 @@ pub fn collect_const_usages(
 ) -> HashMap<String, HashSet<PathBuf>> {
     let mut usages: HashMap<String, HashSet<PathBuf>> = HashMap::new();
     for (rel_path, file) in parsed_files {
+        if rel_path.components().any(|c| c.as_os_str() == "testing") {
+            continue;
+        }
         let mut visitor = rules::constants_placement::ConstUseVisitor {
             defined,
             found: Vec::new(),

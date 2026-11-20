@@ -7,6 +7,9 @@ pub fn collect_defined_consts(
 ) -> HashMap<String, PathBuf> {
     let mut out = HashMap::new();
     for (rel_path, file) in parsed_files {
+        if rel_path.components().any(|c| c.as_os_str() == "testing") {
+            continue;
+        }
         for item in &file.items {
             let (name, exposed) = match item {
                 syn::Item::Const(c) => (c.ident.to_string(), Visibility(&c.vis).is_exposed()),

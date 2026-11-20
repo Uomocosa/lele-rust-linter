@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 use crate::rules;
 use crate::Project;
@@ -19,7 +20,15 @@ pub fn rule_check(
     );
 
     for (name, rel_path) in &defined {
+        if rel_path.components().any(|c| c.as_os_str() == "testing") {
+            continue;
+        }
         if let Some(users) = usages.get(name) {
+            let users: HashSet<PathBuf> =
+                users.iter().filter(|p| *p != rel_path).cloned().collect();
+            if users.is_empty() {
+                continue;
+            }
             violations.extend(
                 rules::constants_placement::ConstantsPlacement::check_fn_file_const(
                     name, rel_path, project,
@@ -27,12 +36,12 @@ pub fn rule_check(
             );
             violations.extend(
                 rules::constants_placement::ConstantsPlacement::check_lift_to_ancestor(
-                    name, rel_path, users, project,
+                    name, rel_path, &users, project,
                 ),
             );
             violations.extend(
                 rules::constants_placement::ConstantsPlacement::check_lower_to_subdir(
-                    name, rel_path, users, project,
+                    name, rel_path, &users, project,
                 ),
             );
         }
@@ -298,6 +307,128 @@ mod tests {
         assert_eq!(
             found[0],
             "const `ACRONYMS` is used across top-level dirs but lives in `foo/constants.rs` — lift it to `src/__basic__/constants.rs`"
+        );
+    }
+
+    #[test]
+    fn test_usage_bare_use_across_dirs_lifts() {
+        let found = testing::violation_messages(
+            &rules::constants_placement::ConstantsPlacement,
+            &[
+                (
+                    "foo/constants.rs",
+                    "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                ),
+                (
+                    "foo/user.rs",
+                    "pub fn count() -> usize { ACRONYMS.len() }\n",
+                ),
+                (
+                    "bar/user.rs",
+                    "pub fn count() -> usize { ACRONYMS.len() }\n",
+                ),
+            ],
+        );
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            found[0],
+            "const `ACRONYMS` is used across top-level dirs but lives in `foo/constants.rs` — lift it to `src/__basic__/constants.rs`"
+        );
+    }
+
+    #[test]
+    fn test_usage_reexport_use_item_does_not_count() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    (
+                        "foo/constants.rs",
+                        "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                    ),
+                    (
+                        "foo/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                    (
+                        "bar/reexport.rs",
+                        "pub use crate::foo::basic::constants::ACRONYMS;\n",
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_testing_users_do_not_count() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    (
+                        "foo/constants.rs",
+                        "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                    ),
+                    (
+                        "foo/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                    (
+                        "testing/__fixtures__/helper.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                    (
+                        "testing/__app__/helper.rs",
+                        "pub fn count() -> usize { ACRONYMS.len() }\n",
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_testing_defining_file_is_ignored() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    (
+                        "testing/__fixtures__/constants.rs",
+                        "pub const ACRONYMS: &[&str] = &[\"ABC\"];\n",
+                    ),
+                    (
+                        "foo/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                    (
+                        "bar/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_defining_file_self_use_is_ignored() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    (
+                        "foo/constants.rs",
+                        "pub const ACRONYMS: &[&str] = &[\"ABC\"];\npub fn count() -> usize { ACRONYMS.len() }\n",
+                    ),
+                    (
+                        "bar/user.rs",
+                        testing::constant_user_source("ACRONYMS").as_str(),
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
         );
     }
 }

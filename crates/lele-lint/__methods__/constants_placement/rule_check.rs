@@ -13,17 +13,16 @@ pub fn rule_check(
     let defined = rules::constants_placement::ConstantsPlacement::collect_defined_consts(
         &project.parsed_files,
     );
-    let defined_names: HashSet<String> = defined.keys().cloned().collect();
     let usages = rules::constants_placement::ConstantsPlacement::collect_const_usages(
         &project.parsed_files,
-        &defined_names,
+        &defined,
     );
 
-    for (name, rel_path) in &defined {
+    for ((name, rel_path), users) in &usages {
         if rel_path.components().any(|c| c.as_os_str() == "testing") {
             continue;
         }
-        if let Some(users) = usages.get(name) {
+        {
             let users: HashSet<PathBuf> =
                 users.iter().filter(|p| *p != rel_path).cloned().collect();
             if users.is_empty() {
@@ -426,6 +425,44 @@ mod tests {
                         "bar/user.rs",
                         testing::constant_user_source("ACRONYMS").as_str(),
                     ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_same_name_consts_used_only_in_own_dir_stay_clean() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    ("alpha/constants.rs", "pub const LIMIT: usize = 1;\n"),
+                    ("beta/constants.rs", "pub const LIMIT: usize = 2;\n"),
+                    (
+                        "alpha/user.rs",
+                        "use crate::alpha::constants::LIMIT;\n\npub fn count() -> usize { LIMIT }\n",
+                    ),
+                    (
+                        "beta/user.rs",
+                        "pub fn count() -> usize { crate::beta::constants::LIMIT }\n",
+                    ),
+                ]
+            ),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn test_usage_ambiguous_bare_use_without_import_is_not_counted() {
+        assert_eq!(
+            testing::violation_messages(
+                &rules::constants_placement::ConstantsPlacement,
+                &[
+                    ("alpha/constants.rs", "pub const LIMIT: usize = 1;\n"),
+                    ("beta/constants.rs", "pub const LIMIT: usize = 2;\n"),
+                    ("alpha/user.rs", "pub fn count() -> usize { LIMIT }\n"),
+                    ("beta/user.rs", "pub fn count() -> usize { LIMIT }\n"),
                 ]
             ),
             Vec::<String>::new()

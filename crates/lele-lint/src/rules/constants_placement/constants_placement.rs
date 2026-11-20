@@ -54,12 +54,12 @@ impl ConstantsPlacement {
     pub(crate) fn clamp_flat_dir(ancestor: &Path, project: &Project) -> PathBuf {}
     pub(crate) fn collect_defined_consts(
         parsed_files: &HashMap<PathBuf, syn::File>,
-    ) -> HashMap<String, PathBuf> {
+    ) -> HashMap<String, Vec<PathBuf>> {
     }
     pub(crate) fn collect_const_usages(
         parsed_files: &HashMap<PathBuf, syn::File>,
-        defined: &HashSet<String>,
-    ) -> HashMap<String, HashSet<PathBuf>> {
+        defined: &HashMap<String, Vec<PathBuf>>,
+    ) -> HashMap<(String, PathBuf), HashSet<PathBuf>> {
     }
     pub(crate) fn check_fn_file_const(
         name: &str,

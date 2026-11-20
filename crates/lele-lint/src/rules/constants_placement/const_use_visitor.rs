@@ -4,7 +4,7 @@ use syn::visit::Visit;
 
 pub(crate) struct ConstUseVisitor<'a> {
     pub(crate) defined: &'a HashSet<String>,
-    pub(crate) found: Vec<String>,
+    pub(crate) found: Vec<Vec<String>>,
 }
 
 impl<'ast> Visit<'ast> for ConstUseVisitor<'_> {
@@ -17,9 +17,13 @@ impl<'ast> Visit<'ast> for ConstUseVisitor<'_> {
 
     fn visit_path(&mut self, path: &'ast syn::Path) {
         if let Some(last) = path.segments.last() {
-            let name = last.ident.to_string();
-            if self.defined.contains(&name) {
-                self.found.push(name);
+            if self.defined.contains(&last.ident.to_string()) {
+                self.found.push(
+                    path.segments
+                        .iter()
+                        .map(|segment| segment.ident.to_string())
+                        .collect(),
+                );
             }
         }
         syn::visit::visit_path(self, path);

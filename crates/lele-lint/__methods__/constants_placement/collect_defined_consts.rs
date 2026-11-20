@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 pub fn collect_defined_consts(
     parsed_files: &HashMap<PathBuf, syn::File>,
-) -> HashMap<String, PathBuf> {
-    let mut out = HashMap::new();
+) -> HashMap<String, Vec<PathBuf>> {
+    let mut out: HashMap<String, Vec<PathBuf>> = HashMap::new();
     for (rel_path, file) in parsed_files {
         if rel_path.components().any(|c| c.as_os_str() == "testing") {
             continue;
@@ -17,7 +17,7 @@ pub fn collect_defined_consts(
                 _ => continue,
             };
             if exposed {
-                out.insert(name, rel_path.clone());
+                out.entry(name).or_default().push(rel_path.clone());
             }
         }
     }

@@ -55,6 +55,7 @@ pub fn default() -> Linter {
     Linter {
         rules,
         error_format: ErrorFormat::Clippy,
+        exemptions: Vec::new(),
     }
 }
 

@@ -39,6 +39,7 @@ mod tests {
             let linter = Linter {
                 rules: Vec::new(),
                 error_format,
+                exemptions: Vec::new(),
             };
             print_violations(&linter, &violations);
         }

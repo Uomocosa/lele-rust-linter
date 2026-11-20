@@ -4,6 +4,7 @@ use atomic_delegate_macros::atomic_delegates;
 use crate::traits::Rule;
 use crate::ErrorFormat;
 use crate::ExampleFile;
+use crate::PathExemption;
 use crate::Project;
 use crate::RuleViolation;
 use std::fmt::Write as _;
@@ -12,6 +13,7 @@ use std::io::Write;
 pub struct Linter {
     pub rules: Vec<Box<dyn Rule>>,
     pub error_format: ErrorFormat,
+    pub exemptions: Vec<PathExemption>,
 }
 
 impl Default for Linter {
@@ -43,6 +45,12 @@ impl Linter {
     }
     pub fn render_summary(violations: &[RuleViolation], color: bool) -> String {}
     pub fn explain(&self, code_or_name: &str) -> Option<String> {}
+}
+
+#[rustfmt::skip]
+impl Linter {
+    pub fn exempt(&mut self, exemption: PathExemption) { self.exemptions.push(exemption); }
+    pub fn extend_rules(&mut self, rules: Vec<Box<dyn Rule>>) { self.rules.extend(rules); }
 }
 
 #[atomic_delegates]

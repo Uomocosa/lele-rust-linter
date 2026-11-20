@@ -49,6 +49,8 @@ pub use module_info::ModuleInfo;
 mod methods;
 pub mod parsed_source;
 pub use parsed_source::ParsedSource;
+pub mod path_exemption;
+pub use path_exemption::PathExemption;
 pub mod project;
 pub use project::Project;
 pub mod visibility;

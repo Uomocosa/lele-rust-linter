@@ -4,6 +4,7 @@ use derive_more::Deref;
 use derive_more::DerefMut;
 use lele_lint::ErrorFormat;
 use lele_lint::Linter;
+use lele_lint::traits::Rule;
 
 #[derive(Deref, DerefMut)]
 pub struct BevyLinter(pub Linter);
@@ -20,6 +21,7 @@ impl From<ErrorFormat> for BevyLinter {
 
 #[atomic_delegates]
 impl BevyLinter {
+    pub fn bevy_rules() -> Vec<Box<dyn Rule>> {}
     pub fn skill_markdown(&self) -> String {}
 }
 

@@ -55,6 +55,7 @@ mod tests {
     use crate::rules;
     use crate::testing;
     use crate::DunderPath;
+    use crate::FlatDirEntry;
     use crate::Project;
     use std::path::PathBuf;
 
@@ -156,6 +157,26 @@ mod tests {
             rules::constants_placement::ConstantsPlacement::common_ancestor_dir(&systems, &project),
             PathBuf::from("foo")
         );
+    }
+
+    #[test]
+    fn test_usage_root_const_used_only_in_extra_src_flat_dir_stays_clean() {
+        let mut project = testing::parsed_project(
+            testing::dunder_project(),
+            &[
+                ("constants.rs", "pub const LIMIT: u32 = 1;\n"),
+                (
+                    "__rules__/r1.rs",
+                    testing::constant_user_source("LIMIT").as_str(),
+                ),
+            ],
+        );
+        project.flat_dirs = vec![FlatDirEntry {
+            path: PathBuf::from("__rules__"),
+            reason: "one file per item".to_string(),
+        }];
+        let rule = rules::constants_placement::ConstantsPlacement;
+        assert!(rule_check(&rule, &project).is_empty());
     }
 
     #[test]

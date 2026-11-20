@@ -8,18 +8,15 @@ pub fn rule_check(_self: &rules::flat_dir::FlatDir, project: &Project) -> Vec<Ru
         return violations;
     }
     let base = project.config_base();
-    let prefix = rules::boundary_imports::BoundaryImports::base_prefix(project, &base);
     for flat in &project.flat_dirs {
         violations.extend(rules::flat_dir::FlatDir::validate_flat_dir(flat, &base));
+        let flat_rel = rules::flat_dir::FlatDir::crate_relative_flat_dir(project, flat);
         for entry in &project.entries {
-            let full = prefix.join(rules::flat_dir::FlatDir::crate_relative_path(
-                project,
-                &entry.relative_path,
-            ));
-            if !full.starts_with(&flat.path) || full == flat.path {
+            let rel = rules::flat_dir::FlatDir::crate_relative_path(project, &entry.relative_path);
+            if !rel.starts_with(&flat_rel) || rel == flat_rel {
                 continue;
             }
-            if full.parent() == Some(flat.path.as_path()) {
+            if rel.parent() == Some(flat_rel.as_path()) {
                 continue;
             }
             violations.push(RuleViolation::from_file(
@@ -42,6 +39,9 @@ mod tests {
     use super::rule_check;
     use crate::rules;
     use crate::testing;
+    use crate::FlatDirEntry;
+    use crate::Project;
+    use std::path::PathBuf;
 
     #[test]
     fn test_usage() {
@@ -59,6 +59,31 @@ mod tests {
         assert!(violations[0].message.contains("src/flat"));
         assert!(violations[0].message.contains("one file per item"));
         assert!(violations[0].message.contains("flat/sub/nested.rs"));
+    }
+
+    #[test]
+    fn test_usage_extra_src_flat_dir_subdir_is_a_violation() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("crates/rule-engine");
+        std::fs::create_dir_all(root.join("__rules__/__basic__")).unwrap();
+        let mut project = Project {
+            root: root.clone(),
+            src_dir: root.join("src"),
+            config_dir: dir.path().to_path_buf(),
+            extra_src_dirs: vec![root.join("__rules__")],
+            ..Project::default()
+        };
+        project.flat_dirs = vec![FlatDirEntry {
+            path: PathBuf::from("crates/rule-engine/__rules__"),
+            reason: "one file per item".to_string(),
+        }];
+        project.entries = vec![
+            testing::file_entry(&root, "__rules__/ok.rs"),
+            testing::file_entry(&root, "__rules__/__basic__/x.rs"),
+        ];
+        let violations = rule_check(&rules::flat_dir::FlatDir, &project);
+        assert_eq!(violations.len(), 1);
+        assert!(violations[0].message.contains("__rules__/__basic__/x.rs"));
     }
 
     #[test]

@@ -1,3 +1,4 @@
+use crate::rules;
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
@@ -49,6 +50,14 @@ impl FlatDir {
         } else {
             rel_path.to_path_buf()
         }
+    }
+    pub(crate) fn crate_relative_flat_dir(project: &Project, flat: &FlatDirEntry) -> PathBuf {
+        let base = project.config_base();
+        let prefix = rules::boundary_imports::BoundaryImports::base_prefix(project, &base);
+        flat.path
+            .strip_prefix(&prefix)
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|_| flat.path.clone())
     }
 }
 

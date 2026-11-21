@@ -1,11 +1,15 @@
 mod common;
 pub mod common_args;
 pub mod rules;
+pub mod sync_args;
+pub use sync_args::SyncArgs;
 #[path = "__traits__/mod.rs"]
 pub mod traits;
 pub use common_args::CommonArgs;
 pub mod config;
 pub use config::Config;
+pub mod config_sync;
+pub use config_sync::ConfigSync;
 #[path = "__basic__/mod.rs"]
 mod basic;
 pub use basic::enums::Category;
@@ -21,7 +25,7 @@ pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
     FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection,
     LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RuleDoc,
-    RuleTable, ScannedDir,
+    RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

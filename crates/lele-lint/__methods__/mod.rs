@@ -6,6 +6,7 @@ pub mod caught_error_scan;
 pub mod clippy_config_cargo;
 pub mod clippy_config_clippy;
 pub mod config;
+pub mod config_sync;
 pub mod constants_placement;
 pub mod constructor_naming;
 pub mod constructor_no_skip;

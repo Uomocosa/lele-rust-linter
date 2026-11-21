@@ -156,6 +156,21 @@ pub struct Reexport {
     pub is_glob: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct RuleSnapshot {
+    pub name: String,
+    pub code: String,
+    pub namespace: String,
+    pub is_locked: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SyncOutcome {
+    pub missing: Vec<String>,
+    pub refreshed: Vec<String>,
+    pub is_header_added: bool,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ExampleFile {
     pub path: &'static str,

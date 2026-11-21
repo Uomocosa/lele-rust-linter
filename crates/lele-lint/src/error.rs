@@ -63,6 +63,12 @@ pub enum Error {
 
     #[error("lele.toml: `{name}` has an exemption without a `reason`")]
     ExemptWithoutReason { name: String },
+
+    #[error("lele.toml sync failed")]
+    SyncParse {
+        #[source]
+        source: toml_edit::TomlError,
+    },
 }
 
 #[atomic_delegates]

@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use clap::Args;
 
+use crate::SyncArgs;
+
 use crate::ErrorFormat;
 
 #[derive(Args)]
@@ -23,6 +25,12 @@ pub struct CommonArgs {
 
     #[arg(long = "scan-folder", value_name = "FOLDERS", value_delimiter = ',')]
     pub scan_folder: Option<Vec<PathBuf>>,
+
+    #[command(flatten)]
+    pub sync: SyncArgs,
+
+    #[arg(long)]
+    pub config_report: bool,
 
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,

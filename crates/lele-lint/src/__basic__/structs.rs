@@ -1,8 +1,11 @@
 use serde::Deserialize;
 
 use crate::basic;
+use crate::basic::enums::CodeDunderRole;
+use crate::basic::enums::Origin;
 use crate::basic::enums::Requirement;
 use crate::basic::enums::RuleLevel;
+use crate::basic::enums::TestingRole;
 use crate::DunderPath;
 use crate::Entry;
 
@@ -186,6 +189,16 @@ pub struct ConfigReportRow {
 pub struct ExampleFile {
     pub path: &'static str,
     pub source: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DirFacts {
+    pub origin: Origin,
+    pub testing_role: Option<TestingRole>,
+    pub code_dunder: Option<CodeDunderRole>,
+    pub is_in_container: bool,
+    pub is_in_tests: bool,
+    pub is_in_flat_dir: bool,
 }
 
 #[derive(Debug, Clone, Copy)]

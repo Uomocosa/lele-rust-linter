@@ -1,12 +1,10 @@
-use crate::DirRole;
 use crate::Origin;
 use crate::Project;
 
 pub fn has_tests_component(project: &Project, path: &std::path::Path) -> bool {
-    matches!(
-        project.dir_role(Origin::Src, &path.join("file.rs")),
-        DirRole::Tests
-    )
+    project
+        .dir_facts(Origin::Src, &path.join("file.rs"))
+        .is_in_tests
 }
 
 #[cfg(test)]

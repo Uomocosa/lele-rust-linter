@@ -1,7 +1,6 @@
 use crate::rules;
 use crate::traits::Rule;
 use crate::Category;
-use crate::DirRole;
 use crate::ExampleFile;
 use crate::Origin;
 use crate::Project;
@@ -49,7 +48,7 @@ impl TraitImplCoLocation {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("");
-        file_name == "build.rs" || matches!(project.dir_role(Origin::Src, rel_path), DirRole::Tests)
+        file_name == "build.rs" || project.dir_facts(Origin::Src, rel_path).is_in_tests
     }
     pub(crate) fn ambiguous_target_message(
         name: &str,

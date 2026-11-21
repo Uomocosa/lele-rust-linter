@@ -1,5 +1,4 @@
 use crate::rules;
-use crate::DirRole;
 use crate::Origin;
 use crate::Project;
 use std::path::Path;
@@ -25,7 +24,7 @@ pub fn is_exempt(origin: Origin, rel_path: &Path, file: &syn::File, project: &Pr
         return true;
     }
 
-    if matches!(project.dir_role(origin, rel_path), DirRole::Tests) {
+    if project.dir_facts(origin, rel_path).is_in_tests {
         return true;
     }
 

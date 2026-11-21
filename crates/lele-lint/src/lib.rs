@@ -13,7 +13,7 @@ pub use config_sync::ConfigSync;
 #[path = "__basic__/mod.rs"]
 mod basic;
 pub use basic::enums::Category;
-pub use basic::enums::DirRole;
+pub use basic::enums::CodeDunderRole;
 pub(crate) use basic::enums::DunderKind;
 pub use basic::enums::EntryKind;
 pub(crate) use basic::enums::ImplItemGroup;
@@ -24,10 +24,10 @@ pub use basic::enums::Requirement;
 pub use basic::enums::RuleLevel;
 pub use basic::enums::TestingRole;
 pub use basic::structs::{
-    AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, ConfigReportRow, EntryPoint,
-    ExampleFile, FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection,
-    LeleSection, LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection, Reexport,
-    RuleDoc, RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
+    AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, ConfigReportRow, DirFacts,
+    EntryPoint, ExampleFile, FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry,
+    LayoutSection, LeleSection, LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection,
+    Reexport, RuleDoc, RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

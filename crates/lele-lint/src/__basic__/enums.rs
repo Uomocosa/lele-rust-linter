@@ -26,7 +26,7 @@ pub enum PlacementKind {
     Delegate,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     Src,
     Methods,
@@ -72,6 +72,12 @@ pub(crate) enum DunderKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CodeDunderRole {
+    Traits,
+    BevySystems,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TestingRole {
     Root,
     App,
@@ -79,19 +85,6 @@ pub enum TestingRole {
     Fixtures,
     Fakes,
     Basic,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DirRole {
-    Domain,
-    Container,
-    Traits,
-    BevySystems,
-    Testing(TestingRole),
-    Tests,
-    Flat,
-    Methods,
-    Examples,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]

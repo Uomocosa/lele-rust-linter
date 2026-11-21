@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::rules;
-use crate::DirRole;
+use crate::CodeDunderRole;
 use crate::Origin;
 use crate::Project;
 
@@ -14,7 +14,7 @@ pub fn needs_no_test_usage(
     if rules::test_usage::TestUsage::is_forbidden_file(rel_path, file) {
         return true;
     }
-    matches!(project.dir_role(origin, rel_path), DirRole::BevySystems)
+    project.dir_facts(origin, rel_path).code_dunder == Some(CodeDunderRole::BevySystems)
 }
 
 #[cfg(test)]
@@ -36,6 +36,12 @@ mod tests {
         assert!(needs_no_test_usage(
             Origin::Src,
             Path::new("enemy/__bevy_systems__/tick.rs"),
+            &system,
+            &project
+        ));
+        assert!(needs_no_test_usage(
+            Origin::Src,
+            Path::new("testing/__app__/__bevy_systems__/x.rs"),
             &system,
             &project
         ));

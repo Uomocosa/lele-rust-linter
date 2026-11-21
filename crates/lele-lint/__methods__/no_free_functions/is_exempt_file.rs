@@ -1,4 +1,4 @@
-use crate::DirRole;
+use crate::CodeDunderRole;
 use crate::Origin;
 use crate::Project;
 use std::path::Path;
@@ -10,13 +10,11 @@ pub fn is_exempt_file(rel_path: &Path, project: &Project) -> bool {
     if EXEMPT_FILES.contains(&file_name) {
         return true;
     }
-    if project.is_in_dunder_dir(rel_path) {
-        return true;
-    }
-    matches!(
-        project.dir_role(Origin::Src, rel_path),
-        DirRole::BevySystems | DirRole::Tests | DirRole::Testing(_)
-    )
+    let facts = project.dir_facts(Origin::Src, rel_path);
+    facts.code_dunder == Some(CodeDunderRole::BevySystems)
+        || facts.is_in_tests
+        || facts.testing_role.is_some()
+        || facts.is_in_container
 }
 
 // no test_usage necessary

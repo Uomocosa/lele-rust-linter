@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use syn::spanned::Spanned;
 
 use crate::rules;
-use crate::DirRole;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -27,10 +26,10 @@ pub fn rule_check(
     };
     let mut out_of_line: BTreeSet<PathBuf> = BTreeSet::new();
     for source in project.content_sources() {
-        if matches!(
-            project.dir_role(source.origin, source.relative_path),
-            DirRole::Tests
-        ) {
+        if project
+            .dir_facts(source.origin, source.relative_path)
+            .is_in_tests
+        {
             continue;
         }
         let candidates = rules::test_module_items::TestModuleItems::out_of_line_test_files(
@@ -46,10 +45,10 @@ pub fn rule_check(
 
     let mut violations = Vec::new();
     for source in project.content_sources() {
-        if matches!(
-            project.dir_role(source.origin, source.relative_path),
-            DirRole::Tests
-        ) {
+        if project
+            .dir_facts(source.origin, source.relative_path)
+            .is_in_tests
+        {
             continue;
         }
         let absolute = project.absolute_path(source.origin, source.relative_path);

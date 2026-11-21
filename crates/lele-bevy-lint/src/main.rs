@@ -5,6 +5,7 @@ use clap::ValueEnum;
 use lele_bevy_lint::BevyLinter;
 use lele_bevy_lint::scan;
 use lele_lint::CommonArgs;
+use lele_lint::Config;
 use lele_lint::ConfigSync;
 use lele_lint::Linter;
 use lele_lint::Project;
@@ -109,7 +110,7 @@ fn main() {
         return;
     }
 
-    let config = match project.load_config() {
+    let config = match Config::resolve(args.common.config.as_deref(), &project) {
         Ok(c) => c,
         Err(e) => {
             eprintln!(
@@ -119,6 +120,8 @@ fn main() {
             process::exit(1);
         }
     };
+    let (config, config_dir) = config;
+    project.config_dir = config_dir;
 
     if let Err(e) = project.apply_layout(&config) {
         eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));

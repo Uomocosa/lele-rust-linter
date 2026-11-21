@@ -5,11 +5,7 @@ use clap::ValueEnum;
 use lele_bevy_lint::BevyLinter;
 use lele_bevy_lint::scan;
 use lele_lint::CommonArgs;
-use lele_lint::Config;
-use lele_lint::ConfigSync;
-use lele_lint::Linter;
-use lele_lint::Project;
-use lele_lint::RuleSnapshot;
+use lele_lint::LintSession;
 
 #[derive(Clone, Copy, ValueEnum)]
 enum Emit {
@@ -78,124 +74,22 @@ fn main() {
         }
     }
 
-    let mut project = match Project::try_from_start_dir_and_scan_folders(
-        args.common.path.as_deref(),
-        args.common.scan_folder.as_deref(),
-    ) {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
-            process::exit(1);
+    let ui_inventory = args.ui_inventory;
+    process::exit(
+        LintSession {
+            binary: "lele_bevy_lint",
         }
-    };
-
-    if args.common.sync.sync_config {
-        let config_path = ConfigSync::config_path(args.common.config.as_deref(), &project);
-        let outcome =
-            match ConfigSync::synchronize(&linter.rules, &config_path, args.common.sync.check) {
-                Ok(outcome) => outcome,
-                Err(e) => {
-                    eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
-                    process::exit(1);
-                }
-            };
-        if args.common.sync.check {
-            let report = ConfigSync::render_sync_check(&outcome, "lele-bevy-lint");
-            if report.is_empty() {
-                return;
-            }
-            eprint!("{report}");
-            process::exit(1);
-        }
-        return;
-    }
-
-    let config = match Config::resolve(args.common.config.as_deref(), &project) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!(
-                "lele_bevy_lint: lele.toml: {}",
-                lele_lint::Error::with_causes(&e)
-            );
-            process::exit(1);
-        }
-    };
-    let (config, config_dir) = config;
-    project.config_dir = config_dir;
-
-    if let Err(e) = project.apply_layout(&config) {
-        eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
-        process::exit(1);
-    }
-
-    let snapshot: Vec<RuleSnapshot> = linter
-        .rules
-        .iter()
-        .map(|rule| RuleSnapshot {
-            name: rule.name().to_owned(),
-            code: rule.code().to_owned(),
-            namespace: rule.namespace().to_owned(),
-            is_locked: rule.is_locked(),
-        })
-        .collect();
-
-    let relaxed = match linter.apply_rule_settings(&config) {
-        Ok(relaxed) => relaxed,
-        Err(e) => {
-            eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
-            process::exit(1);
-        }
-    };
-
-    if args.common.config_report {
-        let mut snapshot = snapshot;
-        if let Some(codes) = &args.common.only {
-            let unknown: Vec<String> = codes
-                .iter()
-                .filter(|code| {
-                    !snapshot.iter().any(|entry| {
-                        entry.code.eq_ignore_ascii_case(code) || entry.name == code.as_str()
-                    })
+        .run(
+            &mut linter,
+            &args.common,
+            false,
+            |_, _| Ok(()),
+            move |project| {
+                ui_inventory.then(|| {
+                    print!("{}", scan::BevyProject(project).ui_inventory());
+                    0
                 })
-                .cloned()
-                .collect();
-            if !unknown.is_empty() {
-                eprintln!(
-                    "lele_bevy_lint: no rule with code or name `{}`",
-                    unknown.join("`, `")
-                );
-                process::exit(1);
-            }
-            snapshot.retain(|entry| {
-                codes.iter().any(|code| {
-                    entry.code.eq_ignore_ascii_case(code) || entry.name == code.as_str()
-                })
-            });
-        }
-        print!("{}", ConfigSync::render_config_report(&snapshot, &relaxed));
-        return;
-    }
-
-    if let Some(codes) = &args.common.only {
-        let unknown = linter.retain_codes(codes);
-        if !unknown.is_empty() {
-            eprintln!(
-                "lele_bevy_lint: no rule with code or name `{}`",
-                unknown.join("`, `")
-            );
-            process::exit(1);
-        }
-    }
-    let relaxed: Vec<lele_lint::RelaxedRule> = relaxed
-        .into_iter()
-        .filter(|entry| entry.applies_to(&project))
-        .collect();
-    eprint!("{}", Linter::render_relaxed_banner(&relaxed));
-
-    if args.ui_inventory {
-        print!("{}", scan::BevyProject(&project).ui_inventory());
-        return;
-    }
-
-    process::exit(linter.run(&project));
+            },
+        ),
+    );
 }

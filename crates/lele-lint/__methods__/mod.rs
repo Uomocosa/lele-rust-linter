@@ -33,6 +33,7 @@ pub mod impl_visitor;
 pub mod inline_trait_methods;
 pub mod inner_fn_finder;
 pub mod item_marker;
+pub mod lint_session;
 pub mod linter;
 pub mod method_file_co_location;
 pub mod method_visibility;

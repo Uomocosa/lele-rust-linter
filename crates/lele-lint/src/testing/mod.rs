@@ -15,6 +15,7 @@ pub(crate) use fixtures::dunder_project::dunder_project;
 pub(crate) use fixtures::file_entry::file_entry;
 pub(crate) use fixtures::flat_dir_entries::flat_dir_entries;
 pub(crate) use fixtures::flat_dir_project::flat_dir_project;
+pub(crate) use fixtures::lint_session_args::lint_session_args;
 pub(crate) use fixtures::named_impl_hit::named_impl_hit;
 pub(crate) use fixtures::nested_strings::nested_strings;
 pub(crate) use fixtures::parsed_file::parsed_file;

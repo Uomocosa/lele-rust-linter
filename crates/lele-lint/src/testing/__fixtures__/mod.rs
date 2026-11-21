@@ -10,6 +10,7 @@ pub(crate) mod dunder_project;
 pub(crate) mod file_entry;
 pub(crate) mod flat_dir_entries;
 pub(crate) mod flat_dir_project;
+pub(crate) mod lint_session_args;
 pub(crate) mod named_impl_hit;
 pub(crate) mod nested_strings;
 pub(crate) mod parsed_file;

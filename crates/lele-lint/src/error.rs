@@ -69,6 +69,9 @@ pub enum Error {
         #[source]
         source: toml_edit::TomlError,
     },
+
+    #[error("prepare failed")]
+    Prepare(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[atomic_delegates]

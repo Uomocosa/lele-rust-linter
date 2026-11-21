@@ -2,7 +2,6 @@ use crate::rules;
 use crate::DirRole;
 use crate::Origin;
 use crate::Project;
-use crate::TestingRole;
 use std::path::Path;
 
 pub fn is_exempt(origin: Origin, rel_path: &Path, file: &syn::File, project: &Project) -> bool {
@@ -22,14 +21,11 @@ pub fn is_exempt(origin: Origin, rel_path: &Path, file: &syn::File, project: &Pr
         return true;
     }
 
-    if project.is_dunder_file_path(rel_path) {
+    if project.is_dunder_path(rel_path) {
         return true;
     }
 
-    if matches!(
-        project.dir_role(origin, rel_path),
-        DirRole::Container | DirRole::Testing(TestingRole::Basic) | DirRole::Tests
-    ) {
+    if matches!(project.dir_role(origin, rel_path), DirRole::Tests) {
         return true;
     }
 
@@ -66,6 +62,18 @@ mod tests {
             Origin::Src,
             Path::new("player/__basic__/enums.rs"),
             &type_only,
+            &project
+        ));
+        assert!(is_exempt(
+            Origin::Src,
+            Path::new("testing/__app__/__basic__/x.rs"),
+            &plain,
+            &project
+        ));
+        assert!(is_exempt(
+            Origin::Src,
+            Path::new("testing/__fixtures__/__basic__/x.rs"),
+            &plain,
             &project
         ));
     }

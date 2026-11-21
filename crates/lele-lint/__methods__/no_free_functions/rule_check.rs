@@ -152,6 +152,7 @@ mod tests {
             testing::dunder_project(),
             &[
                 ("game/__bevy_systems__/tick.rs", "pub fn tick() {}"),
+                ("stock/__traits__/__basic__/x.rs", "pub fn tick() {}"),
                 ("main.rs", "pub fn run() {}"),
                 (
                     "run.rs",

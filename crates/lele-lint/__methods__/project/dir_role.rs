@@ -37,6 +37,8 @@ pub fn dir_role(project: &Project, origin: Origin, rel_path: &Path) -> DirRole {
     if dirs.contains(&"tests".to_string()) {
         return DirRole::Tests;
     }
+    let mut code_role: Option<DirRole> = None;
+    let mut has_container = false;
     for component in dirs.iter().rev() {
         let Some(dunder) = project.dunder_paths.iter().find(|dunder| {
             dunder.is_dunder_dir()
@@ -47,12 +49,20 @@ pub fn dir_role(project: &Project, origin: Origin, rel_path: &Path) -> DirRole {
             continue;
         };
         if dunder.is_container() {
-            return DirRole::Container;
-        } else if dunder.module_name() == "traits" {
-            return DirRole::Traits;
-        } else if dunder.module_name() == "bevy_systems" {
-            return DirRole::BevySystems;
+            has_container = true;
+        } else if code_role.is_none() {
+            if dunder.module_name() == "traits" {
+                code_role = Some(DirRole::Traits);
+            } else if dunder.module_name() == "bevy_systems" {
+                code_role = Some(DirRole::BevySystems);
+            }
         }
+    }
+    if let Some(role) = code_role {
+        return role;
+    }
+    if has_container {
+        return DirRole::Container;
     }
     DirRole::Domain
 }
@@ -97,8 +107,9 @@ mod tests {
     #[case(
         Origin::Src,
         "stock/__bevy_systems__/__basic__/x.rs",
-        DirRole::Container
+        DirRole::BevySystems
     )]
+    #[case(Origin::Src, "stock/__traits__/__basic__/x.rs", DirRole::Traits)]
     #[case(Origin::Src, "testing/mod.rs", DirRole::Testing(TestingRole::Root))]
     #[case(
         Origin::Src,

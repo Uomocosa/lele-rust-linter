@@ -10,9 +10,12 @@ pub fn is_exempt_file(rel_path: &Path, project: &Project) -> bool {
     if EXEMPT_FILES.contains(&file_name) {
         return true;
     }
+    if project.is_in_dunder_dir(rel_path) {
+        return true;
+    }
     matches!(
         project.dir_role(Origin::Src, rel_path),
-        DirRole::BevySystems | DirRole::Tests | DirRole::Testing(_) | DirRole::Container
+        DirRole::BevySystems | DirRole::Tests | DirRole::Testing(_)
     )
 }
 

@@ -16,7 +16,11 @@ pub fn rule_check(
         let rel_path = source.relative_path;
         let file = source.file;
         let file_path = project.absolute_path(source.origin, rel_path);
-        if rules::testing_layout::TestingLayout::is_testing_path(rel_path) {
+        if project
+            .dir_facts(source.origin, rel_path)
+            .testing_role
+            .is_some()
+        {
             continue;
         }
         if project.is_in_dunder_dir(rel_path) {

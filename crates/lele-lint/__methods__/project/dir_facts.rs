@@ -36,12 +36,14 @@ pub fn dir_facts(project: &Project, origin: Origin, rel_path: &Path) -> DirFacts
     let dirs = dirs.get(..dirs.len().saturating_sub(1)).unwrap_or(&[]);
     let testing_role = if dirs.first().is_some_and(|first| first == "testing") {
         match dirs.get(1).map(String::as_str) {
-            Some("__app__") => Some(TestingRole::App),
-            Some("__queries__") => Some(TestingRole::Queries),
-            Some("__fixtures__") => Some(TestingRole::Fixtures),
-            Some("__fakes__") => Some(TestingRole::Fakes),
-            Some("__basic__") => Some(TestingRole::Basic),
-            _ => Some(TestingRole::Root),
+            Some(second) => Some(
+                rules::testing_layout::TESTING_ROLE_TABLE
+                    .iter()
+                    .find(|(name, _)| *name == second)
+                    .map(|(_, role)| *role)
+                    .unwrap_or(TestingRole::Root),
+            ),
+            None => Some(TestingRole::Root),
         }
     } else {
         None
@@ -95,6 +97,21 @@ mod tests {
     use crate::Origin;
     use crate::Project;
     use crate::TestingRole;
+
+    #[test]
+    fn test_usage_testing_role_table_matches_testing_roles() {
+        use crate::rules::testing_layout::TESTING_ROLES;
+        use crate::rules::testing_layout::TESTING_ROLE_TABLE;
+        let mut table_names: Vec<&str> = TESTING_ROLE_TABLE.iter().map(|(name, _)| *name).collect();
+        table_names.sort_unstable();
+        let mut expected: Vec<&str> = TESTING_ROLES.to_vec();
+        expected.push("__basic__");
+        expected.sort_unstable();
+        assert_eq!(table_names, expected);
+        assert!(TESTING_ROLE_TABLE
+            .iter()
+            .all(|(_, role)| *role != TestingRole::Root));
+    }
 
     #[test]
     fn test_usage() {

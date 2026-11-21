@@ -4,6 +4,7 @@ use crate::ExampleFile;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
+use crate::TestingRole;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 use rule_examples_macro::rule_examples;
@@ -25,6 +26,14 @@ impl TestingLayout {
 }
 
 pub(crate) const TESTING_ROLES: [&str; 4] = ["__app__", "__queries__", "__fixtures__", "__fakes__"];
+
+pub(crate) const TESTING_ROLE_TABLE: [(&str, TestingRole); 5] = [
+    ("__app__", TestingRole::App),
+    ("__queries__", TestingRole::Queries),
+    ("__fixtures__", TestingRole::Fixtures),
+    ("__fakes__", TestingRole::Fakes),
+    ("__basic__", TestingRole::Basic),
+];
 
 #[rustfmt::skip]
 impl Rule for TestingLayout {

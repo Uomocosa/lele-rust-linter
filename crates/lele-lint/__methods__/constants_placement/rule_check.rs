@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::rules;
+use crate::Origin;
 use crate::Project;
 use crate::RuleViolation;
 
@@ -19,7 +20,11 @@ pub fn rule_check(
     );
 
     for ((name, rel_path), users) in &usages {
-        if rel_path.components().any(|c| c.as_os_str() == "testing") {
+        if project
+            .dir_facts(Origin::Src, rel_path)
+            .testing_role
+            .is_some()
+        {
             continue;
         }
         {

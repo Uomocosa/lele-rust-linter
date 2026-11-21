@@ -1,3 +1,4 @@
+use lele_lint::CodeDunderRole;
 use lele_lint::Project;
 use lele_lint::RuleViolation;
 use syn::spanned::Spanned;
@@ -11,10 +12,10 @@ pub fn rule_check(
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();
     for source in project.content_sources() {
-        let in_systems = source
-            .relative_path
-            .components()
-            .any(|c| c.as_os_str() == "__bevy_systems__" || c.as_os_str() == "bevy_systems");
+        let in_systems = project
+            .dir_facts(source.origin, source.relative_path)
+            .code_dunder
+            == Some(CodeDunderRole::BevySystems);
         if !in_systems {
             continue;
         }
@@ -94,11 +95,11 @@ mod tests {
 
     #[test]
     fn test_usage_flags_a_test_module_in_a_systems_file() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn test_usage() {}\n}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert_eq!(found.len(), 1);
         assert_eq!(
             found[0].code,
@@ -109,16 +110,16 @@ mod tests {
 
     #[test]
     fn test_usage_empty_test_module_is_clean() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "#[cfg(test)]\nmod tests {}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert!(found.is_empty());
     }
 
     #[test]
-    fn test_usage_literal_bevy_systems_folder_is_flagged() {
+    fn test_usage_literal_bevy_systems_folder_is_clean() {
         let project = testing::project_with(
             Project::default(),
             &[(
@@ -127,69 +128,68 @@ mod tests {
             )],
         );
         let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
-        assert_eq!(found.len(), 1);
-        assert!(found[0].message.contains("regression"));
+        assert!(found.is_empty());
     }
 
     #[test]
     fn test_usage_cfg_test_fn_is_flagged() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub fn tick_enemies() {}\n\n#[cfg(test)]\nfn helper() {}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert_eq!(found.len(), 1);
     }
 
     #[test]
     fn test_usage_nested_cfg_test_is_flagged() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub mod inner {\n    #[cfg(test)]\n    fn helper() {}\n}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert_eq!(found.len(), 1);
     }
 
     #[test]
     fn test_usage_preview_only_module_is_clean() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\n#[cfg(test)]\nmod tests {\n    use super::Query;\n    use super::tick_enemies;\n    #[test]\n    fn tick_enemies_ui_png_preview() {\n        tick_enemies(Query);\n    }\n}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert!(found.is_empty());
     }
 
     #[test]
     fn test_usage_preview_plus_plain_test_is_flagged_once() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\n#[cfg(test)]\nmod tests {\n    use super::Query;\n    #[test]\n    fn tick_enemies_ui_png_preview() {}\n    #[test]\n    fn extra_regression() {}\n}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert_eq!(found.len(), 1);
         assert!(found[0].message.contains("extra_regression"));
     }
 
     #[test]
     fn test_usage_preview_plus_helper_is_flagged() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n\n#[cfg(test)]\nmod tests {\n    fn preview_build() {}\n    #[test]\n    fn tick_enemies_ui_png_preview() {}\n}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert_eq!(found.len(), 1);
         assert!(found[0].message.contains("preview_build"));
     }
 
     #[test]
     fn test_usage_systems_file_without_tests_is_clean() {
-        let found = testing::violations_of(
-            &rules::no_tests_in_systems::NoTestsInSystems,
+        let project = testing::bevy_project(&[(
             "enemy/__bevy_systems__/tick_enemies.rs",
             "pub struct Query;\n\npub fn tick_enemies(_q: Query) {}\n",
-        );
+        )]);
+        let found = rule_check(&rules::no_tests_in_systems::NoTestsInSystems, &project);
         assert!(found.is_empty());
     }
 

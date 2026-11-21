@@ -51,7 +51,7 @@ mod tests {
         );
         let other_code = RuleViolation::from_file(
             PathBuf::from("/crate/__rules__/r.rs"),
-            "LELE001",
+            "LELECORE001",
             String::from("m"),
         );
         assert!(exemption.matches(&under, &project));

@@ -11,7 +11,7 @@ pub struct MethodsAreDelegates;
 
 impl MethodsAreDelegates {
     pub const NAME: &'static str = "methods_are_delegates";
-    pub const CODE: &'static str = "LELE035";
+    pub const CODE: &'static str = "LELECORE017";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.",

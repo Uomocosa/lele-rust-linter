@@ -14,7 +14,7 @@ pub struct NoFreeFunctions;
 
 impl NoFreeFunctions {
     pub const NAME: &'static str = "no_free_functions";
-    pub const CODE: &'static str = "LELE034";
+    pub const CODE: &'static str = "LELECORE016";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.",

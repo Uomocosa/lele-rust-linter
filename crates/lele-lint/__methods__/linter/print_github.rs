@@ -35,14 +35,14 @@ mod tests {
         let site = RuleViolation {
             file: PathBuf::from("a.rs"),
             location: Location::Site { line: 3, col: 4 },
-            code: "LELE001",
+            code: "LELECORE001",
             message: "m".to_string(),
         };
         let mut out: Vec<u8> = Vec::new();
         print_github(&site, &mut out);
         assert_eq!(
             String::from_utf8(out).unwrap(),
-            "::error file=a.rs,line=3,col=4,title=LELE001::m\n"
+            "::error file=a.rs,line=3,col=4,title=LELECORE001::m\n"
         );
         let file_level = RuleViolation {
             location: Location::File,
@@ -52,7 +52,7 @@ mod tests {
         print_github(&file_level, &mut out);
         assert_eq!(
             String::from_utf8(out).unwrap(),
-            "::error file=a.rs,line=1,title=LELE001::m\n"
+            "::error file=a.rs,line=1,title=LELECORE001::m\n"
         );
     }
 }

@@ -13,7 +13,7 @@ pub struct TestUsage;
 
 impl TestUsage {
     pub const NAME: &'static str = "test_usage";
-    pub const CODE: &'static str = "LELETEST003";
+    pub const CODE: &'static str = "LELECORE006";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.",

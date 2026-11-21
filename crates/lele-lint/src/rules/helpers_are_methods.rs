@@ -11,7 +11,7 @@ pub struct HelpersAreMethods;
 
 impl HelpersAreMethods {
     pub const NAME: &'static str = "helpers_are_methods";
-    pub const CODE: &'static str = "LELE008";
+    pub const CODE: &'static str = "LELECORE005";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.",

@@ -22,7 +22,7 @@ pub struct TestUsageShape;
 
 impl TestUsageShape {
     pub const NAME: &'static str = "test_usage_shape";
-    pub const CODE: &'static str = "LELETEST007";
+    pub const CODE: &'static str = "LELECORE007";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.",

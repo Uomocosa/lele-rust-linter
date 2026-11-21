@@ -156,24 +156,49 @@ fn every_rule_file_is_registered() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// `LELE` codes are LELE001..LELE043 minus retired [006, 007, 009], and `LELETEST`
-/// codes are LELETEST001..N contiguous, each in registration order. A retired number
-/// is never reused.
+/// `LELE` codes are numbers 1-44 minus retired [1, 2, 3, 6, 7, 8, 9, 10, 17,
+/// 22, 24, 28, 29, 30, 31, 34, 35, 38, 39], `LELETEST` codes are numbers 1-7
+/// minus retired [2, 3, 7], and `LELECORE` codes are numbers 1-19 contiguous,
+/// each in registration order. A retired number is never reused.
 #[test]
 fn codes_are_contiguous_in_registration_order() {
-    const RETIRED: [u32; 3] = [6, 7, 9];
+    const RETIRED_LELE: [u32; 19] = [
+        1, 2, 3, 6, 7, 8, 9, 10, 17, 22, 24, 28, 29, 30, 31, 34, 35, 38, 39,
+    ];
     const MAX_LELE: u32 = 44;
+    const RETIRED_LETEST: [u32; 3] = [2, 3, 7];
+    const MAX_LETEST: u32 = 7;
+    const MAX_CORE: u32 = 19;
     let expected_lele: Vec<String> = (1..=MAX_LELE)
-        .filter(|n| !RETIRED.contains(n))
+        .filter(|n| !RETIRED_LELE.contains(n))
         .map(|n| format!("LELE{n:03}"))
         .collect();
+    let expected_letest: Vec<String> = (1..=MAX_LETEST)
+        .filter(|n| !RETIRED_LETEST.contains(n))
+        .map(|n| format!("LELETEST{n:03}"))
+        .collect();
+    let expected_core: Vec<String> = (1..=MAX_CORE).map(|n| format!("LELECORE{n:03}")).collect();
     let mut lele = expected_lele.iter();
-    let mut letest_next: u32 = 1;
+    let mut letest = expected_letest.iter();
+    let mut core_series = expected_core.iter();
     for rule in Linter::default().rules.iter() {
         let code = rule.code();
-        if code.starts_with("LELETEST") {
-            assert_eq!(code, format!("LELETEST{letest_next:03}"), "{}", rule.name());
-            letest_next += 1;
+        if code.starts_with("LELECORE") {
+            assert_eq!(
+                code,
+                core_series
+                    .next()
+                    .expect("more LELECORE rules than expected"),
+                "{}",
+                rule.name()
+            );
+        } else if code.starts_with("LELETEST") {
+            assert_eq!(
+                code,
+                letest.next().expect("more LELETEST rules than expected"),
+                "{}",
+                rule.name()
+            );
         } else {
             assert_eq!(
                 code,
@@ -184,4 +209,6 @@ fn codes_are_contiguous_in_registration_order() {
         }
     }
     assert!(lele.next().is_none(), "missing LELE rules");
+    assert!(letest.next().is_none(), "missing LELETEST rules");
+    assert!(core_series.next().is_none(), "missing LELECORE rules");
 }

@@ -53,17 +53,31 @@ mod tests {
     #[test]
     fn test_usage() {
         let violations = vec![
-            RuleViolation::from_site(PathBuf::from("b.rs"), 9, 0, "LELE002", String::from("x")),
-            RuleViolation::from_site(PathBuf::from("b.rs"), 3, 0, "LELE001", String::from("y")),
-            RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("z")),
+            RuleViolation::from_site(
+                PathBuf::from("b.rs"),
+                9,
+                0,
+                "LELECORE002",
+                String::from("x"),
+            ),
+            RuleViolation::from_site(
+                PathBuf::from("b.rs"),
+                3,
+                0,
+                "LELECORE001",
+                String::from("y"),
+            ),
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELECORE001", String::from("z")),
         ];
         let out = render_report(&violations, &[], false);
         assert!(!out.contains("── a.rs"));
         let header = out.find("── b.rs (2 errors) ──").unwrap_or(usize::MAX);
-        let first = out.find("error[LELE001]: y").unwrap_or(0);
-        let second = out.find("error[LELE002]: x").unwrap_or(0);
-        assert!(out.find("error[LELE001]: z") < Some(header));
+        let first = out.find("error[LELECORE001]: y").unwrap_or(0);
+        let second = out.find("error[LELECORE002]: x").unwrap_or(0);
+        assert!(out.find("error[LELECORE001]: z") < Some(header));
         assert!(header < first && first < second);
-        assert!(out.ends_with("error: 3 violations in 2 files\n  LELE001 ×2   LELE002 ×1\n"));
+        assert!(
+            out.ends_with("error: 3 violations in 2 files\n  LELECORE001 ×2   LELECORE002 ×1\n")
+        );
     }
 }

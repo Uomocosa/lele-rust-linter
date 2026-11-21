@@ -48,10 +48,15 @@ mod tests {
     #[test]
     fn test_usage() {
         let file_level =
-            RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("m"));
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELECORE001", String::from("m"));
         assert_eq!(file_level.location, Location::File);
-        let site_level =
-            RuleViolation::from_site(PathBuf::from("a.rs"), 7, 3, "LELE002", String::from("m"));
+        let site_level = RuleViolation::from_site(
+            PathBuf::from("a.rs"),
+            7,
+            3,
+            "LELECORE002",
+            String::from("m"),
+        );
         assert_eq!(site_level.location, Location::Site { line: 7, col: 3 });
     }
 }

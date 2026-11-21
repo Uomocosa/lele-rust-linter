@@ -13,12 +13,12 @@ pub struct ClippyConfigCargo;
 
 impl ClippyConfigCargo {
     pub const NAME: &'static str = "clippy_config_cargo";
-    pub const CODE: &'static str = "LELE028";
+    pub const CODE: &'static str = "LELECORE012";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Config,
         summary: "`Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).",
         why: "Every crate gets the same strict baseline, so no crate silently allows unwraps, panics or lossy casts.",
-        fix: "Add the `[lints.clippy]` block shown by `lele-lint --explain LELE028` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.",
+        fix: "Add the `[lints.clippy]` block shown by `lele-lint --explain LELECORE012` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.",
         bad: rule_examples!("clippy_config_cargo/bad"),
         good: rule_examples!("clippy_config_cargo/good"),
     };

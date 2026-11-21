@@ -64,13 +64,13 @@ mod tests {
     #[test]
     fn test_usage() {
         let violations = vec![
-            RuleViolation::from_file(PathBuf::from("a.rs"), "LELE002", String::from("m")),
-            RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("m")),
-            RuleViolation::from_file(PathBuf::from("b.rs"), "LELE001", String::from("m")),
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELECORE002", String::from("m")),
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELECORE001", String::from("m")),
+            RuleViolation::from_file(PathBuf::from("b.rs"), "LELECORE001", String::from("m")),
         ];
         assert_eq!(
             render_summary(&violations, false),
-            "error: 3 violations in 2 files\n  LELE001 ×2   LELE002 ×1\n"
+            "error: 3 violations in 2 files\n  LELECORE001 ×2   LELECORE002 ×1\n"
         );
         assert_eq!(render_summary(&[], false), "");
     }

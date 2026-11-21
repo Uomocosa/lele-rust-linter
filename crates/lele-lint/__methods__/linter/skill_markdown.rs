@@ -31,23 +31,23 @@ the rules (domains, atomic files, delegates), load the `lele-syntax-rs` skill. B
 4. Re-run the linter after each code: fixes cascade, so the list changes every time.
 5. Never silence or loosen a rule: no `#[allow]`/`#[expect]`, no new exemptions or allow
    entries in `lele.toml`, `Cargo.toml` or `clippy.toml` (adding the required clippy
-   baseline for LELE028/LELE029 is fine). If a fix seems to need one, stop and ask the user.
+   baseline for LELECORE012/LELECORE013 is fine). If a fix seems to need one, stop and ask the user.
 
 ## Every file you create or edit
 
 A fix for one rule must not break another. Before saving, check the file against this list
 (most cascades come from new files):
 
-- Named in snake_case after its one public item (LELE001, LELE002).
+- Named in snake_case after its one public item (LELECORE001, LELECORE002).
 - Ends with `#[cfg(test)] mod tests` holding a `test_usage` test, or with
-  `// no test_usage necessary` when there is nothing to test (LELETEST003).
-- No comments (LELE031): before deleting one, move what it says into the item's name or its
-  `test_usage` test. No `#[allow]`/`#[expect]` (LELE024).
+  `// no test_usage necessary` when there is nothing to test (LELECORE006).
+- No comments (LELECORE015): before deleting one, move what it says into the item's name or its
+  `test_usage` test. No `#[allow]`/`#[expect]` (LELECORE011).
 - Imports the domain, not the item (`use crate::stock;` then `stock::Item`, LELE016);
   no `super::` outside tests (LELE013); `crate::` only in `use` lines (LELE025).
-- Helpers are `pub(crate)` methods of a type, never private or free fns (LELE008, LELE034).
+- Helpers are `pub(crate)` methods of a type, never private or free fns (LELECORE005, LELECORE016).
 - A data type with no `impl` goes in the domain's `__basic__/` (LELE020).
-- Method bodies have four kinds, decided by rustfmt: a one-liner (one statement rustfmt prints on one line) stays inline under `#[rustfmt::skip]`; a single simple `match`/`if`/loop, or a body of 2 or 3 statements, stays inline in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/<type>/<method>.rs`. Never pad a body to change its kind (LELE017, LELE030).
+- Method bodies have four kinds, decided by rustfmt: a one-liner (one statement rustfmt prints on one line) stays inline under `#[rustfmt::skip]`; a single simple `match`/`if`/loop, or a body of 2 or 3 statements, stays inline in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/<type>/<method>.rs`. Never pad a body to change its kind (LELECORE009, LELECORE014).
 
 ";
 

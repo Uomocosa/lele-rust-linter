@@ -13,7 +13,7 @@ pub struct NoStringifiedErrors;
 
 impl NoStringifiedErrors {
     pub const NAME: &'static str = "no_stringified_errors";
-    pub const CODE: &'static str = "LELE039";
+    pub const CODE: &'static str = "LELECORE019";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.",

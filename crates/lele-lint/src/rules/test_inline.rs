@@ -12,7 +12,7 @@ pub struct TestInline;
 
 impl TestInline {
     pub const NAME: &'static str = "test_inline";
-    pub const CODE: &'static str = "LELETEST002";
+    pub const CODE: &'static str = "LELECORE004";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Tests,
         summary: "Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).",

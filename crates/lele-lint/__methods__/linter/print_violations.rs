@@ -32,7 +32,7 @@ mod tests {
             PathBuf::from("a.rs"),
             1,
             0,
-            "LELE001",
+            "LELECORE001",
             String::from("m"),
         )];
         for error_format in [ErrorFormat::Clippy, ErrorFormat::Github] {

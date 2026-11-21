@@ -12,338 +12,16 @@ every **Good** example reports nothing at all.
 
 ## Layout: files and folders
 
-- [LELE001 `atomic_file`](#lele001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
-- [LELE002 `snake_case_files`](#lele002-snake_case_files): File and folder names are snake_case.
-- [LELE003 `method_file_co_location`](#lele003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
 - [LELE019 `constants_placement`](#lele019-constants_placement): A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) shared by all its users.
 - [LELE020 `container_placement`](#lele020-container_placement): Behavior-free types (plain structs, enums, newtypes, aliases, ECS markers) go in the domain's `__basic__/<role>.rs`.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
-- [LELE038 `dunder_module_name`](#lele038-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 - [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file (relative `super::`/`self::` qualifiers resolve against the impl file's own module, and dunder-mounted modules match by their code name, `stock::traits` → `stock/__traits__/`), and an unresolved ambiguity lists every defining file.
 - [LELE044 `flat_dir`](#lele044-flat_dir): A `[[lele.flat_dir]]` dir holds only files, no subdirectories.
-
-### LELE001 `atomic_file`
-
-One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
-
-**Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
-
-**Fix:** Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
-
-**Bad** (reports LELE001):
-
-`src/greeting.rs`
-
-```rust
-pub fn greet(name: &str) -> String {
-    format!("Hello, {name}!")
-}
-
-pub fn farewell(name: &str) -> String {
-    format!("Bye, {name}!")
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod greeting;
-pub use greeting::{farewell, greet};
-```
-
-**Good:**
-
-`src/guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-```
-
-`src/host.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Host(pub String);
-
-#[rustfmt::skip]
-impl Host {
-    pub fn farewell(&self) -> String { format!("Bye, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Host;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Host("Ada".to_string()).farewell(), "Bye, Ada!");
-    }
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod guest;
-mod host;
-pub use guest::Guest;
-pub use host::Host;
-```
-
-### LELE002 `snake_case_files`
-
-File and folder names are snake_case.
-
-**Why:** Module names are derived from file names; one casing keeps paths predictable.
-
-**Fix:** Rename the file or folder to snake_case and update the `mod` line that declares it.
-
-**Bad** (reports LELE002):
-
-`src/Guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-```
-
-`src/lib.rs`
-
-```rust
-#[path = "Guest.rs"]
-mod guest;
-pub use guest::Guest;
-```
-
-**Good:**
-
-`src/guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
-    }
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
-### LELE003 `method_file_co_location`
-
-A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
-
-**Why:** A method file that drifts away from its type is impossible to find from the type.
-
-**Fix:** Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
-
-**Bad** (reports LELE003):
-
-`src/lib.rs`
-
-```rust
-pub mod game;
-pub mod player;
-```
-
-`src/game/mod.rs`
-
-```rust
-mod player_rename;
-
-pub use player_rename::rename;
-```
-
-`src/game/player_rename.rs`
-
-```rust
-use crate::player;
-
-pub fn rename(player: &mut player::Player, name: String) {
-    player.name = name;
-}
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-```
-
-**Good:**
-
-`__methods__/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-
-#[path = "../__methods__/mod.rs"]
-mod methods;
-```
-
-`__methods__/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    if player.health == 0 {
-        return;
-    }
-    player.health = player.health.saturating_add(amount).min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
-    }
-}
-```
-
-`__methods__/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-```
+- [LELECORE001 `atomic_file`](#lelecore001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
+- [LELECORE002 `snake_case_files`](#lelecore002-snake_case_files): File and folder names are snake_case.
+- [LELECORE003 `method_file_co_location`](#lelecore003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
+- [LELECORE018 `dunder_module_name`](#lelecore018-dunder_module_name): A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
 
 ### LELE019 `constants_placement`
 
@@ -594,89 +272,13 @@ mod guest;
 pub use guest::Guest;
 ```
 
-### LELE038 `dunder_module_name`
-
-A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
-
-**Why:** The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name. Every item keeps exactly one public path: container items are re-exported flat from the owning module, and trait/system items are reached as `domain::traits::Trait` / `domain::bevy_systems::system`.
-
-**Fix:** Declare the folder as `#[path = "__basic__/mod.rs"] mod basic;` (`basic` and the configured methods mount private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).
-
-**Bad** (reports LELE038):
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-pub mod __basic__;
-
-#[path = "__traits__/mod.rs"]
-mod traits;
-
-pub use __basic__::structs::Item;
-pub use traits::Greetable;
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-mod basic;
-
-pub use basic::structs::Item;
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-```
-
 ### LELE041 `trait_placement`
 
 Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 
 **Why:** The `__traits__/` folder is the domain's implementable-role edge: the folder says what the files hold, so each trait keeps its atomic file, named after it, mounted `pub mod traits;` and reached as `domain::traits::<Trait>`.
 
-**Fix:** Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = "__traits__/mod.rs"] pub mod traits;` and refer to the trait as `domain::traits::<Trait>` — never re-export it (`pub use traits::X;` is a LELE038 error); rename a `…Trait` trait to its bare name — the folder already says it is a trait.
+**Fix:** Move the trait into `<domain>/__traits__/<trait_snake>.rs`, mount the folder with `#[path = "__traits__/mod.rs"] pub mod traits;` and refer to the trait as `domain::traits::<Trait>` — never re-export it (`pub use traits::X;` is a LELECORE018 error); rename a `…Trait` trait to its bare name — the folder already says it is a trait.
 
 **Bad** (reports LELE041):
 
@@ -1069,19 +671,417 @@ mod entry;
 pub use entry::Entry;
 ```
 
+### LELECORE001 `atomic_file`
+
+One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
+
+**Why:** A file name tells you exactly what is inside; finding code means finding a file, and every unit gets its own test.
+
+**Fix:** Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
+
+**Bad** (reports LELECORE001):
+
+`src/greeting.rs`
+
+```rust
+pub fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+
+pub fn farewell(name: &str) -> String {
+    format!("Bye, {name}!")
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod greeting;
+pub use greeting::{farewell, greet};
+```
+
+**Good:**
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/host.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Host(pub String);
+
+#[rustfmt::skip]
+impl Host {
+    pub fn farewell(&self) -> String { format!("Bye, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Host;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Host("Ada".to_string()).farewell(), "Bye, Ada!");
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+mod host;
+pub use guest::Guest;
+pub use host::Host;
+```
+
+### LELECORE002 `snake_case_files`
+
+File and folder names are snake_case.
+
+**Why:** Module names are derived from file names; one casing keeps paths predictable.
+
+**Fix:** Rename the file or folder to snake_case and update the `mod` line that declares it.
+
+**Bad** (reports LELECORE002):
+
+`src/Guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+#[path = "Guest.rs"]
+mod guest;
+pub use guest::Guest;
+```
+
+**Good:**
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Guest("Ada".to_string()).greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
+```
+
+### LELECORE003 `method_file_co_location`
+
+A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
+
+**Why:** A method file that drifts away from its type is impossible to find from the type.
+
+**Fix:** Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
+
+**Bad** (reports LELECORE003):
+
+`src/lib.rs`
+
+```rust
+pub mod game;
+pub mod player;
+```
+
+`src/game/mod.rs`
+
+```rust
+mod player_rename;
+
+pub use player_rename::rename;
+```
+
+`src/game/player_rename.rs`
+
+```rust
+use crate::player;
+
+pub fn rename(player: &mut player::Player, name: String) {
+    player.name = name;
+}
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+```
+
+**Good:**
+
+`__methods__/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../__methods__/mod.rs"]
+mod methods;
+```
+
+`__methods__/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`__methods__/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+### LELECORE018 `dunder_module_name`
+
+A dunder folder or file (`__basic__/`) is declared `#[path = "__basic__/mod.rs"] mod basic;` under its plain name with the mount visibility the layout gives it — `basic` and the configured methods mount private, `traits`/`bevy_systems` `pub` or `pub(crate)` — and no `pub use`/`pub(crate) use` path goes through a code-dunder mount.
+
+**Why:** The dunders mark the folder on disk (sorted first, not a domain); in code they are noise, so the module carries the plain name. Every item keeps exactly one public path: container items are re-exported flat from the owning module, and trait/system items are reached as `domain::traits::Trait` / `domain::bevy_systems::system`.
+
+**Fix:** Declare the folder as `#[path = "__basic__/mod.rs"] mod basic;` (`basic` and the configured methods mount private; `traits`/`bevy_systems` `pub` or `pub(crate)`), write `basic::` in every path, never `__basic__`, and delete every `pub use traits::X;` / `pub use bevy_systems::y;` — refer to the item as `domain::traits::X` / `domain::bevy_systems::y` (`bevy_systems` re-exports are reported by lele-bevy-lint's `bevy_export`).
+
+**Bad** (reports LELECORE018):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+pub mod __basic__;
+
+#[path = "__traits__/mod.rs"]
+mod traits;
+
+pub use __basic__::structs::Item;
+pub use traits::Greetable;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::structs::Item;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+```
+
 ## Delegates: shells and `__methods__/`
 
 - [LELE004 `method_visibility`](#lele004-method_visibility): A method file is a private module: declared with `mod`, never `pub mod` or `pub use`.
-- [LELE008 `helpers_are_methods`](#lele008-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-- [LELE017 `atomic_delegates`](#lele017-atomic_delegates): Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 - [LELE018 `constructor_no_skip`](#lele018-constructor_no_skip): `impl Default` and real constructors are never `#[rustfmt::skip]`.
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
-- [LELE030 `methods_layout`](#lele030-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
-- [LELE034 `no_free_functions`](#lele034-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
-- [LELE035 `methods_are_delegates`](#lele035-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 - [LELE043 `inline_trait_methods`](#lele043-inline_trait_methods): A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
+- [LELECORE005 `helpers_are_methods`](#lelecore005-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
+- [LELECORE009 `atomic_delegates`](#lelecore009-atomic_delegates): Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+- [LELECORE014 `methods_layout`](#lelecore014-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
+- [LELECORE016 `no_free_functions`](#lelecore016-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
+- [LELECORE017 `methods_are_delegates`](#lelecore017-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 ### LELE004 `method_visibility`
 
@@ -1230,195 +1230,6 @@ mod tests {
         let mut player = player::Player::default();
         player.heal(5);
         assert_eq!(player.health, 100);
-    }
-}
-```
-
-### LELE008 `helpers_are_methods`
-
-No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-
-**Why:** `src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.
-
-**Fix:** Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `__methods__/<type>/<fn>.rs`.
-
-**Bad** (reports LELE008):
-
-`src/lib.rs`
-
-```rust
-mod round;
-pub use round::Round;
-```
-
-`src/round.rs`
-
-```rust
-pub struct Round {
-    pub hits: u32,
-    pub misses: u32,
-}
-
-#[rustfmt::skip]
-impl Round {
-    pub fn score(&self) -> u32 { base(self.hits).saturating_sub(self.misses) }
-}
-
-fn base(hits: u32) -> u32 {
-    hits.saturating_mul(10)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Round;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-mod round;
-pub use round::Round;
-```
-
-`src/round.rs`
-
-```rust
-pub struct Round {
-    pub hits: u32,
-    pub misses: u32,
-}
-
-#[rustfmt::skip]
-impl Round {
-    pub fn score(&self) -> u32 { Self::base(self.hits).saturating_sub(self.misses) }
-    pub(crate) fn base(hits: u32) -> u32 { hits.saturating_mul(10) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Round;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
-    }
-}
-```
-
-### LELE017 `atomic_delegates`
-
-Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
-
-**Why:** rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.
-
-**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
-
-**Bad** (reports LELE017):
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-impl Player {
-    pub fn is_alive(&self) -> bool {
-        self.health > 0
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[rustfmt::skip]
-impl Player {
-    pub fn is_alive(&self) -> bool { self.health > 0 }
-}
-
-impl Player {
-    pub fn status(&self) -> &'static str {
-        match self.health {
-            0 => "down",
-            _ => "up",
-        }
-    }
-    pub fn label(&self) -> String {
-        let prefix = "player";
-        format!("{prefix}: {}", self.name)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        assert!(player::Player::default().is_alive());
     }
 }
 ```
@@ -1748,210 +1559,6 @@ mod tests {
     fn test_usage() {
         assert_eq!(Round::from(1).score(), 10);
         assert_eq!(Round::default().to_string(), "0/0");
-    }
-}
-```
-
-### LELE030 `methods_layout`
-
-Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
-
-**Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do. A single statement spanning several lines is a real body and may stay in its delegate file.
-
-**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument) and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. If the body is a single one-line statement, do not create the file: write the method inline in a `#[rustfmt::skip] impl` block, then delete the file. If the body is a single simple `match`/`if`/loop, write it inline in a plain `impl` block (rustfmt formats it), then delete the file. Never pad a body or change a signature to keep a delegate file. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
-
-**Bad** (reports LELE030):
-
-`methods/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-
-#[path = "../methods/mod.rs"]
-mod methods;
-```
-
-`methods/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    if player.health == 0 {
-        return;
-    }
-    player.health = player.health.saturating_add(amount).min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
-    }
-}
-```
-
-`methods/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
-    }
-}
-```
-
-**Good:**
-
-`__methods__/mod.rs`
-
-```rust
-pub mod player;
-```
-
-`src/lib.rs`
-
-```rust
-pub mod player;
-
-#[path = "../__methods__/mod.rs"]
-mod methods;
-```
-
-`__methods__/player/heal.rs`
-
-```rust
-use crate::player;
-
-pub fn heal(player: &mut player::Player, amount: u32) {
-    if player.health == 0 {
-        return;
-    }
-    player.health = player.health.saturating_add(amount).min(100);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::heal;
-    use crate::player::Player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = Player {
-            name: String::new(),
-            health: 10,
-        };
-        heal(&mut player, 5);
-        assert_eq!(player.health, 15);
-    }
-}
-```
-
-`__methods__/player/mod.rs`
-
-```rust
-mod heal;
-pub use heal::heal;
-```
-
-`src/player/mod.rs`
-
-```rust
-mod player;
-
-pub use player::Player;
-```
-
-`src/player/player.rs`
-
-```rust
-use atomic_delegate_macros::atomic_delegates;
-
-pub struct Player {
-    pub name: String,
-    pub health: u32,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            health: 100,
-        }
-    }
-}
-
-#[atomic_delegates]
-impl Player {
-    pub fn heal(&mut self, amount: u32) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::player;
-
-    #[test]
-    fn test_usage() {
-        let mut player = player::Player::default();
-        player.heal(5);
-        assert_eq!(player.health, 100);
     }
 }
 ```
@@ -2313,7 +1920,483 @@ mod tests {
 }
 ```
 
-### LELE034 `no_free_functions`
+### LELE043 `inline_trait_methods`
+
+A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
+
+**Why:** Some traits are called by a framework that expects the method in the impl itself. Bevy's `Plugin::build` is the usual case: the trait method is the registration point, and a body that only forwards to an inherent shell hides the wiring the framework reads. The reason is recorded in the config so the exception is a decision, not an accident.
+
+**Fix:** Write the listed method's body inline in the trait impl and delete its `__methods__/<type>/<file>.rs` body. Remove any `#[atomic_delegate]` on the method and any `#[atomic_delegates]` on the impl block. Only the user adds or changes `[[lele.lint.inline_trait_methods]]` entries; a trait path matches an impl when the last segments agree (`bevy::app::Plugin` matches `impl Plugin` and `impl bevy::prelude::Plugin`, and `impl other::Plugin` does not).
+
+**Bad** (reports LELE043):
+
+`lele.toml`
+
+```toml
+[lele.lint]
+
+[[lele.lint.inline_trait_methods]]
+trait = "bevy::app::Plugin"
+methods = ["build"]
+reason = "the framework reads build in the impl"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod starboard_plugin;
+
+pub use starboard_plugin::StarboardPlugin;
+```
+
+`src/starboard_plugin.rs`
+
+```rust
+pub struct StarboardPlugin;
+
+#[atomic_delegates]
+impl StarboardPlugin {
+    pub fn build(&self, app: &mut Vec<String>) {}
+}
+
+impl bevy::app::Plugin for StarboardPlugin {
+    fn build(&self, app: &mut Vec<String>) {
+        self.build(app)
+    }
+}
+
+// no test_usage necessary
+```
+
+**Good:**
+
+`lele.toml`
+
+```toml
+[lele.lint]
+
+[[lele.lint.inline_trait_methods]]
+trait = "bevy::app::Plugin"
+methods = ["build"]
+reason = "the framework reads build in the impl"
+```
+
+`src/lib.rs`
+
+```rust
+pub mod starboard_plugin;
+
+pub use starboard_plugin::StarboardPlugin;
+```
+
+`src/starboard_plugin.rs`
+
+```rust
+pub struct StarboardPlugin;
+
+impl bevy::app::Plugin for StarboardPlugin {
+    fn build(&self, app: &mut Vec<String>) {
+        app.push(String::from("starboard"));
+    }
+}
+
+// no test_usage necessary
+```
+
+### LELECORE005 `helpers_are_methods`
+
+No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
+
+**Why:** `src/` lists types and what each can do; `pub` vs `pub(crate)` on the type's own methods tells API from internal machinery, so no helper hides outside the type.
+
+**Fix:** Turn the private `fn` into a `pub(crate)` method or associated fn of the type it serves: an inline one-liner, or an `#[atomic_delegates]` shell with its body in `__methods__/<type>/<fn>.rs`.
+
+**Bad** (reports LELECORE005):
+
+`src/lib.rs`
+
+```rust
+mod round;
+pub use round::Round;
+```
+
+`src/round.rs`
+
+```rust
+pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { base(self.hits).saturating_sub(self.misses) }
+}
+
+fn base(hits: u32) -> u32 {
+    hits.saturating_mul(10)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Round;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+mod round;
+pub use round::Round;
+```
+
+`src/round.rs`
+
+```rust
+pub struct Round {
+    pub hits: u32,
+    pub misses: u32,
+}
+
+#[rustfmt::skip]
+impl Round {
+    pub fn score(&self) -> u32 { Self::base(self.hits).saturating_sub(self.misses) }
+    pub(crate) fn base(hits: u32) -> u32 { hits.saturating_mul(10) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Round;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Round { hits: 1, misses: 0 }.score(), 10);
+    }
+}
+```
+
+### LELECORE009 `atomic_delegates`
+
+Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+
+**Why:** rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.
+
+**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
+
+**Bad** (reports LELECORE009):
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+impl Player {
+    pub fn is_alive(&self) -> bool {
+        self.health > 0
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[rustfmt::skip]
+impl Player {
+    pub fn is_alive(&self) -> bool { self.health > 0 }
+}
+
+impl Player {
+    pub fn status(&self) -> &'static str {
+        match self.health {
+            0 => "down",
+            _ => "up",
+        }
+    }
+    pub fn label(&self) -> String {
+        let prefix = "player";
+        format!("{prefix}: {}", self.name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        assert!(player::Player::default().is_alive());
+    }
+}
+```
+
+### LELECORE014 `methods_layout`
+
+Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
+
+**Why:** The `__methods__/` folder (mounted as the `crate::methods` module) hides bodies until you need them; the type file stays a short list of what the type can do. A single statement spanning several lines is a real body and may stay in its delegate file.
+
+**Fix:** Create `__methods__/<type>/<method>.rs` with `pub fn <method>` (the receiver becomes the first argument) and a `test_usage` test, then run `lele-lint --sync-methods <crate>` to update the `__methods__/` `mod.rs` indexes. If the body is a single one-line statement, do not create the file: write the method inline in a `#[rustfmt::skip] impl` block, then delete the file. If the body is a single simple `match`/`if`/loop, write it inline in a plain `impl` block (rustfmt formats it), then delete the file. Never pad a body or change a signature to keep a delegate file. To rename a stale root-level `methods/` folder: `git mv methods __methods__` and update the `#[path]` mount to `#[path = "../__methods__/mod.rs"]`.
+
+**Bad** (reports LELECORE014):
+
+`methods/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../methods/mod.rs"]
+mod methods;
+```
+
+`methods/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`methods/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+**Good:**
+
+`__methods__/mod.rs`
+
+```rust
+pub mod player;
+```
+
+`src/lib.rs`
+
+```rust
+pub mod player;
+
+#[path = "../__methods__/mod.rs"]
+mod methods;
+```
+
+`__methods__/player/heal.rs`
+
+```rust
+use crate::player;
+
+pub fn heal(player: &mut player::Player, amount: u32) {
+    if player.health == 0 {
+        return;
+    }
+    player.health = player.health.saturating_add(amount).min(100);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::heal;
+    use crate::player::Player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = Player {
+            name: String::new(),
+            health: 10,
+        };
+        heal(&mut player, 5);
+        assert_eq!(player.health, 15);
+    }
+}
+```
+
+`__methods__/player/mod.rs`
+
+```rust
+mod heal;
+pub use heal::heal;
+```
+
+`src/player/mod.rs`
+
+```rust
+mod player;
+
+pub use player::Player;
+```
+
+`src/player/player.rs`
+
+```rust
+use atomic_delegate_macros::atomic_delegates;
+
+pub struct Player {
+    pub name: String,
+    pub health: u32,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            health: 100,
+        }
+    }
+}
+
+#[atomic_delegates]
+impl Player {
+    pub fn heal(&mut self, amount: u32) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::player;
+
+    #[test]
+    fn test_usage() {
+        let mut player = player::Player::default();
+        player.heal(5);
+        assert_eq!(player.health, 100);
+    }
+}
+```
+
+### LELECORE016 `no_free_functions`
 
 A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 
@@ -2321,7 +2404,7 @@ A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its ow
 
 **Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call; its `file` is relative to the lele.toml that holds it.
 
-**Bad** (reports LELE034):
+**Bad** (reports LELECORE016):
 
 `src/lib.rs`
 
@@ -2471,7 +2554,7 @@ mod tests {
 }
 ```
 
-### LELE035 `methods_are_delegates`
+### LELECORE017 `methods_are_delegates`
 
 A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
@@ -2479,7 +2562,7 @@ A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s
 
 **Fix:** Move every helper fn, type or impl out of the method file into `src/` as a `pub(crate)` method or type of the type it serves; leave only `use` lines, private `const`s, `pub fn <method>` and its tests.
 
-**Bad** (reports LELE035):
+**Bad** (reports LELECORE017):
 
 `__methods__/mod.rs`
 
@@ -2682,89 +2765,6 @@ mod tests {
         assert_eq!(player.health, 100);
     }
 }
-```
-
-### LELE043 `inline_trait_methods`
-
-A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
-
-**Why:** Some traits are called by a framework that expects the method in the impl itself. Bevy's `Plugin::build` is the usual case: the trait method is the registration point, and a body that only forwards to an inherent shell hides the wiring the framework reads. The reason is recorded in the config so the exception is a decision, not an accident.
-
-**Fix:** Write the listed method's body inline in the trait impl and delete its `__methods__/<type>/<file>.rs` body. Remove any `#[atomic_delegate]` on the method and any `#[atomic_delegates]` on the impl block. Only the user adds or changes `[[lele.lint.inline_trait_methods]]` entries; a trait path matches an impl when the last segments agree (`bevy::app::Plugin` matches `impl Plugin` and `impl bevy::prelude::Plugin`, and `impl other::Plugin` does not).
-
-**Bad** (reports LELE043):
-
-`lele.toml`
-
-```toml
-[lele.lint]
-
-[[lele.lint.inline_trait_methods]]
-trait = "bevy::app::Plugin"
-methods = ["build"]
-reason = "the framework reads build in the impl"
-```
-
-`src/lib.rs`
-
-```rust
-pub mod starboard_plugin;
-
-pub use starboard_plugin::StarboardPlugin;
-```
-
-`src/starboard_plugin.rs`
-
-```rust
-pub struct StarboardPlugin;
-
-#[atomic_delegates]
-impl StarboardPlugin {
-    pub fn build(&self, app: &mut Vec<String>) {}
-}
-
-impl bevy::app::Plugin for StarboardPlugin {
-    fn build(&self, app: &mut Vec<String>) {
-        self.build(app)
-    }
-}
-
-// no test_usage necessary
-```
-
-**Good:**
-
-`lele.toml`
-
-```toml
-[lele.lint]
-
-[[lele.lint.inline_trait_methods]]
-trait = "bevy::app::Plugin"
-methods = ["build"]
-reason = "the framework reads build in the impl"
-```
-
-`src/lib.rs`
-
-```rust
-pub mod starboard_plugin;
-
-pub use starboard_plugin::StarboardPlugin;
-```
-
-`src/starboard_plugin.rs`
-
-```rust
-pub struct StarboardPlugin;
-
-impl bevy::app::Plugin for StarboardPlugin {
-    fn build(&self, app: &mut Vec<String>) {
-        app.push(String::from("starboard"));
-    }
-}
-
-// no test_usage necessary
 ```
 
 ## Imports and re-exports
@@ -3668,89 +3668,15 @@ mod tests {
 
 ## Types
 
-- [LELE010 `no_positional`](#lele010-no_positional): No positional field access (`.0`, `.1`).
 - [LELE012 `no_stuttered_type`](#lele012-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
 - [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
-- [LELE022 `single_field_newtype`](#lele022-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
 - [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.lint.collection_wrappers]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
 - [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. `async fn`, `const fn` and fns whose argument is generic (`impl Trait` or a type parameter) cannot be written as a trait impl and are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.
 - [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
-- [LELE039 `no_stringified_errors`](#lele039-no_stringified_errors): A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
 - [LELE040 `error_message_omits_source`](#lele040-error_message_omits_source): An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
-
-### LELE010 `no_positional`
-
-No positional field access (`.0`, `.1`).
-
-**Why:** A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.
-
-**Fix:** Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields; destructure a plain tuple instead (`let (a, b) = pair;`).
-
-**Bad** (reports LELE010):
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-pub use meters::Meters;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { self.0 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod meters;
-pub use meters::Meters;
-```
-
-`src/meters.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
-pub struct Meters(pub u32);
-
-#[rustfmt::skip]
-impl Meters {
-    pub fn doubled(&self) -> u32 { **self * 2 }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Meters;
-
-    #[test]
-    fn test_usage() {
-        assert_eq!(Meters(4).doubled(), 8);
-    }
-}
-```
+- [LELECORE008 `no_positional`](#lelecore008-no_positional): No positional field access (`.0`, `.1`).
+- [LELECORE010 `single_field_newtype`](#lelecore010-single_field_newtype): A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
+- [LELECORE019 `no_stringified_errors`](#lelecore019-no_stringified_errors): A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
 
 ### LELE012 `no_stuttered_type`
 
@@ -3942,77 +3868,6 @@ mod tests {
         assert!(player::Player::default().is_alive());
     }
 }
-```
-
-### LELE022 `single_field_newtype`
-
-A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
-
-**Why:** Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.
-
-**Fix:** Rewrite a one-field struct as `pub struct X(pub T)` with `#[derive(Deref)]` (`derive_more`) and read it as `*x`; give structs with two or more fields named fields.
-
-**Bad** (reports LELE022):
-
-`src/lib.rs`
-
-```rust
-pub mod track;
-```
-
-`src/track/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-mod basic;
-
-pub use basic::structs::Meters;
-```
-
-`src/track/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/track/__basic__/structs.rs`
-
-```rust
-pub struct Meters {
-    pub value: u32,
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod track;
-```
-
-`src/track/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-mod basic;
-
-pub use basic::newtypes::Meters;
-```
-
-`src/track/__basic__/mod.rs`
-
-```rust
-pub mod newtypes;
-```
-
-`src/track/__basic__/newtypes.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Meters(pub u32);
 ```
 
 ### LELE026 `no_collection_newtype`
@@ -4393,7 +4248,198 @@ mod tests {
 }
 ```
 
-### LELE039 `no_stringified_errors`
+### LELE040 `error_message_omits_source`
+
+An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
+
+**Why:** Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.
+
+**Fix:** Remove the source field (`{0}`, `{source}`) from the `#[error("…")]` text, or use `#[error(transparent)]` to forward it.
+
+**Bad** (reports LELE040):
+
+`src/error.rs`
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("i/o error: {0}")]
+    Io(#[from] std::io::Error),
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+```
+
+**Good:**
+
+`src/error.rs`
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("i/o error")]
+    Io(#[from] std::io::Error),
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod error;
+pub use error::Error;
+```
+
+### LELECORE008 `no_positional`
+
+No positional field access (`.0`, `.1`).
+
+**Why:** A single-field newtype derefs to its value and multi-field types have names, so a number never stands for a meaning.
+
+**Fix:** Replace `.0` with deref (`*value`) on single-field newtypes; give tuple structs with two or more fields named fields; destructure a plain tuple instead (`let (a, b) = pair;`).
+
+**Bad** (reports LELECORE008):
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+pub use meters::Meters;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { self.0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod meters;
+pub use meters::Meters;
+```
+
+`src/meters.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deref)]
+pub struct Meters(pub u32);
+
+#[rustfmt::skip]
+impl Meters {
+    pub fn doubled(&self) -> u32 { **self * 2 }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Meters;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Meters(4).doubled(), 8);
+    }
+}
+```
+
+### LELECORE010 `single_field_newtype`
+
+A struct with one field is a tuple newtype deriving `Deref`; two or more fields are named.
+
+**Why:** Field count decides the shape, so every single-value wrapper reads the same: `*meters`, never `meters.value`.
+
+**Fix:** Rewrite a one-field struct as `pub struct X(pub T)` with `#[derive(Deref)]` (`derive_more`) and read it as `*x`; give structs with two or more fields named fields.
+
+**Bad** (reports LELECORE010):
+
+`src/lib.rs`
+
+```rust
+pub mod track;
+```
+
+`src/track/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::structs::Meters;
+```
+
+`src/track/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/track/__basic__/structs.rs`
+
+```rust
+pub struct Meters {
+    pub value: u32,
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod track;
+```
+
+`src/track/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::newtypes::Meters;
+```
+
+`src/track/__basic__/mod.rs`
+
+```rust
+pub mod newtypes;
+```
+
+`src/track/__basic__/newtypes.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Meters(pub u32);
+```
+
+### LELECORE019 `no_stringified_errors`
 
 A caught error is never stored as text in the crate's own error enum (`map_err`, `impl From`, or a helper taking `…Error`): keep it as a `#[source]`/`#[from]` field.
 
@@ -4401,7 +4447,7 @@ A caught error is never stored as text in the crate's own error enum (`map_err`,
 
 **Fix:** Keep the caught error as a typed field: `#[from] source: io::Error` or `#[source]`, instead of `.to_string()` or `format!`.
 
-**Bad** (reports LELE039):
+**Bad** (reports LELECORE019):
 
 `src/config_text.rs`
 
@@ -4525,149 +4571,17 @@ mod config_text;
 pub use config_text::ConfigText;
 ```
 
-### LELE040 `error_message_omits_source`
-
-An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
-
-**Why:** Error reporters walk the `source()` chain and print every cause, so a message that also prints the source shows it twice. A binary reports `error: cause: cause…` by walking `source()` once, at the top.
-
-**Fix:** Remove the source field (`{0}`, `{source}`) from the `#[error("…")]` text, or use `#[error(transparent)]` to forward it.
-
-**Bad** (reports LELE040):
-
-`src/error.rs`
-
-```rust
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("i/o error: {0}")]
-    Io(#[from] std::io::Error),
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod error;
-pub use error::Error;
-```
-
-**Good:**
-
-`src/error.rs`
-
-```rust
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("i/o error")]
-    Io(#[from] std::io::Error),
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod error;
-pub use error::Error;
-```
-
 ## Tests
 
+- [LELECORE004 `test_inline`](#lelecore004-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
+- [LELECORE006 `test_usage`](#lelecore006-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
+- [LELECORE007 `test_usage_shape`](#lelecore007-test_usage_shape): A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
 - [LELETEST001 `no_dunder_tests`](#leletest001-no_dunder_tests): No `#[cfg(test)]` inside `__basic__/` containers.
-- [LELETEST002 `test_inline`](#leletest002-test_inline): Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
-- [LELETEST003 `test_usage`](#leletest003-test_usage): Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 - [LELETEST004 `no_tests_in_plain_data`](#leletest004-no_tests_in_plain_data): No `#[cfg(test)]` in plain-data files (plain structs/enums, pure `mod.rs`/`lib.rs`, `constants.rs`).
 - [LELETEST005 `test_module_items`](#leletest005-test_module_items): A `#[cfg(test)]` module holds only test fns (`#[test]`, `#[rstest]`, `#[tokio::test]`), `use` and `const`.
 - [LELETEST006 `testing_layout`](#leletest006-testing_layout): `src/testing/` holds only `mod.rs`, `__basic__/` and the four roles `__app__/`, `__queries__/`, `__fixtures__/`, `__fakes__/`.
-- [LELETEST007 `test_usage_shape`](#leletest007-test_usage_shape): A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
 
-### LELETEST001 `no_dunder_tests`
-
-No `#[cfg(test)]` inside `__basic__/` containers.
-
-**Why:** Containers hold declarations only; test the function or method that uses the types instead.
-
-**Fix:** Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.
-
-**Bad** (reports LELETEST001):
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-mod basic;
-
-pub use basic::structs::Item;
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Item;
-
-    #[test]
-    fn test_usage() {
-        let item = Item {
-            name: "apple".to_string(),
-            price: 3,
-        };
-        assert_eq!(item.price, 3);
-    }
-}
-```
-
-**Good:**
-
-`src/lib.rs`
-
-```rust
-pub mod stock;
-```
-
-`src/stock/mod.rs`
-
-```rust
-#[path = "__basic__/mod.rs"]
-mod basic;
-
-pub use basic::structs::Item;
-```
-
-`src/stock/__basic__/mod.rs`
-
-```rust
-pub mod structs;
-```
-
-`src/stock/__basic__/structs.rs`
-
-```rust
-pub struct Item {
-    pub name: String,
-    pub price: u32,
-}
-```
-
-### LELETEST002 `test_inline`
+### LELECORE004 `test_inline`
 
 Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).
 
@@ -4675,7 +4589,7 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`, 
 
 **Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.config] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.
 
-**Bad** (reports LELETEST002):
+**Bad** (reports LELECORE004):
 
 `src/greet_tests.rs`
 
@@ -4768,7 +4682,7 @@ mod guest;
 pub use guest::Guest;
 ```
 
-### LELETEST003 `test_usage`
+### LELECORE006 `test_usage`
 
 Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, or ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need neither a test nor the opt-out.
 
@@ -4776,7 +4690,7 @@ Every non-trivial file has a `#[cfg(test)] mod tests` with a `test_usage` test, 
 
 **Fix:** Add `#[cfg(test)] mod tests { #[test] fn test_usage() { .. } }` that calls the file's item and asserts its result; only a file with nothing to test ends with `// no test_usage necessary`. Plain-data files and `__bevy_systems__/` system files need no test and no opt-out — delete a stray opt-out there.
 
-**Bad** (reports LELETEST003):
+**Bad** (reports LELECORE006):
 
 `src/guest.rs`
 
@@ -4851,6 +4765,165 @@ pub use tick_enemies::tick_enemies;
 
 ```rust
 pub fn tick_enemies() {}
+```
+
+### LELECORE007 `test_usage_shape`
+
+A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
+
+**Why:** One usage test per file is the file's documentation (D1); a `test_usage` that never calls the item, or asserts nothing, proves nothing (D4).
+
+**Fix:** Keep one `test_usage`: construct the type / call the method / add the plugin, bind the result and `assert*!` on it (or on its receiver/arguments when it returns `()`). Rename the other tests for their corner case; `#[rstest]` for honest ones.
+
+**Bad** (reports LELECORE007):
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_usage() {
+        assert!(true);
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
+```
+
+**Good:**
+
+`src/guest.rs`
+
+```rust
+use derive_more::Deref;
+
+#[derive(Deref)]
+pub struct Guest(pub String);
+
+#[rustfmt::skip]
+impl Guest {
+    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Guest;
+
+    #[test]
+    fn test_usage() {
+        let guest = Guest("Ada".to_string());
+        assert_eq!(guest.greet(), "Hello, Ada!");
+    }
+}
+```
+
+`src/lib.rs`
+
+```rust
+mod guest;
+pub use guest::Guest;
+```
+
+### LELETEST001 `no_dunder_tests`
+
+No `#[cfg(test)]` inside `__basic__/` containers.
+
+**Why:** Containers hold declarations only; test the function or method that uses the types instead.
+
+**Fix:** Delete the `#[cfg(test)]` block from the `__basic__/` file and test the method or function that uses the type instead.
+
+**Bad** (reports LELETEST001):
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::structs::Item;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Item;
+
+    #[test]
+    fn test_usage() {
+        let item = Item {
+            name: "apple".to_string(),
+            price: 3,
+        };
+        assert_eq!(item.price, 3);
+    }
+}
+```
+
+**Good:**
+
+`src/lib.rs`
+
+```rust
+pub mod stock;
+```
+
+`src/stock/mod.rs`
+
+```rust
+#[path = "__basic__/mod.rs"]
+mod basic;
+
+pub use basic::structs::Item;
+```
+
+`src/stock/__basic__/mod.rs`
+
+```rust
+pub mod structs;
+```
+
+`src/stock/__basic__/structs.rs`
+
+```rust
+pub struct Item {
+    pub name: String,
+    pub price: u32,
+}
 ```
 
 ### LELETEST004 `no_tests_in_plain_data`
@@ -5199,85 +5272,12 @@ mod tests {
 pub mod lobby_row;
 ```
 
-### LELETEST007 `test_usage_shape`
-
-A file has exactly one `test_usage`; it calls the file's primary item and asserts on a value that call produced.
-
-**Why:** One usage test per file is the file's documentation (D1); a `test_usage` that never calls the item, or asserts nothing, proves nothing (D4).
-
-**Fix:** Keep one `test_usage`: construct the type / call the method / add the plugin, bind the result and `assert*!` on it (or on its receiver/arguments when it returns `()`). Rename the other tests for their corner case; `#[rstest]` for honest ones.
-
-**Bad** (reports LELETEST007):
-
-`src/guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_usage() {
-        assert!(true);
-    }
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
-**Good:**
-
-`src/guest.rs`
-
-```rust
-use derive_more::Deref;
-
-#[derive(Deref)]
-pub struct Guest(pub String);
-
-#[rustfmt::skip]
-impl Guest {
-    pub fn greet(&self) -> String { format!("Hello, {}!", **self) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Guest;
-
-    #[test]
-    fn test_usage() {
-        let guest = Guest("Ada".to_string());
-        assert_eq!(guest.greet(), "Hello, Ada!");
-    }
-}
-```
-
-`src/lib.rs`
-
-```rust
-mod guest;
-pub use guest::Guest;
-```
-
 ## Style
 
-- [LELE024 `no_allow_attributes`](#lele024-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).
-- [LELE031 `no_comments`](#lele031-no_comments): No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
+- [LELECORE011 `no_allow_attributes`](#lelecore011-no_allow_attributes): No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).
+- [LELECORE015 `no_comments`](#lelecore015-no_comments): No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
-### LELE024 `no_allow_attributes`
+### LELECORE011 `no_allow_attributes`
 
 No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the exact lint, file and a reason (the file is relative to that lele.toml).
 
@@ -5285,7 +5285,7 @@ No `#[allow(...)]`/`#[expect(...)]` unless whitelisted in `lele.toml` with the e
 
 **Fix:** Remove the `#[allow]`/`#[expect]` and fix the code the lint points at; a whitelist entry in `lele.toml` is the user's decision, never yours.
 
-**Bad** (reports LELE024):
+**Bad** (reports LELECORE011):
 
 `src/guest.rs`
 
@@ -5364,7 +5364,7 @@ mod guest;
 pub use guest::Guest;
 ```
 
-### LELE031 `no_comments`
+### LELECORE015 `no_comments`
 
 No comments in `src/` or `__methods__/`, except `///` doc comments in `constants.rs` and a final `// no test_usage necessary`.
 
@@ -5372,7 +5372,7 @@ No comments in `src/` or `__methods__/`, except `///` doc comments in `constants
 
 **Fix:** Delete the comment and move its meaning into names, types or the `test_usage` test; in a file named exactly `constants.rs` keep `///` history notes and delete `//` and `/* */`.
 
-**Bad** (reports LELE031):
+**Bad** (reports LELECORE015):
 
 `src/constants.rs`
 
@@ -5458,18 +5458,18 @@ pub use guest::Guest;
 
 ## Crate config
 
-- [LELE028 `clippy_config_cargo`](#lele028-clippy_config_cargo): `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
-- [LELE029 `clippy_config_clippy`](#lele029-clippy_config_clippy): `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
+- [LELECORE012 `clippy_config_cargo`](#lelecore012-clippy_config_cargo): `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
+- [LELECORE013 `clippy_config_clippy`](#lelecore013-clippy_config_clippy): `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
-### LELE028 `clippy_config_cargo`
+### LELECORE012 `clippy_config_cargo`
 
 `Cargo.toml` has `[lints.clippy]` with `pedantic`/`nursery` denied at priority -1 and the 13 required deny lints (or inherits them from the workspace).
 
 **Why:** Every crate gets the same strict baseline, so no crate silently allows unwraps, panics or lossy casts.
 
-**Fix:** Add the `[lints.clippy]` block shown by `lele-lint --explain LELE028` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.
+**Fix:** Add the `[lints.clippy]` block shown by `lele-lint --explain LELECORE012` to `Cargo.toml`, or `[lints] workspace = true` in a workspace that defines it.
 
-**Bad** (reports LELE028):
+**Bad** (reports LELECORE012):
 
 `Cargo.toml`
 
@@ -5508,7 +5508,7 @@ exit = "deny"
 as_conversions = "deny"
 ```
 
-### LELE029 `clippy_config_clippy`
+### LELECORE013 `clippy_config_clippy`
 
 `clippy.toml` sets `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` to `true`.
 
@@ -5516,7 +5516,7 @@ as_conversions = "deny"
 
 **Fix:** Add `allow-unwrap-in-tests`, `allow-expect-in-tests`, `allow-panic-in-tests` and `allow-indexing-slicing-in-tests` set to `true` in the nearest `clippy.toml` (or `.clippy.toml`) in the crate directory or any parent directory.
 
-**Bad** (reports LELE029):
+**Bad** (reports LELECORE013):
 
 `clippy.toml`
 

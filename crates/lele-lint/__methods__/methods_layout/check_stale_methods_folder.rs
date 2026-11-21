@@ -48,7 +48,7 @@ mod tests {
         let violations = check_stale_methods_folder(&project);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].file.ends_with(super::STALE_FOLDER_NAME));
-        assert_eq!(violations[0].code, "LELE030");
+        assert_eq!(violations[0].code, "LELECORE014");
         assert!(violations[0]
             .message
             .contains("rename `methods/` to `__methods__/` and update the `#[path]` mount"));

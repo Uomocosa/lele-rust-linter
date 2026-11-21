@@ -188,12 +188,16 @@ fn test_multi_root_layout_and_crate_local_boundary() -> Result<(), Box<dyn std::
     {
         return Err(format!("expected no LELE033 inside ui/user.rs, got {violations:#?}").into());
     }
-    if !has("ui/gadget/fetch.rs", "LELE030", "__methods__/src/gadget/") {
-        return Err(format!("expected LELE030 naming `__methods__/src/gadget/` for the misplaced methods file, got {violations:#?}").into());
+    if !has(
+        "ui/gadget/fetch.rs",
+        "LELECORE014",
+        "__methods__/src/gadget/",
+    ) {
+        return Err(format!("expected LELECORE014 naming `__methods__/src/gadget/` for the misplaced methods file, got {violations:#?}").into());
     }
-    if !has("ui/widget.rs", "LELE030", "more than one source root") {
+    if !has("ui/widget.rs", "LELECORE014", "more than one source root") {
         return Err(format!(
-            "expected LELE030 for duplicate `Widget` across roots, got {violations:#?}"
+            "expected LELECORE014 for duplicate `Widget` across roots, got {violations:#?}"
         )
         .into());
     }
@@ -233,19 +237,19 @@ fn test_custom_methods_root_mount_visibility_follows_config(
         .map(|violation| (violation.code.to_string(), violation.message))
         .collect();
     if !hits.iter().any(|(code, message)| {
-        code == "LELE038" && message.contains("`pub mod bodies;` must be private")
+        code == "LELECORE018" && message.contains("`pub mod bodies;` must be private")
     }) {
         return Err(format!(
-            "expected LELE038 mount-visibility for `pub mod bodies;` under methods_root = \"bodies\", got {hits:#?}"
+            "expected LELECORE018 mount-visibility for `pub mod bodies;` under methods_root = \"bodies\", got {hits:#?}"
         )
         .into());
     }
     if hits
         .iter()
-        .any(|(code, message)| code == "LELE038" && message.contains("`pub mod methods;`"))
+        .any(|(code, message)| code == "LELECORE018" && message.contains("`pub mod methods;`"))
     {
         return Err(format!(
-            "expected no LELE038 for `pub mod methods;` when methods_root = \"bodies\", got {hits:#?}"
+            "expected no LELECORE018 for `pub mod methods;` when methods_root = \"bodies\", got {hits:#?}"
         )
         .into());
     }

@@ -4,15 +4,15 @@ code = "LELE004"
 
 [[violations]]
 file = "Cargo.toml"
-code = "LELE028"
+code = "LELECORE012"
 
 [[violations]]
 file = "clippy.toml"
-code = "LELE029"
+code = "LELECORE013"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter_increment.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter_increment.rs"
@@ -20,11 +20,11 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter_increment.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter_increment.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
@@ -32,11 +32,11 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
-code = "LELE017"
+code = "LELECORE009"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
@@ -44,7 +44,7 @@ code = "LELE027"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_atomic_delegate/counter.rs"
@@ -52,7 +52,7 @@ code = "LELE032"
 
 [[violations]]
 file = "src/bad_atomic/multiple_items.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_atomic/multiple_items.rs"
@@ -60,19 +60,19 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_atomic/multiple_items.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_atomic/multiple_items.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
-code = "LELE017"
+code = "LELECORE009"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
@@ -80,11 +80,11 @@ code = "LELE018"
 
 [[violations]]
 file = "src/bad_constructor_skip/defaults.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_crate_path/connect.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/bad_crate_path/connect.rs"
@@ -92,7 +92,7 @@ code = "LELE025"
 
 [[violations]]
 file = "src/bad_crate_path/connect.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_cross_domain/mod.rs"
@@ -100,7 +100,7 @@ code = "LELE005"
 
 [[violations]]
 file = "src/bad_cross_domain/mod.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_getter/score.rs"
@@ -108,23 +108,23 @@ code = "LELE014"
 
 [[violations]]
 file = "src/bad_getter/score.rs"
-code = "LELE017"
+code = "LELECORE009"
 
 [[violations]]
 file = "src/bad_getter/score.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_getter/score.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
@@ -136,7 +136,7 @@ code = "LELE025"
 
 [[violations]]
 file = "src/bad_import/settings_new.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_import/settings.rs"
@@ -148,39 +148,39 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_import/settings.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_import/settings.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_logging/reporter.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_logging/reporter.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_logging/reporter.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_logging/reporter.rs"
-code = "LELETEST007"
+code = "LELECORE007"
 
 [[violations]]
 file = "src/bad_method_vis/mod.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
@@ -188,7 +188,7 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_method_vis/player_new.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_method_vis/player.rs"
@@ -196,7 +196,7 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_method_vis/player.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_modrs_purity/mod.rs"
@@ -208,7 +208,7 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_modrs_purity/mod.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_modrs_purity/mod.rs"
@@ -216,19 +216,19 @@ code = "LELE023"
 
 [[violations]]
 file = "src/bad_orphan_method/orphan_load.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_orphan_method/orphan_load.rs"
-code = "LELE003"
+code = "LELECORE003"
 
 [[violations]]
 file = "src/bad_orphan_method/orphan_load.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_positional/positional_new.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_positional/positional_new.rs"
@@ -236,15 +236,15 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_positional/positional_new.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_positional/positional_new.rs"
-code = "LELETEST007"
+code = "LELECORE007"
 
 [[violations]]
 file = "src/bad_positional/positional.rs"
-code = "LELE010"
+code = "LELECORE008"
 
 [[violations]]
 file = "src/bad_positional/positional.rs"
@@ -252,11 +252,11 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_positional/positional.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_positional/positional.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_positional/positional.rs"
@@ -264,7 +264,7 @@ code = "LELE032"
 
 [[violations]]
 file = "src/bad_single_caller/consumer.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_single_caller/consumer.rs"
@@ -272,11 +272,11 @@ code = "LELE013"
 
 [[violations]]
 file = "src/bad_single_caller/consumer.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_single_caller/consumer.rs"
-code = "LELETEST007"
+code = "LELECORE007"
 
 [[violations]]
 file = "src/bad_single_caller/msg.rs"
@@ -292,7 +292,7 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_single_field/config.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_single_field/player.rs"
@@ -304,15 +304,15 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_single_field/player.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_snake_case/PascalName.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_snake_case/PascalName.rs"
-code = "LELE002"
+code = "LELECORE002"
 
 [[violations]]
 file = "src/bad_snake_case/PascalName.rs"
@@ -320,7 +320,7 @@ code = "LELE020"
 
 [[violations]]
 file = "src/bad_snake_case/PascalName.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_stutter/consume.rs"
@@ -328,39 +328,39 @@ code = "LELE011"
 
 [[violations]]
 file = "src/bad_stutter/consume.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_test_inline/data.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_test_inline/data.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/bad_test_inline/data.rs"
-code = "LELETEST007"
+code = "LELECORE007"
 
 [[violations]]
 file = "src/bad_test_inline/tests"
-code = "LELETEST002"
+code = "LELECORE004"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
-code = "LELE001"
+code = "LELECORE001"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/bad_test_missing/compute.rs"
-code = "LELE034"
+code = "LELECORE016"
 
 [[violations]]
 file = "src/freenet/freenet_client.rs"
@@ -376,7 +376,7 @@ code = "LELE020"
 
 [[violations]]
 file = "src/report.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/report.rs"
@@ -388,23 +388,23 @@ code = "LELE020"
 
 [[violations]]
 file = "src/report.rs"
-code = "LELE022"
+code = "LELECORE010"
 
 [[violations]]
 file = "src/bad_dunder_mount/mod.rs"
-code = "LELE038"
+code = "LELECORE018"
 
 [[violations]]
 file = "src/bad_test_inline/greet_tests.rs"
-code = "LELETEST002"
+code = "LELECORE004"
 
 [[violations]]
 file = "src/bad_test_inline/greet_tests.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "tests"
-code = "LELETEST002"
+code = "LELECORE004"
 
 [[violations]]
 file = "src/bad_dunder_mount/__traits__/greetable.rs"

@@ -23,13 +23,13 @@ mod tests {
     fn test_usage() {
         let mut linter = Linter::default();
         let unknown = linter.retain_codes(&[
-            "lele001".to_string(),
+            "lelecore001".to_string(),
             "no_comments".to_string(),
             "LELE999".to_string(),
         ]);
         assert_eq!(unknown, vec!["LELE999".to_string()]);
         let mut codes: Vec<&str> = linter.rules.iter().map(|rule| rule.code()).collect();
         codes.sort_unstable();
-        assert_eq!(codes, vec!["LELE001", "LELE031"]);
+        assert_eq!(codes, vec!["LELECORE001", "LELECORE015"]);
     }
 }

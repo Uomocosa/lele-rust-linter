@@ -1,26 +1,26 @@
 [[violations]]
 file = "Cargo.toml"
-code = "LELE028"
+code = "LELECORE012"
 
 [[violations]]
 file = "click_counter/increment.rs"
-code = "LELE030"
+code = "LELECORE014"
 
 [[violations]]
 file = "click_counter/mod.rs"
-code = "LELE030"
+code = "LELECORE014"
 
 [[violations]]
 file = "click_counter/new.rs"
-code = "LELE030"
+code = "LELECORE014"
 
 [[violations]]
 file = "mod.rs"
-code = "LELE030"
+code = "LELECORE014"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"
-code = "LELETEST003"
+code = "LELECORE006"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"
@@ -28,7 +28,7 @@ code = "LELE027"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"
-code = "LELE031"
+code = "LELECORE015"
 
 [[violations]]
 file = "src/clicker/click_counter.rs"

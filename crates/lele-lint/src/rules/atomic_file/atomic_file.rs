@@ -17,7 +17,7 @@ pub struct AtomicFile;
 
 impl AtomicFile {
     pub const NAME: &'static str = "atomic_file";
-    pub const CODE: &'static str = "LELE001";
+    pub const CODE: &'static str = "LELECORE001";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
         summary: "One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).",

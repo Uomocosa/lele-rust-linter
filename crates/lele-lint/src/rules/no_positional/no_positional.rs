@@ -11,7 +11,7 @@ pub struct NoPositional;
 
 impl NoPositional {
     pub const NAME: &'static str = "no_positional";
-    pub const CODE: &'static str = "LELE010";
+    pub const CODE: &'static str = "LELECORE008";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Types,
         summary: "No positional field access (`.0`, `.1`).",

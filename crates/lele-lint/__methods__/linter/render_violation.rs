@@ -97,19 +97,20 @@ mod tests {
             PathBuf::from("a.rs"),
             2,
             4,
-            "LELE001",
+            "LELECORE001",
             String::from("too many items — move `spawn` to `spawn.rs`"),
         );
         let out = render_violation(&violation, Some("mod x;\npub fn spawn() {}\n"), None, false);
-        let plain = RuleViolation::from_file(PathBuf::from("a.rs"), "LELE001", String::from("bad"));
+        let plain =
+            RuleViolation::from_file(PathBuf::from("a.rs"), "LELECORE001", String::from("bad"));
         assert!(
             render_violation(&plain, None, Some("split it"), false).contains("= help: split it\n")
         );
-        assert!(out.starts_with("error[LELE001]: too many items\n"));
+        assert!(out.starts_with("error[LELECORE001]: too many items\n"));
         assert!(out.contains("--> a.rs:2:5\n"));
         assert!(out.contains("2 | pub fn spawn() {}\n"));
         assert!(out.contains("  |     ^^^^^^^^^^^^^^^^\n") || out.contains("|     ^^"));
         assert!(out.contains("= help: move `spawn` to `spawn.rs`\n"));
-        assert!(out.contains("`lele-lint --explain LELE001`"));
+        assert!(out.contains("`lele-lint --explain LELECORE001`"));
     }
 }

@@ -16,7 +16,7 @@ pub struct MethodsLayout;
 
 impl MethodsLayout {
     pub const NAME: &'static str = "methods_layout";
-    pub const CODE: &'static str = "LELE030";
+    pub const CODE: &'static str = "LELECORE014";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.",

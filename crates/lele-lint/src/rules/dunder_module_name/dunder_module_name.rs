@@ -15,7 +15,7 @@ pub struct DunderModuleName;
 
 impl DunderModuleName {
     pub const NAME: &'static str = "dunder_module_name";
-    pub const CODE: &'static str = "LELE038";
+    pub const CODE: &'static str = "LELECORE018";
     pub(crate) const BEVY_OWNED_MOUNT: &'static str = "bevy_systems";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,

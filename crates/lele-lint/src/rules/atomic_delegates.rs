@@ -14,7 +14,7 @@ pub struct AtomicDelegates;
 
 impl AtomicDelegates {
     pub const NAME: &'static str = "atomic_delegates";
-    pub const CODE: &'static str = "LELE017";
+    pub const CODE: &'static str = "LELECORE009";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Delegates,
         summary: "Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.",

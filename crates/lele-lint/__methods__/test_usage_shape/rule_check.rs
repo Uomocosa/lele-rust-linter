@@ -31,10 +31,20 @@ pub fn rule_check(
         if out_of_line.contains(source.relative_path) {
             continue;
         }
-        if rules::test_usage::TestUsage::needs_no_test_usage(source.relative_path, source.file) {
+        if rules::test_usage::TestUsage::needs_no_test_usage(
+            source.origin,
+            source.relative_path,
+            source.file,
+            project,
+        ) {
             continue;
         }
-        if rules::test_usage::TestUsage::is_exempt(source.relative_path, source.file, project) {
+        if rules::test_usage::TestUsage::is_exempt(
+            source.origin,
+            source.relative_path,
+            source.file,
+            project,
+        ) {
             continue;
         }
         if matches!(source.origin, Origin::Methods)
@@ -279,7 +289,7 @@ mod tests {
     #[test]
     fn test_usage_skips_a_bevy_systems_file() {
         let project = testing::parsed_project(
-            Project::default(),
+            testing::dunder_project(),
             &[("enemy/__bevy_systems__/tick.rs", "pub fn tick() {}\n")],
         );
         assert!(rule_check(&rules::test_usage_shape::TestUsageShape, &project).is_empty());

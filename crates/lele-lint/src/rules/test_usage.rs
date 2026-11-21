@@ -1,6 +1,7 @@
 use crate::traits::Rule;
 use crate::Category;
 use crate::ExampleFile;
+use crate::Origin;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -44,11 +45,23 @@ impl TestUsage {
 impl TestUsage {
     pub(crate) fn opt_out_at_end(content: &str) -> bool {}
     pub(crate) fn reads_opt_out(path: &Path) -> bool {}
-    pub(crate) fn is_exempt(rel_path: &Path, file: &syn::File, project: &Project) -> bool {}
+    pub(crate) fn is_exempt(
+        origin: Origin,
+        rel_path: &Path,
+        file: &syn::File,
+        project: &Project,
+    ) -> bool {
+    }
     pub(crate) fn is_pure_module_tree(file: &syn::File) -> bool {}
     pub(crate) fn is_plain_data(file: &syn::File) -> bool {}
     pub(crate) fn is_forbidden_file(rel_path: &Path, file: &syn::File) -> bool {}
-    pub(crate) fn needs_no_test_usage(rel_path: &Path, file: &syn::File) -> bool {}
+    pub(crate) fn needs_no_test_usage(
+        origin: Origin,
+        rel_path: &Path,
+        file: &syn::File,
+        project: &Project,
+    ) -> bool {
+    }
     pub(crate) fn is_type_only(file: &syn::File) -> bool {}
     pub(crate) fn is_default_only_impl(impl_block: &syn::ItemImpl) -> bool {}
     pub(crate) fn is_atomic_delegate_only(file: &syn::File) -> bool {}

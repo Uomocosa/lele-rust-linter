@@ -14,7 +14,7 @@ pub fn rule_check(
     let mut violations = Vec::new();
 
     for (rel_path, file) in &project.parsed_files {
-        if rules::trait_impl_co_location::TraitImplCoLocation::is_exempt_source(rel_path) {
+        if rules::trait_impl_co_location::TraitImplCoLocation::is_exempt_source(rel_path, project) {
             continue;
         }
         let mut hits = Vec::new();

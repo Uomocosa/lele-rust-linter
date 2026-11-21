@@ -149,7 +149,7 @@ mod tests {
         std::fs::create_dir_all(dir.path().join("src")).unwrap();
         std::fs::write(dir.path().join("src/run.rs"), "pub fn run() {}").unwrap();
         let mut project = testing::parsed_project(
-            testing::crate_project(),
+            testing::dunder_project(),
             &[
                 ("game/__bevy_systems__/tick.rs", "pub fn tick() {}"),
                 ("main.rs", "pub fn run() {}"),

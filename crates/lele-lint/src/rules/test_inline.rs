@@ -41,7 +41,7 @@ impl TestInline {
 
 #[atomic_delegates]
 impl TestInline {
-    pub(crate) fn has_tests_component(path: &std::path::Path) -> bool {}
+    pub(crate) fn has_tests_component(project: &Project, path: &std::path::Path) -> bool {}
     pub(crate) fn has_underscore_tests_stem(path: &std::path::Path) -> bool {}
     pub(crate) fn file_has_test_items(file: &syn::File) -> bool {}
     pub(crate) fn is_listed_e2e_dir(project: &Project, dir: &std::path::Path) -> bool {}

@@ -10,7 +10,7 @@ pub fn rule_check(_self: &rules::test_inline::TestInline, project: &Project) -> 
         if entry.kind != EntryKind::Directory {
             continue;
         }
-        if rules::test_inline::TestInline::has_tests_component(&entry.relative_path) {
+        if rules::test_inline::TestInline::has_tests_component(project, &entry.relative_path) {
             violations.push(RuleViolation::from_file(entry.absolute_path.clone(), rules::test_inline::TestInline::CODE, format!(
                     "unit tests are in a separate file `{}` — move them into `#[cfg(test)] mod tests` of the file they test, then delete this file",
                     entry.relative_path.display()
@@ -79,16 +79,21 @@ mod tests {
 
     #[test]
     fn tests_component_detection() {
+        let project = Project::default();
         assert!(rules::test_inline::TestInline::has_tests_component(
+            &project,
             Path::new("player/tests")
         ));
         assert!(rules::test_inline::TestInline::has_tests_component(
+            &project,
             Path::new("player/tests/helpers.rs")
         ));
         assert!(!rules::test_inline::TestInline::has_tests_component(
+            &project,
             Path::new("player/mod.rs")
         ));
         assert!(!rules::test_inline::TestInline::has_tests_component(
+            &project,
             Path::new("__bevy_systems__")
         ));
     }

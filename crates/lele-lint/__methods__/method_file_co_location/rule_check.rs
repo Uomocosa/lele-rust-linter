@@ -74,6 +74,7 @@ pub fn rule_check(
 #[cfg(test)]
 mod tests {
     use crate::rules;
+    use crate::DunderPath;
     use crate::Identifier;
     use std::collections::HashMap;
     use std::collections::HashSet;
@@ -187,8 +188,10 @@ mod tests {
 
     #[test]
     fn test_usage_bevy_systems_file_passes() {
+        let mut base = testing::relative_project();
+        base.dunder_paths = DunderPath::defaults();
         let project = testing::parsed_project(
-            testing::relative_project(),
+            base,
             &[
                 ("room_sync/libp2p_events.rs", "pub struct Libp2pEvents;"),
                 (

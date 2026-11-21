@@ -1,7 +1,9 @@
 use crate::rules;
 use crate::traits::Rule;
 use crate::Category;
+use crate::DirRole;
 use crate::ExampleFile;
+use crate::Origin;
 use crate::Project;
 use crate::RuleDoc;
 use crate::RuleViolation;
@@ -42,15 +44,12 @@ impl TraitImplCoLocation {
 }
 
 impl TraitImplCoLocation {
-    pub(crate) fn is_exempt_source(rel_path: &Path) -> bool {
+    pub(crate) fn is_exempt_source(rel_path: &Path, project: &Project) -> bool {
         let file_name = rel_path
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("");
-        file_name == "build.rs"
-            || rel_path
-                .components()
-                .any(|component| component.as_os_str().to_str() == Some("tests"))
+        file_name == "build.rs" || matches!(project.dir_role(Origin::Src, rel_path), DirRole::Tests)
     }
     pub(crate) fn ambiguous_target_message(
         name: &str,

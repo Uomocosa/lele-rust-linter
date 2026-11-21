@@ -13,7 +13,12 @@ pub fn rule_check(_self: &rules::test_usage::TestUsage, project: &Project) -> Ve
             continue;
         }
         let rel_path = source.relative_path;
-        if rules::test_usage::TestUsage::needs_no_test_usage(rel_path, source.file) {
+        if rules::test_usage::TestUsage::needs_no_test_usage(
+            source.origin,
+            rel_path,
+            source.file,
+            project,
+        ) {
             let absolute = project.absolute_path(source.origin, rel_path);
             if rules::test_usage::TestUsage::reads_opt_out(&absolute) {
                 violations.push(RuleViolation::from_file(absolute, rules::test_usage::TestUsage::CODE, format!(
@@ -23,7 +28,7 @@ pub fn rule_check(_self: &rules::test_usage::TestUsage, project: &Project) -> Ve
             }
             continue;
         }
-        if rules::test_usage::TestUsage::is_exempt(rel_path, source.file, project) {
+        if rules::test_usage::TestUsage::is_exempt(source.origin, rel_path, source.file, project) {
             continue;
         }
 
@@ -47,6 +52,7 @@ pub fn rule_check(_self: &rules::test_usage::TestUsage, project: &Project) -> Ve
 mod tests {
     use super::rule_check;
     use crate::rules;
+    use crate::DunderPath;
     use crate::Origin;
     use crate::ParsedSource;
     use crate::Project;
@@ -88,7 +94,10 @@ mod tests {
         use std::path::PathBuf;
         let rule = rules::test_usage::TestUsage;
         let system: syn::File = syn::parse_str("pub fn tick() {}").unwrap();
-        let mut project = Project::default();
+        let mut project = Project {
+            dunder_paths: DunderPath::defaults(),
+            ..Project::default()
+        };
         project
             .parsed_files
             .insert(PathBuf::from("enemy/__bevy_systems__/tick.rs"), system);
@@ -107,6 +116,7 @@ mod tests {
         std::fs::write(&absolute, source).unwrap();
         let mut project = Project {
             src_dir: dir.path().to_path_buf(),
+            dunder_paths: DunderPath::defaults(),
             ..Project::default()
         };
         project

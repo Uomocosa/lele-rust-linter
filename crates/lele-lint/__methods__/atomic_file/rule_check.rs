@@ -222,8 +222,10 @@ mod tests {
 
     #[test]
     fn test_usage_bevy_systems_file_passes() {
+        let mut base = testing::relative_project();
+        base.dunder_paths = DunderPath::defaults();
         let project = testing::parsed_project(
-            testing::relative_project(),
+            base,
             &[
                 ("direct_dial/libp2p_events.rs", "pub struct Libp2pEvents;\n"),
                 (

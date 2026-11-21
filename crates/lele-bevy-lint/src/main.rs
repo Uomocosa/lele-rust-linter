@@ -5,6 +5,7 @@ use clap::ValueEnum;
 use lele_bevy_lint::BevyLinter;
 use lele_bevy_lint::scan;
 use lele_lint::CommonArgs;
+use lele_lint::Linter;
 use lele_lint::Project;
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -98,6 +99,15 @@ fn main() {
         eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
         process::exit(1);
     }
+
+    let relaxed = match linter.apply_rule_settings(&config) {
+        Ok(relaxed) => relaxed,
+        Err(e) => {
+            eprintln!("lele_bevy_lint: {}", lele_lint::Error::with_causes(&e));
+            process::exit(1);
+        }
+    };
+    eprint!("{}", Linter::render_relaxed_banner(&relaxed));
 
     if args.ui_inventory {
         print!("{}", scan::BevyProject(&project).ui_inventory());

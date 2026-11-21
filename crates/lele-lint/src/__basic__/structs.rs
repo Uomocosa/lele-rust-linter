@@ -163,3 +163,10 @@ pub struct RuleDoc {
     pub bad: &'static [ExampleFile],
     pub good: &'static [ExampleFile],
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RelaxedRule {
+    pub name: String,
+    pub code: String,
+    pub reason: String,
+}

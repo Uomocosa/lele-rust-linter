@@ -48,6 +48,15 @@ pub enum Error {
 
     #[error("rustfmt output lacks a placement answer for a method")]
     RustfmtMissing,
+
+    #[error("lele.toml: no rule `{name}` in namespace `{namespace}`")]
+    UnknownRule { namespace: String, name: String },
+
+    #[error("lele.toml: `{name}` ({code}) is a LELECORE rule and cannot be turned off; exempt a path instead")]
+    LockedRuleTurnedOff { name: String, code: String },
+
+    #[error("lele.toml: `{name}` is turned off without a `reason`")]
+    SettingWithoutReason { name: String },
 }
 
 #[atomic_delegates]

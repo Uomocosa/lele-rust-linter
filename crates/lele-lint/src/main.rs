@@ -98,6 +98,15 @@ fn main() {
         process::exit(1);
     }
 
+    let relaxed = match linter.apply_rule_settings(&config) {
+        Ok(relaxed) => relaxed,
+        Err(e) => {
+            eprintln!("lele_lint: {}", lele_lint::Error::with_causes(&e));
+            process::exit(1);
+        }
+    };
+    eprint!("{}", Linter::render_relaxed_banner(&relaxed));
+
     if !project.parse_failures.is_empty() {
         for failure in &project.parse_failures {
             eprintln!(

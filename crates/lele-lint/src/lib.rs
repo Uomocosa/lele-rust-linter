@@ -20,7 +20,8 @@ pub use basic::enums::RuleLevel;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
     FlatDirEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection, LeleToml, ModDecl,
-    NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RuleDoc, RuleTable, ScannedDir,
+    NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RelaxedRule, RuleDoc, RuleTable,
+    ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

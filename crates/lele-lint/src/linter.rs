@@ -2,10 +2,13 @@ use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
 
 use crate::traits::Rule;
+use crate::Config;
+use crate::Error;
 use crate::ErrorFormat;
 use crate::ExampleFile;
 use crate::PathExemption;
 use crate::Project;
+use crate::RelaxedRule;
 use crate::RuleViolation;
 use std::fmt::Write as _;
 use std::io::Write;
@@ -30,6 +33,8 @@ impl Linter {
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}
     pub fn retain_codes(&mut self, codes: &[String]) -> Vec<String> {}
+    pub fn apply_rule_settings(&mut self, config: &Config) -> Result<Vec<RelaxedRule>, Error> {}
+    pub fn render_relaxed_banner(relaxed: &[RelaxedRule]) -> String {}
     pub fn render_report(
         violations: &[RuleViolation],
         rules: &[Box<dyn Rule>],

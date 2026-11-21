@@ -1,34 +1,34 @@
 # One lele.toml per workspace. `just lint` passes `--config lele.toml`. Every path
 # in this file is relative to this file's directory (the config base).
+# Facts live under `[lele.project]`; per-rule tables live under
+# `[lele.rules.<namespace>.<rule>]`.
 
-[lele.config]
+[lele.project]
 exclude = ["target", ".devenv", ".git", "lele-lint-test-crates"]
 e2e_test_dirs = ["crates/lele-lint/tests", "crates/lele-bevy-lint/tests"]
 
-[lele.lint]
-
-[[lele.lint.entry_points]]
+[[lele.project.entry_points]]
 file = "crates/atomic-delegate-macros/src/lib.rs"
 fn = "atomic_delegates"
 reason = "proc-macro entry point"
 
-[[lele.lint.entry_points]]
+[[lele.project.entry_points]]
 file = "crates/atomic-delegate-macros/src/lib.rs"
 fn = "atomic_delegate"
 reason = "proc-macro entry point"
 
-[[lele.lint.entry_points]]
+[[lele.project.entry_points]]
 file = "crates/rule-examples-macro/src/lib.rs"
 fn = "rule_examples"
 reason = "proc-macro entry point"
 
-[[lele.boundary]]
+[[lele.project.boundary]]
 name       = "syntax analysis is pure"
 why        = "crates/lele-lint/src/common holds pure wrappers over syn ASTs and source paths; filesystem and process I/O live in Project::discover/walk_entries/parse_source_files."
 folders    = ["crates/lele-lint/src/common"]
 cannot_use = ["std::fs", "std::env", "std::process", "std::net", "std::time"]
 require    = "honest"
 
-[[lele.lint.no_delegates]]
+[[lele.rules.lint.atomic_delegates.exempt]]
 crate = "crates/lele-snake-case"
 reason = "atomic-delegate-macros depends on this crate, so it cannot use #[atomic_delegates]"

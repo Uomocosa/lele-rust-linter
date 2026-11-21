@@ -19,9 +19,9 @@ impl FlatDir {
     pub const CODE: &'static str = "LELE044";
     pub const DOC: RuleDoc = RuleDoc {
         category: Category::Layout,
-        summary: "A `[[lele.flat_dir]]` dir holds only files, no subdirectories.",
+        summary: "A `[[lele.project.flat_dir]]` dir holds only files, no subdirectories.",
         why: "A flat dir holds one file per item with shared items at the crate root; a subdirectory hides files from that layout and invites the nesting the flat layout forbids.",
-        fix: "Move the nested files up into the flat dir itself, or delete the `[[lele.flat_dir]]` entry if the dir is meant to nest.",
+        fix: "Move the nested files up into the flat dir itself, or delete the `[[lele.project.flat_dir]]` entry if the dir is meant to nest.",
         bad: rule_examples!("flat_dir/bad"),
         good: rule_examples!("flat_dir/good"),
     };

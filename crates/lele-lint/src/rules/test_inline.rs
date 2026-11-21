@@ -17,7 +17,7 @@ impl TestInline {
         category: Category::Tests,
         summary: "Unit tests live in the same file as the code (no `tests/` folders under `src/`, no `*_tests.rs` files, no unlisted crate-level `tests/` dirs).",
         why: "The test sits next to what it tests, so reading one means reading the other. Only listed end-to-end suites may live outside the crate.",
-        fix: "Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.config] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.",
+        fix: "Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.project] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.",
         bad: rule_examples!("test_inline/bad"),
         good: rule_examples!("test_inline/good"),
     };

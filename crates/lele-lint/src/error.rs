@@ -36,6 +36,13 @@ pub enum Error {
     #[error("rustfmt rejected the placement check: {stderr}")]
     RustfmtFailed { stderr: String },
 
+    #[error("invalid `exempt` entry for rule `{rule}`")]
+    BadRuleExempt {
+        rule: String,
+        #[source]
+        source: toml::de::Error,
+    },
+
     #[error("rustfmt output could not be parsed")]
     RustfmtOutput(#[source] syn::Error),
 

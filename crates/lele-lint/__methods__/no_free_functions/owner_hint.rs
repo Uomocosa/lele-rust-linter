@@ -80,7 +80,7 @@ pub fn owner_hint(
         ),
     };
     format!(
-        "free fn `{name}` has no owner type — {advice}; then run `lele-lint --sync-methods`. Only if the user confirms it is a process/task entry point, list it in `[[lele.lint.entry_points]]` instead"
+        "free fn `{name}` has no owner type — {advice}; then run `lele-lint --sync-methods`. Only if the user confirms it is a process/task entry point, list it in `[[lele.project.entry_points]]` instead"
     )
 }
 

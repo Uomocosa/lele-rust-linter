@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 use crate::basic;
 use crate::basic::enums::Requirement;
+use crate::basic::enums::RuleLevel;
 use crate::DunderPath;
 use crate::Entry;
 
@@ -9,23 +10,39 @@ use crate::Entry;
 #[serde(deny_unknown_fields)]
 pub struct LeleSection {
     #[serde(default)]
-    pub lint: LeleTomlLintSections,
+    pub project: ProjectSection,
+    #[serde(default)]
+    pub rules: std::collections::BTreeMap<String, std::collections::BTreeMap<String, RuleTable>>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectSection {
+    #[serde(default)]
+    pub exclude: Vec<std::path::PathBuf>,
+    #[serde(default)]
+    pub e2e_test_dirs: Vec<std::path::PathBuf>,
+    #[serde(default)]
+    pub dunder_paths: Vec<DunderPath>,
+    #[serde(default)]
+    pub layout: LayoutSection,
     #[serde(default)]
     pub boundary: Vec<BoundaryEntry>,
     #[serde(default)]
     pub flat_dir: Vec<FlatDirEntry>,
     #[serde(default)]
-    pub config: ConfigSection,
+    pub entry_points: Vec<EntryPoint>,
     #[serde(default)]
-    pub layout: LayoutSection,
+    pub inline_trait_methods: Vec<InlineTraitMethodsEntry>,
 }
 
 #[derive(Deserialize, Debug, Default)]
-pub struct ConfigSection {
+#[serde(deny_unknown_fields)]
+pub struct RuleTable {
+    pub level: Option<RuleLevel>,
+    pub reason: Option<String>,
     #[serde(default)]
-    pub exclude: Vec<std::path::PathBuf>,
-    #[serde(default)]
-    pub e2e_test_dirs: Vec<std::path::PathBuf>,
+    pub exempt: Vec<toml::Table>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
@@ -60,23 +77,6 @@ pub struct BoundaryEntry {
 pub struct FlatDirEntry {
     pub path: std::path::PathBuf,
     pub reason: String,
-}
-
-#[derive(Deserialize, Debug, Default)]
-#[serde(deny_unknown_fields)]
-pub struct LeleTomlLintSections {
-    #[serde(default)]
-    pub dunder_paths: Vec<DunderPath>,
-    #[serde(default)]
-    pub clippy_allow_whitelist: Vec<AllowWhitelistEntry>,
-    #[serde(default)]
-    pub entry_points: Vec<EntryPoint>,
-    #[serde(default)]
-    pub collection_wrappers: Vec<CollectionWrapperEntry>,
-    #[serde(default)]
-    pub no_delegates: Vec<NoDelegatesEntry>,
-    #[serde(default)]
-    pub inline_trait_methods: Vec<InlineTraitMethodsEntry>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

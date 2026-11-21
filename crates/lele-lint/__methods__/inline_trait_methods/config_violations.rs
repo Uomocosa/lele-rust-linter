@@ -14,7 +14,7 @@ pub fn config_violations(project: &Project) -> Vec<RuleViolation> {
                 config_path.clone(),
                 code,
                 format!(
-                    "[[lele.lint.inline_trait_methods]] entry for `{trait_path}` has no reason"
+                    "[[lele.project.inline_trait_methods]] entry for `{trait_path}` has no reason"
                 ),
             ));
         }
@@ -23,7 +23,7 @@ pub fn config_violations(project: &Project) -> Vec<RuleViolation> {
                 config_path.clone(),
                 code,
                 format!(
-                    "[[lele.lint.inline_trait_methods]] entry for `{trait_path}` lists no methods"
+                    "[[lele.project.inline_trait_methods]] entry for `{trait_path}` lists no methods"
                 ),
             ));
         }
@@ -37,7 +37,7 @@ pub fn config_violations(project: &Project) -> Vec<RuleViolation> {
                 violations.push(RuleViolation::from_file(
                     config_path.clone(),
                     code,
-                    format!("[[lele.lint.inline_trait_methods]] entry for `{trait_path}` lists `{method}` twice"),
+                    format!("[[lele.project.inline_trait_methods]] entry for `{trait_path}` lists `{method}` twice"),
                 ));
             }
         }

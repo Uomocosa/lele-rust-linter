@@ -8,21 +8,64 @@ pub fn apply_layout(project: &mut Project, config: &Config) -> Result<(), Error>
     project.dunder_paths = config.dunder_paths();
     if let Some(section) = config.as_ref() {
         project
-            .clippy_allow_whitelist
-            .clone_from(&section.lint.clippy_allow_whitelist);
-        project.entry_points.clone_from(&section.lint.entry_points);
-        project
-            .collection_wrappers
-            .clone_from(&section.lint.collection_wrappers);
-        project.no_delegates.clone_from(&section.lint.no_delegates);
+            .entry_points
+            .clone_from(&section.project.entry_points);
         project
             .inline_trait_methods
-            .clone_from(&section.lint.inline_trait_methods);
+            .clone_from(&section.project.inline_trait_methods);
         project
             .e2e_test_dirs
-            .clone_from(&section.config.e2e_test_dirs);
-        project.boundaries.clone_from(&section.boundary);
-        project.flat_dirs.clone_from(&section.flat_dir);
+            .clone_from(&section.project.e2e_test_dirs);
+        project.boundaries.clone_from(&section.project.boundary);
+        project.flat_dirs.clone_from(&section.project.flat_dir);
+        project.clippy_allow_whitelist = Vec::new();
+        if let Some(rule) = section
+            .rules
+            .get("lint")
+            .and_then(|namespace| namespace.get("no_allow_attributes"))
+        {
+            for exempt in &rule.exempt {
+                let entry = toml::Value::Table(exempt.clone())
+                    .try_into()
+                    .map_err(|source| Error::BadRuleExempt {
+                        rule: "lint.no_allow_attributes".to_string(),
+                        source,
+                    })?;
+                project.clippy_allow_whitelist.push(entry);
+            }
+        }
+        project.collection_wrappers = Vec::new();
+        if let Some(rule) = section
+            .rules
+            .get("lint")
+            .and_then(|namespace| namespace.get("no_collection_newtype"))
+        {
+            for exempt in &rule.exempt {
+                let entry = toml::Value::Table(exempt.clone())
+                    .try_into()
+                    .map_err(|source| Error::BadRuleExempt {
+                        rule: "lint.no_collection_newtype".to_string(),
+                        source,
+                    })?;
+                project.collection_wrappers.push(entry);
+            }
+        }
+        project.no_delegates = Vec::new();
+        if let Some(rule) = section
+            .rules
+            .get("lint")
+            .and_then(|namespace| namespace.get("atomic_delegates"))
+        {
+            for exempt in &rule.exempt {
+                let entry = toml::Value::Table(exempt.clone())
+                    .try_into()
+                    .map_err(|source| Error::BadRuleExempt {
+                        rule: "lint.atomic_delegates".to_string(),
+                        source,
+                    })?;
+                project.no_delegates.push(entry);
+            }
+        }
     }
 
     let roots = config.layout_roots();
@@ -116,7 +159,8 @@ mod tests {
             src_dir: dir.path().join("src"),
             ..Project::default()
         };
-        let section: LeleSection = toml::from_str("[layout]\nroots = [\"src\", \"ui\"]\n").unwrap();
+        let section: LeleSection =
+            toml::from_str("[project.layout]\nroots = [\"src\", \"ui\"]\n").unwrap();
         apply_layout(&mut project, &Config(Some(section))).unwrap();
         assert!(project
             .parsed_files
@@ -140,7 +184,7 @@ mod tests {
             ..Project::default()
         };
         let section: LeleSection =
-            toml::from_str("[layout]\nmethods_root = \"custom_methods\"\n").unwrap();
+            toml::from_str("[project.layout]\nmethods_root = \"custom_methods\"\n").unwrap();
         apply_layout(&mut project, &Config(Some(section))).unwrap();
         assert!(project
             .methods_dir
@@ -160,7 +204,7 @@ mod tests {
             ..Project::default()
         };
         let section: LeleSection =
-            toml::from_str("[layout]\nroots = [\"src\", \"missing\"]\n").unwrap();
+            toml::from_str("[project.layout]\nroots = [\"src\", \"missing\"]\n").unwrap();
         assert!(apply_layout(&mut project, &Config(Some(section))).is_err());
     }
 }

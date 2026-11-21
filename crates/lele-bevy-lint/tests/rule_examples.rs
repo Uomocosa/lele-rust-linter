@@ -16,7 +16,7 @@ edition = "2021"
 [workspace]
 "#;
 
-const DEFAULT_LELE_TOML: &str = "[lele.lint]\n";
+const DEFAULT_LELE_TOML: &str = "[lele.project]\n";
 
 fn write_file(root: &Path, rel: &str, source: &str) -> Result<(), Box<dyn std::error::Error>> {
     let path = root.join(rel);

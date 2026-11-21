@@ -1,6 +1,4 @@
-[lele.lint]
-
-[[lele.lint.clippy_allow_whitelist]]
+[[lele.rules.lint.no_allow_attributes.exempt]]
 allow = "clippy::needless_pass_by_value"
 file = "src/guest.rs"
 reason = "example: the signature is fixed by a trait in another crate"

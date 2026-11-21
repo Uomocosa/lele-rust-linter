@@ -16,10 +16,11 @@ pub use basic::enums::Location;
 pub use basic::enums::Origin;
 pub use basic::enums::PlacementKind;
 pub use basic::enums::Requirement;
+pub use basic::enums::RuleLevel;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
-    FlatDirEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection, LeleToml,
-    LeleTomlLintSections, ModDecl, NoDelegatesEntry, ParseFailure, Reexport, RuleDoc, ScannedDir,
+    FlatDirEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection, LeleToml, ModDecl,
+    NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RuleDoc, RuleTable, ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

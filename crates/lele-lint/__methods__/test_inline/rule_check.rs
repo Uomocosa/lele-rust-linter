@@ -40,7 +40,7 @@ pub fn rule_check(_self: &rules::test_inline::TestInline, project: &Project) -> 
     if tests_dir.is_dir() && !rules::test_inline::TestInline::is_listed_e2e_dir(project, &tests_dir)
     {
         violations.push(RuleViolation::from_file(tests_dir, rules::test_inline::TestInline::CODE, String::from(
-                "crate-level `tests/` directory holds integration/e2e tests outside the crate — it must be listed in `[lele.config] e2e_test_dirs` (paths relative to the config file); unit tests go colocated",
+                "crate-level `tests/` directory holds integration/e2e tests outside the crate — it must be listed in `[lele.project] e2e_test_dirs` (paths relative to the config file); unit tests go colocated",
             )));
     }
 

@@ -80,7 +80,7 @@ fn test_multi_root_layout_and_crate_local_boundary() -> Result<(), Box<dyn std::
     )?;
     std::fs::write(
         root.join("lele.toml"),
-        "[lele.layout]\nroots = [\"src\", \"ui\"]\nmethods_root = \"__methods__\"\n\n[[lele.boundary]]\nname = \"src stays free of ui\"\nwhy = \"ui is an adapter\"\nfolders = [\"src\"]\ncannot_use = [\"crate::ui\"]\n",
+        "[lele.project.layout]\nroots = [\"src\", \"ui\"]\nmethods_root = \"__methods__\"\n\n[[lele.project.boundary]]\nname = \"src stays free of ui\"\nwhy = \"ui is an adapter\"\nfolders = [\"src\"]\ncannot_use = [\"crate::ui\"]\n",
     )?;
     std::fs::create_dir_all(root.join("src"))?;
     std::fs::create_dir_all(root.join("ui"))?;
@@ -215,7 +215,7 @@ fn test_custom_methods_root_mount_visibility_follows_config(
     )?;
     std::fs::write(
         root.join("lele.toml"),
-        "[lele.layout]\nmethods_root = \"bodies\"\n",
+        "[lele.project.layout]\nmethods_root = \"bodies\"\n",
     )?;
     std::fs::create_dir_all(root.join("bodies"))?;
     std::fs::create_dir_all(root.join("src"))?;
@@ -266,7 +266,7 @@ fn test_layout_extra_roots_are_linted() -> Result<(), Box<dyn std::error::Error>
     )?;
     std::fs::write(
         root.join("lele.toml"),
-        "[lele.layout]\nroots = [\"src\", \"ui\"]\nmethods_root = \"__methods__\"\n",
+        "[lele.project.layout]\nroots = [\"src\", \"ui\"]\nmethods_root = \"__methods__\"\n",
     )?;
     std::fs::create_dir_all(root.join("src"))?;
     std::fs::create_dir_all(root.join("ui"))?;

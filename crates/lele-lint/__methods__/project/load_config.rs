@@ -27,7 +27,7 @@ mod tests {
         };
         assert!(missing.load_config().unwrap().as_ref().is_none());
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("lele.toml"), "[lele.lint]\n").unwrap();
+        std::fs::write(dir.path().join("lele.toml"), "[lele.project]\n").unwrap();
         let present = Project {
             root: dir.path().to_path_buf(),
             ..Project::default()

@@ -14,7 +14,7 @@ pub fn entry_violations(project: &Project) -> Vec<RuleViolation> {
                 path.clone(),
                 code,
                 format!(
-                    "[[lele.lint.collection_wrappers]] entry for `{}` has no reason",
+                    "[[lele.rules.lint.no_collection_newtype.exempt]] entry for `{}` has no reason",
                     entry.type_name
                 ),
             ));
@@ -24,7 +24,7 @@ pub fn entry_violations(project: &Project) -> Vec<RuleViolation> {
                 config_file.clone(),
                 code,
                 format!(
-                    "stale [[lele.lint.collection_wrappers]] entry: file `{}` does not exist — delete the entry",
+                    "stale [[lele.rules.lint.no_collection_newtype.exempt]] entry: file `{}` does not exist — delete the entry",
                     entry.file.display()
                 ),
             ));
@@ -39,7 +39,7 @@ pub fn entry_violations(project: &Project) -> Vec<RuleViolation> {
                 path,
                 code,
                 format!(
-                    "stale [[lele.lint.collection_wrappers]] entry: no collection wrapper `{}` in `{}` — delete the entry",
+                    "stale [[lele.rules.lint.no_collection_newtype.exempt]] entry: no collection wrapper `{}` in `{}` — delete the entry",
                     entry.type_name,
                     entry.file.display()
                 ),

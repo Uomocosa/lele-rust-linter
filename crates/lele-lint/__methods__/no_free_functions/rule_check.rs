@@ -63,7 +63,7 @@ pub fn rule_check(
                 project.config_base().join(config::CONFIG_FILENAME),
                 CODE,
                 format!(
-                    "stale [[lele.lint.entry_points]] entry: file `{}` does not exist — delete the entry",
+                    "stale [[lele.project.entry_points]] entry: file `{}` does not exist — delete the entry",
                     entry.file.display()
                 ),
             ));
@@ -76,7 +76,7 @@ pub fn rule_check(
             path,
             CODE,
             format!(
-                "stale [[lele.lint.entry_points]] entry: no free `pub fn {}` in `{}` — delete the entry",
+                "stale [[lele.project.entry_points]] entry: no free `pub fn {}` in `{}` — delete the entry",
                 entry.function,
                 entry.file.display()
             ),

@@ -17,7 +17,7 @@ every **Good** example reports nothing at all.
 - [LELE023 `mod_rs_purity`](#lele023-mod_rs_purity): `mod.rs` holds only `mod`/`pub mod` declarations and `pub use` re-exports.
 - [LELE041 `trait_placement`](#lele041-trait_placement): Every trait in `src/` lives in `<domain>/__traits__/<trait_snake>.rs` (crate-root traits in `__traits__/`), one trait per file named after it; a trait never repeats the `Trait` suffix.
 - [LELE042 `trait_impl_co_location`](#lele042-trait_impl_co_location): Every `impl Trait for Type` in `src/` lives in the file that defines `Type` when `Type` is a crate type (last path segment, generics ignored, references and parens unwrapped); blanket impls and impls whose `Type` is not defined in the crate live in the file that defines `Trait`; when several files define a type or trait of that name, the impl is only clean in a file that defines it — otherwise the impl's own qualified path or a matching `use` import in its file selects the defining file (relative `super::`/`self::` qualifiers resolve against the impl file's own module, and dunder-mounted modules match by their code name, `stock::traits` → `stock/__traits__/`), and an unresolved ambiguity lists every defining file.
-- [LELE044 `flat_dir`](#lele044-flat_dir): A `[[lele.flat_dir]]` dir holds only files, no subdirectories.
+- [LELE044 `flat_dir`](#lele044-flat_dir): A `[[lele.project.flat_dir]]` dir holds only files, no subdirectories.
 - [LELECORE001 `atomic_file`](#lelecore001-atomic_file): One public (`pub` or `pub(crate)`) item per file, and the file is named after it (`guest.rs` holds `pub struct Guest`). Files under `__bevy_systems__/` are exempt from method-file inference (a Bevy system file may start with a type's stem).
 - [LELECORE002 `snake_case_files`](#lelecore002-snake_case_files): File and folder names are snake_case.
 - [LELECORE003 `method_file_co_location`](#lelecore003-method_file_co_location): A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files under `__bevy_systems__/` are exempt (a Bevy system file may start with a type's stem).
@@ -539,18 +539,18 @@ pub use clock::Clock;
 
 ### LELE044 `flat_dir`
 
-A `[[lele.flat_dir]]` dir holds only files, no subdirectories.
+A `[[lele.project.flat_dir]]` dir holds only files, no subdirectories.
 
 **Why:** A flat dir holds one file per item with shared items at the crate root; a subdirectory hides files from that layout and invites the nesting the flat layout forbids.
 
-**Fix:** Move the nested files up into the flat dir itself, or delete the `[[lele.flat_dir]]` entry if the dir is meant to nest.
+**Fix:** Move the nested files up into the flat dir itself, or delete the `[[lele.project.flat_dir]]` entry if the dir is meant to nest.
 
 **Bad** (reports LELE044):
 
 `lele.toml`
 
 ```toml
-[[lele.flat_dir]]
+[[lele.project.flat_dir]]
 path = "src/flat"
 reason = "one file per item"
 ```
@@ -629,7 +629,7 @@ mod tests {
 `lele.toml`
 
 ```toml
-[[lele.flat_dir]]
+[[lele.project.flat_dir]]
 path = "src/flat"
 reason = "one file per item"
 ```
@@ -1076,11 +1076,11 @@ pub struct Item {
 - [LELE021 `no_inner_fns`](#lele021-no_inner_fns): No `fn` inside a function body, except a tree walk's inner `fn recursion`.
 - [LELE027 `impl_item_order`](#lele027-impl_item_order): A type's impls in `src/` follow one order: `impl Default`, constructors (receiver-less fns returning `Self`, `impl From`/`TryFrom`/`FromStr`), other trait impls, `pub` fns, then `pub(crate)` fns.
 - [LELE032 `delegate_macro`](#lele032-delegate_macro): Method shells (empty bodies) are declared in one `#[atomic_delegates]` impl block per `impl_item_order` group — constructor shells, `pub` shells, `pub(crate)` shells — and no block mixes groups; `new` is never delegated.
-- [LELE043 `inline_trait_methods`](#lele043-inline_trait_methods): A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
+- [LELE043 `inline_trait_methods`](#lele043-inline_trait_methods): A trait method listed in `[[lele.project.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
 - [LELECORE005 `helpers_are_methods`](#lelecore005-helpers_are_methods): No private `fn` in `src/`: a helper is a `pub(crate)` method or associated fn of the type it serves, never a private free fn or a private method. `fn main` in `main.rs` or a `src/bin/*.rs` binary and test code are exempt.
-- [LELECORE009 `atomic_delegates`](#lelecore009-atomic_delegates): Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+- [LELECORE009 `atomic_delegates`](#lelecore009-atomic_delegates): Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.project.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.rules.lint.atomic_delegates.exempt]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 - [LELECORE014 `methods_layout`](#lelecore014-methods_layout): Every `#[atomic_delegates]` shell has a body at `__methods__/<type>/<method>.rs` with `pub fn <method>` and its own `test_usage` (or a final `// no test_usage necessary`); a body that is a one-liner, or a single simple `match`/`if`/loop, is not a delegate and is reported: it is inlined in the type file. A leftover crate-root `methods/` body folder is reported for renaming.
-- [LELECORE016 `no_free_functions`](#lelecore016-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
+- [LELECORE016 `no_free_functions`](#lelecore016-no_free_functions): A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.project.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 - [LELECORE017 `methods_are_delegates`](#lelecore017-methods_are_delegates): A `__methods__/<type>/<method>.rs` file holds only `use` lines, private `const`s, its delegate body `pub fn <method>` and `#[cfg(test)] mod tests` — no helper fns, types or impls.
 
 ### LELE004 `method_visibility`
@@ -1922,20 +1922,18 @@ mod tests {
 
 ### LELE043 `inline_trait_methods`
 
-A trait method listed in `[[lele.lint.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
+A trait method listed in `[[lele.project.inline_trait_methods]]` (trait path plus method names, with a reason) keeps its body inline in the trait impl: it is not delegated to `__methods__/`, it has no `#[atomic_delegate]` or `#[atomic_delegates]` annotation, its body is not empty, and it is not a single call to a delegate shell of the same type. The rule also checks each listed entry: it needs a reason, at least one method, and no method named twice.
 
 **Why:** Some traits are called by a framework that expects the method in the impl itself. Bevy's `Plugin::build` is the usual case: the trait method is the registration point, and a body that only forwards to an inherent shell hides the wiring the framework reads. The reason is recorded in the config so the exception is a decision, not an accident.
 
-**Fix:** Write the listed method's body inline in the trait impl and delete its `__methods__/<type>/<file>.rs` body. Remove any `#[atomic_delegate]` on the method and any `#[atomic_delegates]` on the impl block. Only the user adds or changes `[[lele.lint.inline_trait_methods]]` entries; a trait path matches an impl when the last segments agree (`bevy::app::Plugin` matches `impl Plugin` and `impl bevy::prelude::Plugin`, and `impl other::Plugin` does not).
+**Fix:** Write the listed method's body inline in the trait impl and delete its `__methods__/<type>/<file>.rs` body. Remove any `#[atomic_delegate]` on the method and any `#[atomic_delegates]` on the impl block. Only the user adds or changes `[[lele.project.inline_trait_methods]]` entries; a trait path matches an impl when the last segments agree (`bevy::app::Plugin` matches `impl Plugin` and `impl bevy::prelude::Plugin`, and `impl other::Plugin` does not).
 
 **Bad** (reports LELE043):
 
 `lele.toml`
 
 ```toml
-[lele.lint]
-
-[[lele.lint.inline_trait_methods]]
+[[lele.project.inline_trait_methods]]
 trait = "bevy::app::Plugin"
 methods = ["build"]
 reason = "the framework reads build in the impl"
@@ -1973,9 +1971,7 @@ impl bevy::app::Plugin for StarboardPlugin {
 `lele.toml`
 
 ```toml
-[lele.lint]
-
-[[lele.lint.inline_trait_methods]]
+[[lele.project.inline_trait_methods]]
 trait = "bevy::app::Plugin"
 methods = ["build"]
 reason = "the framework reads build in the impl"
@@ -2084,11 +2080,11 @@ mod tests {
 
 ### LELECORE009 `atomic_delegates`
 
-Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.lint.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.lint.no_delegates]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
+Each hand-written method of an impl block (inherent or trait; `impl Default` and methods listed in `[[lele.project.inline_trait_methods]]` are exempt) has one of four kinds, and each kind has its home: a one-liner (one statement that rustfmt prints on one line) sits in a `#[rustfmt::skip]` block; a single simple `match`/`if`/loop, or a method of 2 or 3 statements, sits in a plain `impl` block; anything else (a statement rustfmt breaks over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) lives in `__methods__/`. A crate listed in `[[lele.rules.lint.atomic_delegates.exempt]]` with a reason may keep those anything-else methods in a plain `impl` block instead.
 
 **Why:** rustfmt is the judge of layout, so the linter asks rustfmt rather than reading the author's line breaks: a long chain typed on one line under `#[rustfmt::skip]` is not a one-liner. Plain blocks keep rustfmt formatting for multi-line methods; longer bodies belong in `__methods__/<type>/<method>.rs`.
 
-**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.lint.no_delegates]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
+**Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.rules.lint.atomic_delegates.exempt]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
 
 **Bad** (reports LELECORE009):
 
@@ -2398,11 +2394,11 @@ mod tests {
 
 ### LELECORE016 `no_free_functions`
 
-A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.lint.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
+A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its owner is the first argument's type or the return type; body in `__methods__/<type>/<method>.rs`. `__bevy_systems__/`, `__basic__/`, `main.rs`, `build.rs` and `[[lele.project.entry_points]]` are exempt. Paths in lele.toml are relative to the directory that holds that lele.toml.
 
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
-**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.lint.entry_points]]` entry, which is the user's call; its `file` is relative to the lele.toml that holds it.
+**Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.project.entry_points]]` entry, which is the user's call; its `file` is relative to the lele.toml that holds it.
 
 **Bad** (reports LELECORE016):
 
@@ -2775,7 +2771,7 @@ mod tests {
 - [LELE015 `root_reexport`](#lele015-root_reexport): A public type in a crate-root file is re-exported from `lib.rs` (`pub use meters::Meters;`); a root fn file is a private `mod` plus `pub use`.
 - [LELE016 `domain_import`](#lele016-domain_import): Import the domain, not the item: `use crate::stock;` then `stock::Item`.
 - [LELE025 `no_crate_paths`](#lele025-no_crate_paths): `crate::` appears only in `use` items (outside `lib.rs`/`main.rs`).
-- [LELE033 `boundary_imports`](#lele033-boundary_imports): A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
+- [LELE033 `boundary_imports`](#lele033-boundary_imports): A `[[lele.project.boundary]]` folder may not use any path from its `cannot_use` list.
 
 ### LELE005 `no_cross_domain_reexport`
 
@@ -3514,7 +3510,7 @@ pub struct Item {
 
 ### LELE033 `boundary_imports`
 
-A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
+A `[[lele.project.boundary]]` folder may not use any path from its `cannot_use` list.
 
 **Why:** A boundary marks a pure core; forbidden imports are how I/O and frameworks leak in.
 
@@ -3525,7 +3521,7 @@ A `[[lele.boundary]]` folder may not use any path from its `cannot_use` list.
 `lele.toml`
 
 ```toml
-[[lele.boundary]]
+[[lele.project.boundary]]
 name = "session is pure"
 why = "no io"
 folders = ["src/session"]
@@ -3589,7 +3585,7 @@ impl Ui {
 `lele.toml`
 
 ```toml
-[[lele.boundary]]
+[[lele.project.boundary]]
 name = "session is pure"
 why = "no io"
 folders = ["src/session"]
@@ -3670,7 +3666,7 @@ mod tests {
 
 - [LELE012 `no_stuttered_type`](#lele012-no_stuttered_type): A type does not repeat its folder's name (`freenet::Client`, not `freenet::FreenetClient`).
 - [LELE014 `no_trivial_accessors`](#lele014-no_trivial_accessors): No getters or setters that only read or write a public field, including through `Ok(..)`/`Some(..)` or a plain conversion (`.clone()`, `.as_str()`, ...).
-- [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.lint.collection_wrappers]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
+- [LELE026 `no_collection_newtype`](#lele026-no_collection_newtype): No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.rules.lint.no_collection_newtype.exempt]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
 - [LELE036 `conversion_is_from`](#lele036-conversion_is_from): An associated fn that builds `Self` (or `Result<Self, _>`) from exactly one argument is a conversion: write it as `impl From<A> for Self` (`TryFrom<A>` when fallible). `new`, `Option<Self>`, trait impls and fns taking a `Self` argument (merges) are exempt. `async fn`, `const fn` and fns whose argument is generic (`impl Trait` or a type parameter) cannot be written as a trait impl and are exempt. Types with two or more one-argument builders sharing one argument type are named constructors (for example `Duration::from_secs` / `from_millis`), not conversions, and are exempt.
 - [LELE037 `constructor_naming`](#lele037-constructor_naming): An associated fn with two or more arguments and no `self` that returns `Self` is named `from_*`; one returning `Result<Self, _>` or `Option<Self>` is named `try_from_*`. `new`, trait impls and fns taking a `Self` argument (merges) are exempt.
 - [LELE040 `error_message_omits_source`](#lele040-error_message_omits_source): An `#[error("…")]` message does not print its own source (the `#[from]`/`#[source]`/`source` field); use `#[error(transparent)]` to forward it instead.
@@ -3872,11 +3868,11 @@ mod tests {
 
 ### LELE026 `no_collection_newtype`
 
-No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.lint.collection_wrappers]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
+No newtype around a collection (`Rooms(Vec<String>)`); wrap the element (`Room(String)`) and use `Vec<Room>`. A wrapper that guards an invariant of the collection is allowed when listed in `[[lele.rules.lint.no_collection_newtype.exempt]]` with a reason, and it has a private field, `Deref` without `DerefMut`, and an impl. A wrapper over an unsigned-integer collection (`Bytes(Vec<u8>)`) is exempt: neither `u8` nor `Vec<u8>` says what the bytes are.
 
 **Why:** The element is the concept; a collection wrapper hides the standard collection API behind a new name.
 
-**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource. Keep a wrapper only when the collection has a rule every holder must respect (size cap, ordering, uniqueness) — `Deck(Vec<Card>)` with at most 52 cards is one, `Rooms(Vec<Room>)` with nothing to enforce is not. Then ask the user to list it in `[[lele.lint.collection_wrappers]]` (the entry is the user's decision, never yours; its `file` is relative to that lele.toml), give it a private field, `#[derive(Deref)]` without `DerefMut`, and check the invariant in `TryFrom` or its methods; inside them reach the collection with `let Self(cards) = self;`.
+**Fix:** Delete the collection wrapper; wrap the element instead (`Room(String)`) and hold a plain `Vec<Room>`. Bevy Resource types are exempt: Bevy needs a named type for a resource. Keep a wrapper only when the collection has a rule every holder must respect (size cap, ordering, uniqueness) — `Deck(Vec<Card>)` with at most 52 cards is one, `Rooms(Vec<Room>)` with nothing to enforce is not. Then ask the user to list it in `[[lele.rules.lint.no_collection_newtype.exempt]]` (the entry is the user's decision, never yours; its `file` is relative to that lele.toml), give it a private field, `#[derive(Deref)]` without `DerefMut`, and check the invariant in `TryFrom` or its methods; inside them reach the collection with `let Self(cards) = self;`.
 
 **Bad** (reports LELE026):
 
@@ -3915,9 +3911,9 @@ pub struct Rooms(pub Vec<String>);
 `lele.toml`
 
 ```toml
-[lele.lint]
+[lele.rules.lint.no_collection_newtype]
 
-[[lele.lint.collection_wrappers]]
+[[lele.rules.lint.no_collection_newtype.exempt]]
 type = "Deck"
 file = "src/lobby/deck.rs"
 reason = "at most 52 cards"
@@ -4587,7 +4583,7 @@ Unit tests live in the same file as the code (no `tests/` folders under `src/`, 
 
 **Why:** The test sits next to what it tests, so reading one means reading the other. Only listed end-to-end suites may live outside the crate.
 
-**Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.config] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.
+**Fix:** Move the test into a `#[cfg(test)] mod tests` at the bottom of the file it tests and delete the separate file or folder. A crate-level `tests/` dir holding integration/e2e tests must be listed in `[lele.project] e2e_test_dirs` (paths relative to the config file); unit tests go colocated.
 
 **Bad** (reports LELECORE004):
 
@@ -5324,9 +5320,7 @@ pub use guest::Guest;
 `lele.toml`
 
 ```toml
-[lele.lint]
-
-[[lele.lint.clippy_allow_whitelist]]
+[[lele.rules.lint.no_allow_attributes.exempt]]
 allow = "clippy::needless_pass_by_value"
 file = "src/guest.rs"
 reason = "example: the signature is fixed by a trait in another crate"

@@ -13,7 +13,7 @@ pub fn no_delegates_violations(project: &Project) -> Vec<RuleViolation> {
             violations.push(RuleViolation::from_file(
                 config_path.clone(),
                 code,
-                format!("[[lele.lint.no_delegates]] entry for `{crate_path}` has no reason"),
+                format!("[[lele.rules.lint.atomic_delegates.exempt]] entry for `{crate_path}` has no reason"),
             ));
         }
         if !project.config_base().join(&entry.crate_path).is_dir() {
@@ -21,7 +21,7 @@ pub fn no_delegates_violations(project: &Project) -> Vec<RuleViolation> {
                 config_path.clone(),
                 code,
                 format!(
-                    "stale [[lele.lint.no_delegates]] entry: crate `{crate_path}` does not exist — delete the entry"
+                    "stale [[lele.rules.lint.atomic_delegates.exempt]] entry: crate `{crate_path}` does not exist — delete the entry"
                 ),
             ));
         }
@@ -60,6 +60,6 @@ mod tests {
         assert!(violations[0].message.contains("has no reason"));
         assert!(violations[1]
             .message
-            .contains("stale [[lele.lint.no_delegates]] entry"));
+            .contains("stale [[lele.rules.lint.atomic_delegates.exempt]] entry"));
     }
 }

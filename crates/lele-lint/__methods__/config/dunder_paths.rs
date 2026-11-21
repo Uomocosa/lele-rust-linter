@@ -4,7 +4,7 @@ use crate::DunderPath;
 pub fn dunder_paths(config: &Config) -> Vec<DunderPath> {
     let mut merged = DunderPath::defaults();
     if let Some(section) = config.as_ref() {
-        merged.extend(section.lint.dunder_paths.iter().cloned());
+        merged.extend(section.project.dunder_paths.iter().cloned());
     }
     merged
 }
@@ -27,7 +27,7 @@ mod tests {
     #[test]
     fn test_usage_appends_configured_dunder_paths() {
         let section: LeleSection =
-            toml::from_str("[lint]\ndunder_paths = [\"__prelude__.rs\"]\n").unwrap();
+            toml::from_str("[project]\ndunder_paths = [\"__prelude__.rs\"]\n").unwrap();
         let merged = dunder_paths(&Config(Some(section)));
         assert_eq!(merged.len(), 4);
         assert!(merged[3].is_dunder_file());
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_usage_rejects_non_dunder_config() {
-        assert!(toml::from_str::<LeleSection>("[lint]\ndunder_paths = [\"basic\"]\n").is_err());
-        assert!(toml::from_str::<LeleSection>("[lint]\ndunder_whitelist = {}\n").is_err());
+        assert!(toml::from_str::<LeleSection>("[project]\ndunder_paths = [\"basic\"]\n").is_err());
+        assert!(toml::from_str::<LeleSection>("[project]\ndunder_whitelist = {}\n").is_err());
     }
 }

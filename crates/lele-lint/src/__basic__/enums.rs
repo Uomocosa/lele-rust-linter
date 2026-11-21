@@ -70,3 +70,10 @@ pub(crate) enum DunderKind {
     Container,
     Code,
 }
+
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum RuleLevel {
+    Deny,
+    Off,
+}

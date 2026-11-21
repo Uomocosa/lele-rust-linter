@@ -242,9 +242,9 @@ mod tests {
             vec![],
         );
         assert_eq!(messages.len(), 1);
-        assert!(
-            messages[0].contains("ask the user for a `[[lele.lint.collection_wrappers]]` entry")
-        );
+        assert!(messages[0].contains(
+            "ask the user for a `[[lele.rules.lint.no_collection_newtype.exempt]]` entry"
+        ));
     }
 
     #[test]
@@ -315,7 +315,7 @@ mod tests {
             vec![testing::deck_collection_wrapper_entry("cap")],
         );
         assert!(messages.iter().any(|message| message.contains(
-            "stale [[lele.lint.collection_wrappers]] entry: no collection wrapper `Deck` in `src/cards/deck.rs`"
+            "stale [[lele.rules.lint.no_collection_newtype.exempt]] entry: no collection wrapper `Deck` in `src/cards/deck.rs`"
         )));
     }
 

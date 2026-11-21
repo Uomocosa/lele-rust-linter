@@ -1,6 +1,6 @@
-[lele.lint]
+[lele.rules.lint.no_collection_newtype]
 
-[[lele.lint.collection_wrappers]]
+[[lele.rules.lint.no_collection_newtype.exempt]]
 type = "Deck"
 file = "src/lobby/deck.rs"
 reason = "at most 52 cards"

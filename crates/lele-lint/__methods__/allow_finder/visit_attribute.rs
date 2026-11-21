@@ -17,7 +17,7 @@ pub fn visit_attribute(this: &mut AllowFinder<'_>, attr: &syn::Attribute) {
     }
     let start = attr.span().start();
     this.violations.push(RuleViolation::from_site(this.file.clone(), start.line, start.column, rules::no_allow_attributes::NoAllowAttributes::CODE, format!(
-            "`{kind}` attribute is banned — remove it and fix the code the lint points at; a `[[lele.lint.clippy_allow_whitelist]]` entry in lele.toml needs the user's approval"
+            "`{kind}` attribute is banned — remove it and fix the code the lint points at; a `[[lele.rules.lint.no_allow_attributes.exempt]]` entry in lele.toml needs the user's approval"
         )));
 }
 

@@ -49,11 +49,11 @@ pub fn impl_block_violations(
                 .any(|attr| ItemMarker(attr).is_atomic_delegate());
         let message = if annotated {
             format!(
-                "{location} must stay inline (listed in [[lele.lint.inline_trait_methods]]) — remove its `#[atomic_delegate]`/`#[atomic_delegates]` annotation, write the body in the trait impl and delete `{body_file}`"
+                "{location} must stay inline (listed in [[lele.project.inline_trait_methods]]) — remove its `#[atomic_delegate]`/`#[atomic_delegates]` annotation, write the body in the trait impl and delete `{body_file}`"
             )
         } else if method.block.stmts.is_empty() {
             format!(
-                "{location} must stay inline (listed in [[lele.lint.inline_trait_methods]]) — an empty body is a delegate shell, so write the body in the trait impl"
+                "{location} must stay inline (listed in [[lele.project.inline_trait_methods]]) — an empty body is a delegate shell, so write the body in the trait impl"
             )
         } else if let Some(shell_file) =
             rules::inline_trait_methods::InlineTraitMethods::called_shell_file(
@@ -61,7 +61,7 @@ pub fn impl_block_violations(
             )
         {
             format!(
-                "{location} must stay inline (listed in [[lele.lint.inline_trait_methods]]) — it only calls a delegate shell, so write the body in the trait impl and delete `{shell_file}`"
+                "{location} must stay inline (listed in [[lele.project.inline_trait_methods]]) — it only calls a delegate shell, so write the body in the trait impl and delete `{shell_file}`"
             )
         } else {
             continue;

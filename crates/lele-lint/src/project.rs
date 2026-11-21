@@ -11,6 +11,7 @@ use crate::AllowWhitelistEntry;
 use crate::BoundaryEntry;
 use crate::CollectionWrapperEntry;
 use crate::Config;
+use crate::DirRole;
 use crate::DunderPath;
 use crate::Entry;
 use crate::EntryPoint;
@@ -85,6 +86,7 @@ impl Project {
     pub fn methods_in_root(&self, type_snake: &str, root: &str) -> BTreeSet<String> {}
     pub fn dunder_dir(&self) -> Option<String> {}
     pub fn content_sources(&self) -> impl Iterator<Item = ParsedSource<'_>> {}
+    pub fn dir_role(&self, origin: Origin, rel_path: &Path) -> DirRole {}
     pub fn fill_rustfmt_answers(&mut self) -> Result<(), Error> {}
     pub fn rustfmt_one_liner(&self, rel_path: &Path, stmt: &syn::Stmt) -> bool {}
 }

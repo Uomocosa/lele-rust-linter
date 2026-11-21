@@ -71,6 +71,29 @@ pub(crate) enum DunderKind {
     Code,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestingRole {
+    Root,
+    App,
+    Queries,
+    Fixtures,
+    Fakes,
+    Basic,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DirRole {
+    Domain,
+    Container,
+    Traits,
+    BevySystems,
+    Testing(TestingRole),
+    Tests,
+    Flat,
+    Methods,
+    Examples,
+}
+
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum RuleLevel {

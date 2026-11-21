@@ -13,6 +13,7 @@ pub use config_sync::ConfigSync;
 #[path = "__basic__/mod.rs"]
 mod basic;
 pub use basic::enums::Category;
+pub use basic::enums::DirRole;
 pub(crate) use basic::enums::DunderKind;
 pub use basic::enums::EntryKind;
 pub(crate) use basic::enums::ImplItemGroup;
@@ -21,6 +22,7 @@ pub use basic::enums::Origin;
 pub use basic::enums::PlacementKind;
 pub use basic::enums::Requirement;
 pub use basic::enums::RuleLevel;
+pub use basic::enums::TestingRole;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, ConfigReportRow, EntryPoint,
     ExampleFile, FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection,

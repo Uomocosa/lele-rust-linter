@@ -90,6 +90,14 @@ pub struct InlineTraitMethodsEntry {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
+pub struct GenericExemptEntry {
+    pub path: std::path::PathBuf,
+    pub reason: String,
+    pub replaced_by: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CollectionWrapperEntry {
     #[serde(rename = "type")]
     pub type_name: String,
@@ -162,11 +170,4 @@ pub struct RuleDoc {
     pub fix: &'static str,
     pub bad: &'static [ExampleFile],
     pub good: &'static [ExampleFile],
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RelaxedRule {
-    pub name: String,
-    pub code: String,
-    pub reason: String,
 }

@@ -57,6 +57,7 @@ pub mod no_trivial_accessors;
 pub mod parsed_source;
 pub mod project;
 pub mod raw_code;
+pub mod relaxed_rule;
 pub mod root_reexport;
 pub mod single_field_newtype;
 pub mod snake_case_files;

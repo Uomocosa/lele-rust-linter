@@ -2,16 +2,7 @@ use crate::Linter;
 use crate::Project;
 
 pub fn run(linter: &Linter, project: &Project) -> i32 {
-    let mut all_violations = Vec::new();
-    for rule in &linter.rules {
-        all_violations.extend(rule.check(project));
-    }
-    all_violations.retain(|violation| {
-        !linter
-            .exemptions
-            .iter()
-            .any(|exemption| exemption.matches(violation, project))
-    });
+    let all_violations = linter.violations(project);
     linter.print_violations(&all_violations);
     i32::from(!all_violations.is_empty())
 }

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use lele_lint::Linter;
 use lele_lint::Project;
+use lele_lint::RelaxedRule;
 use rstest::rstest;
 use serde::Deserialize;
 
@@ -61,6 +62,52 @@ fn expected(name: &str) -> Result<BTreeSet<(String, String)>, Box<dyn std::error
 #[case("stale_methods_crate")]
 fn test_crate_matches_expected(#[case] name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let found = findings(name)?;
+    let wanted = expected(name)?;
+    let missing: Vec<_> = wanted.difference(&found).collect();
+    let unexpected: Vec<_> = found.difference(&wanted).collect();
+    if missing.is_empty() && unexpected.is_empty() {
+        return Ok(());
+    }
+    Err(format!("{name}:\nmissing: {missing:#?}\nunexpected: {unexpected:#?}").into())
+}
+
+/// The exemption crate: a `no_comments` exemption suppresses the comment in
+/// `src/legacy`, while the `src/vanished` exemption suppresses nothing and is
+/// reported as stale.
+#[test]
+fn exemption_crate_matches_expected() -> Result<(), Box<dyn std::error::Error>> {
+    let name = "exemption_crate";
+    let root = test_crate_path(name);
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(&root), None)?;
+    let config = project.load_config().unwrap_or_default();
+    project.apply_layout(&config)?;
+    let mut linter = Linter::default();
+    let relaxed = linter.apply_rule_settings(&config)?;
+    if relaxed.len() != 2 {
+        return Err(format!("expected 2 relaxed entries, got {relaxed:#?}").into());
+    }
+    let first_is_replaced = matches!(
+        &relaxed[0],
+        RelaxedRule::Exempt {
+            name,
+            replaced_by: Some(replacement),
+            ..
+        } if name == "no_comments" && replacement == "test_usage"
+    );
+    if !first_is_replaced {
+        return Err(format!("expected a replaced_by entry first, got {relaxed:#?}").into());
+    }
+    let found: BTreeSet<(String, String)> = linter
+        .violations(&project)
+        .into_iter()
+        .map(|violation| {
+            let file = violation
+                .file
+                .strip_prefix(&root)
+                .unwrap_or(&violation.file);
+            (file.display().to_string(), violation.code.to_string())
+        })
+        .collect();
     let wanted = expected(name)?;
     let missing: Vec<_> = wanted.difference(&found).collect();
     let unexpected: Vec<_> = found.difference(&wanted).collect();

@@ -169,6 +169,7 @@ impl Project {
 #[atomic_delegates]
 impl Project {
     pub(crate) fn file_cfgs(map: &common::ModuleCfgMap, rel_path: &Path) -> Vec<String> {}
+    pub(crate) fn lexical_absolute(path: &Path) -> PathBuf {}
     pub(crate) fn scan_examples(root: &Path) -> Result<ScannedDir, Error> {}
     pub(crate) fn src_index_for_rel(&self, rel_path: &Path) -> usize {}
     pub(crate) fn collect_rustfmt_candidates(&self) -> Result<Vec<(RustfmtKey, String)>, Error> {}

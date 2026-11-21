@@ -33,6 +33,7 @@ impl Linter {
     pub fn print_rule_list(&self) {}
     pub fn print_violations(&self, violations: &[RuleViolation]) {}
     pub fn retain_codes(&mut self, codes: &[String]) -> Vec<String> {}
+    pub fn violations(&self, project: &Project) -> Vec<RuleViolation> {}
     pub fn apply_rule_settings(&mut self, config: &Config) -> Result<Vec<RelaxedRule>, Error> {}
     pub fn render_relaxed_banner(relaxed: &[RelaxedRule]) -> String {}
     pub fn render_report(

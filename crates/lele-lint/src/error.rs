@@ -57,6 +57,12 @@ pub enum Error {
 
     #[error("lele.toml: `{name}` is turned off without a `reason`")]
     SettingWithoutReason { name: String },
+
+    #[error("lele.toml: exemption in `{name}` is replaced by unknown rule `{replaced_by}`")]
+    UnknownReplacement { name: String, replaced_by: String },
+
+    #[error("lele.toml: `{name}` has an exemption without a `reason`")]
+    ExemptWithoutReason { name: String },
 }
 
 #[atomic_delegates]

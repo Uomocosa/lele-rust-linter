@@ -2,16 +2,19 @@ use crate::Project;
 use crate::RuleViolation;
 
 pub struct PathExemption {
-    pub code: &'static str,
-    pub root: &'static str,
-    pub reason: &'static str,
+    pub code: String,
+    pub root: std::path::PathBuf,
+    pub reason: String,
+    pub replaced_by: Option<String>,
 }
 
 impl PathExemption {
     pub(crate) fn matches(&self, violation: &RuleViolation, project: &Project) -> bool {
-        let is_under_root = violation.file.starts_with(project.root.join(self.root))
-            || violation.file.starts_with(self.root);
-        self.code == violation.code && is_under_root
+        let is_under_root = violation
+            .file
+            .starts_with(project.config_base().join(&self.root))
+            || violation.file.starts_with(&self.root);
+        violation.code == self.code && is_under_root
     }
 }
 
@@ -30,9 +33,10 @@ mod tests {
             ..Project::default()
         };
         let exemption = PathExemption {
-            code: "LELE012",
-            root: "__rules__",
-            reason: "rule sources do not follow the type naming rule",
+            code: String::from("LELE012"),
+            root: PathBuf::from("__rules__"),
+            reason: String::from("rule sources do not follow the type naming rule"),
+            replaced_by: None,
         };
         let under = RuleViolation::from_file(
             PathBuf::from("/crate/__rules__/r.rs"),
@@ -58,5 +62,22 @@ mod tests {
         assert!(exemption.matches(&relative, &Project::default()));
         assert!(!exemption.matches(&elsewhere, &project));
         assert!(!exemption.matches(&other_code, &project));
+        let via_config_base = Project {
+            root: PathBuf::from("/repo/crates/x"),
+            config_dir: PathBuf::from("/repo"),
+            ..Project::default()
+        };
+        let via_config = RuleViolation::from_file(
+            PathBuf::from("/repo/crates/x/legacy/r.rs"),
+            "LELE012",
+            String::from("m"),
+        );
+        let config_exemption = PathExemption {
+            code: String::from("LELE012"),
+            root: PathBuf::from("crates/x/legacy"),
+            reason: String::from("mirror"),
+            replaced_by: Some(String::from("test_usage")),
+        };
+        assert!(config_exemption.matches(&via_config, &via_config_base));
     }
 }

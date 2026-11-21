@@ -1,0 +1,10 @@
+[lele.project]
+
+[[lele.rules.lint.no_comments.exempt]]
+path        = "src/legacy"
+reason      = "generated mirror of the rule book"
+replaced_by = "test_usage"
+
+[[lele.rules.lint.no_comments.exempt]]
+path   = "src/vanished"
+reason = "reserved for the next mirror"

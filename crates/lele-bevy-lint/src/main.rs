@@ -36,41 +36,43 @@ fn main() {
 
     let mut linter = BevyLinter::from(args.common.error_format);
 
-    if let Some(codes) = &args.common.only {
-        let unknown = linter.retain_codes(codes);
-        if !unknown.is_empty() {
-            eprintln!(
-                "lele_bevy_lint: no rule with code or name `{}`",
-                unknown.join("`, `")
-            );
-            process::exit(1);
+    if args.common.rule_list || args.emit.is_some() || args.common.explain.is_some() {
+        if let Some(codes) = &args.common.only {
+            let unknown = linter.retain_codes(codes);
+            if !unknown.is_empty() {
+                eprintln!(
+                    "lele_bevy_lint: no rule with code or name `{}`",
+                    unknown.join("`, `")
+                );
+                process::exit(1);
+            }
         }
-    }
 
-    if args.common.rule_list {
-        linter.print_rule_list();
-        return;
-    }
-
-    match args.emit {
-        Some(Emit::RulesMd) => {
-            print!("{}", linter.rules_markdown());
+        if args.common.rule_list {
+            linter.print_rule_list();
             return;
         }
-        Some(Emit::SkillMd) => {
-            print!("{}", linter.skill_markdown());
+
+        match args.emit {
+            Some(Emit::RulesMd) => {
+                print!("{}", linter.rules_markdown());
+                return;
+            }
+            Some(Emit::SkillMd) => {
+                print!("{}", linter.skill_markdown());
+                return;
+            }
+            None => {}
+        }
+
+        if let Some(code) = &args.common.explain {
+            let Some(text) = linter.explain(code) else {
+                eprintln!("lele_bevy_lint: no rule with code or name `{code}`");
+                process::exit(1);
+            };
+            print!("{text}");
             return;
         }
-        None => {}
-    }
-
-    if let Some(code) = args.common.explain {
-        let Some(text) = linter.explain(&code) else {
-            eprintln!("lele_bevy_lint: no rule with code or name `{code}`");
-            process::exit(1);
-        };
-        print!("{text}");
-        return;
     }
 
     let mut project = match Project::try_from_start_dir_and_scan_folders(
@@ -107,6 +109,21 @@ fn main() {
             process::exit(1);
         }
     };
+
+    if let Some(codes) = &args.common.only {
+        let unknown = linter.retain_codes(codes);
+        if !unknown.is_empty() {
+            eprintln!(
+                "lele_bevy_lint: no rule with code or name `{}`",
+                unknown.join("`, `")
+            );
+            process::exit(1);
+        }
+    }
+    let relaxed: Vec<lele_lint::RelaxedRule> = relaxed
+        .into_iter()
+        .filter(|entry| entry.applies_to(&project))
+        .collect();
     eprint!("{}", Linter::render_relaxed_banner(&relaxed));
 
     if args.ui_inventory {

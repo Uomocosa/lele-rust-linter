@@ -1,8 +1,13 @@
 use std::collections::BTreeSet;
 
+use crate::AllowWhitelistEntry;
+use crate::CollectionWrapperEntry;
 use crate::Config;
 use crate::Error;
+use crate::GenericExemptEntry;
 use crate::Linter;
+use crate::NoDelegatesEntry;
+use crate::PathExemption;
 use crate::RelaxedRule;
 use crate::RuleLevel;
 
@@ -35,28 +40,120 @@ pub fn apply_rule_settings(
                     name: name.clone(),
                 });
             };
-            if !matches!(table.level, Some(RuleLevel::Off)) {
+            if !matches!(table.level, Some(RuleLevel::Off)) && table.exempt.is_empty() {
                 continue;
             }
-            if rule.is_locked() {
-                return Err(Error::LockedRuleTurnedOff {
+            if matches!(table.level, Some(RuleLevel::Off)) {
+                if rule.is_locked() {
+                    return Err(Error::LockedRuleTurnedOff {
+                        name: name.clone(),
+                        code: rule.code().to_owned(),
+                    });
+                }
+                let has_reason = table
+                    .reason
+                    .as_ref()
+                    .is_some_and(|reason| !reason.trim().is_empty());
+                if !has_reason {
+                    return Err(Error::SettingWithoutReason { name: name.clone() });
+                }
+                removed.insert((namespace.clone(), name.clone()));
+                relaxed.push(RelaxedRule::Off {
                     name: name.clone(),
                     code: rule.code().to_owned(),
+                    reason: table.reason.clone().unwrap_or_default(),
                 });
             }
-            let has_reason = table
-                .reason
-                .as_ref()
-                .is_some_and(|reason| !reason.trim().is_empty());
-            if !has_reason {
-                return Err(Error::SettingWithoutReason { name: name.clone() });
+            if table.exempt.is_empty() {
+                continue;
             }
-            removed.insert((namespace.clone(), name.clone()));
-            relaxed.push(RelaxedRule {
-                name: name.clone(),
-                code: rule.code().to_owned(),
-                reason: table.reason.clone().unwrap_or_default(),
-            });
+            if name == "no_allow_attributes" {
+                for exempt in &table.exempt {
+                    let entry: AllowWhitelistEntry = toml::Value::Table(exempt.clone())
+                        .try_into()
+                        .map_err(|source| Error::BadRuleExempt {
+                            rule: "lint.no_allow_attributes".to_string(),
+                            source,
+                        })?;
+                    relaxed.push(RelaxedRule::Exempt {
+                        name: name.clone(),
+                        code: rule.code().to_owned(),
+                        path: entry.file,
+                        reason: entry.reason,
+                        replaced_by: None,
+                    });
+                }
+                continue;
+            }
+            if name == "no_collection_newtype" {
+                for exempt in &table.exempt {
+                    let entry: CollectionWrapperEntry = toml::Value::Table(exempt.clone())
+                        .try_into()
+                        .map_err(|source| Error::BadRuleExempt {
+                            rule: "lint.no_collection_newtype".to_string(),
+                            source,
+                        })?;
+                    relaxed.push(RelaxedRule::Exempt {
+                        name: name.clone(),
+                        code: rule.code().to_owned(),
+                        path: entry.file,
+                        reason: entry.reason,
+                        replaced_by: None,
+                    });
+                }
+                continue;
+            }
+            if name == "atomic_delegates" {
+                for exempt in &table.exempt {
+                    let entry: NoDelegatesEntry = toml::Value::Table(exempt.clone())
+                        .try_into()
+                        .map_err(|source| Error::BadRuleExempt {
+                            rule: "lint.atomic_delegates".to_string(),
+                            source,
+                        })?;
+                    relaxed.push(RelaxedRule::Exempt {
+                        name: name.clone(),
+                        code: rule.code().to_owned(),
+                        path: entry.crate_path,
+                        reason: entry.reason,
+                        replaced_by: None,
+                    });
+                }
+                continue;
+            }
+            for exempt in &table.exempt {
+                let entry: GenericExemptEntry = toml::Value::Table(exempt.clone())
+                    .try_into()
+                    .map_err(|source| Error::BadRuleExempt {
+                        rule: format!("{namespace}.{name}"),
+                        source,
+                    })?;
+                if entry.reason.trim().is_empty() {
+                    return Err(Error::ExemptWithoutReason { name: name.clone() });
+                }
+                if let Some(replaced_by) = &entry.replaced_by {
+                    let known = linter.rules.iter().any(|rule| rule.name() == replaced_by);
+                    if !known {
+                        return Err(Error::UnknownReplacement {
+                            name: name.clone(),
+                            replaced_by: replaced_by.clone(),
+                        });
+                    }
+                }
+                linter.exemptions.push(PathExemption {
+                    code: rule.code().to_owned(),
+                    root: entry.path.clone(),
+                    reason: entry.reason.clone(),
+                    replaced_by: entry.replaced_by.clone(),
+                });
+                relaxed.push(RelaxedRule::Exempt {
+                    name: name.clone(),
+                    code: rule.code().to_owned(),
+                    path: entry.path,
+                    reason: entry.reason,
+                    replaced_by: entry.replaced_by,
+                });
+            }
         }
     }
     linter
@@ -72,6 +169,7 @@ mod tests {
     use crate::Error;
     use crate::LeleSection;
     use crate::Linter;
+    use crate::RelaxedRule;
 
     #[test]
     fn test_usage() {
@@ -83,8 +181,11 @@ mod tests {
         .unwrap();
         let relaxed = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap();
         assert_eq!(relaxed.len(), 1);
-        assert_eq!(relaxed[0].name, "domain_import");
-        assert_eq!(relaxed[0].reason, "legacy file");
+        let RelaxedRule::Off { name, reason, .. } = &relaxed[0] else {
+            panic!("expected an Off entry");
+        };
+        assert_eq!(name, "domain_import");
+        assert_eq!(reason, "legacy file");
         assert_eq!(linter.rules.len(), before - 1);
         assert!(linter
             .rules
@@ -123,6 +224,17 @@ mod tests {
     }
 
     #[test]
+    fn unknown_exempt_only_name_is_rejected() {
+        let mut linter = Linter::default();
+        let section: LeleSection = toml::from_str(
+            "[[rules.lint.no_such_rule.exempt]]\npath = \"src/legacy\"\nreason = \"typo\"\n",
+        )
+        .unwrap();
+        let error = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap_err();
+        assert!(matches!(error, Error::UnknownRule { .. }));
+    }
+
+    #[test]
     fn unowned_namespace_is_ignored() {
         let mut linter = Linter::default();
         let before = linter.rules.len();
@@ -142,5 +254,82 @@ mod tests {
         let relaxed = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap();
         assert_eq!(relaxed.len(), 0);
         assert_eq!(linter.rules.len(), before);
+    }
+
+    #[test]
+    fn generic_exempt_pushes_exemption_and_banner_entry() {
+        let mut linter = Linter::default();
+        let section: LeleSection = toml::from_str(
+            "[[rules.lint.no_comments.exempt]]\npath = \"crates/rule-engine/__rules__\"\nreason = \"generated mirror\"\nreplaced_by = \"test_usage\"\n",
+        )
+        .unwrap();
+        let relaxed = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap();
+        assert_eq!(relaxed.len(), 1);
+        let RelaxedRule::Exempt {
+            name,
+            code,
+            path,
+            reason,
+            replaced_by,
+        } = &relaxed[0]
+        else {
+            panic!("expected an Exempt entry");
+        };
+        assert_eq!(name, "no_comments");
+        assert_eq!(code, "LELECORE015");
+        assert_eq!(
+            path,
+            &std::path::PathBuf::from("crates/rule-engine/__rules__")
+        );
+        assert_eq!(reason, "generated mirror");
+        assert_eq!(replaced_by.as_deref(), Some("test_usage"));
+        assert_eq!(linter.exemptions.len(), 1);
+        assert_eq!(linter.exemptions[0].code, "LELECORE015");
+    }
+
+    #[test]
+    fn exempt_with_unknown_replacement_is_rejected() {
+        let mut linter = Linter::default();
+        let section: LeleSection = toml::from_str(
+            "[[rules.lint.no_comments.exempt]]\npath = \"src/legacy\"\nreason = \"mirror\"\nreplaced_by = \"no_such_rule\"\n",
+        )
+        .unwrap();
+        let error = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap_err();
+        assert!(matches!(error, Error::UnknownReplacement { .. }));
+    }
+
+    #[test]
+    fn exempt_without_reason_is_rejected() {
+        let mut linter = Linter::default();
+        let section: LeleSection = toml::from_str(
+            "[[rules.lint.no_comments.exempt]]\npath = \"src/legacy\"\nreason = \"\"\n",
+        )
+        .unwrap();
+        let error = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap_err();
+        assert!(matches!(error, Error::ExemptWithoutReason { .. }));
+    }
+
+    #[test]
+    fn bad_generic_exempt_table_is_rejected() {
+        let mut linter = Linter::default();
+        let section: LeleSection = toml::from_str(
+            "[[rules.lint.no_comments.exempt]]\npath = \"src/legacy\"\nreason = \"mirror\"\ntypo = 1\n",
+        )
+        .unwrap();
+        let error = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap_err();
+        assert!(matches!(error, Error::BadRuleExempt { .. }));
+    }
+
+    #[test]
+    fn only_flag_with_unrelated_table_succeeds() {
+        let mut linter = Linter::default();
+        let section: LeleSection =
+            toml::from_str("[rules.lint.domain_import]\nlevel = \"off\"\nreason = \"legacy\"\n")
+                .unwrap();
+        let relaxed = apply_rule_settings(&mut linter, &Config(Some(section))).unwrap();
+        assert_eq!(relaxed.len(), 1);
+        let unknown = linter.retain_codes(&[String::from("no_comments")]);
+        assert_eq!(unknown, Vec::<String>::new());
+        assert!(linter.rules.iter().all(|rule| rule.name() == "no_comments"));
     }
 }

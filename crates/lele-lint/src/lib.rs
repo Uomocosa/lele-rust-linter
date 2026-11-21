@@ -19,9 +19,9 @@ pub use basic::enums::Requirement;
 pub use basic::enums::RuleLevel;
 pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
-    FlatDirEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection, LeleToml, ModDecl,
-    NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RelaxedRule, RuleDoc, RuleTable,
-    ScannedDir,
+    FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection,
+    LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RuleDoc,
+    RuleTable, ScannedDir,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;
@@ -59,6 +59,8 @@ pub mod visibility;
 pub use visibility::Visibility;
 pub mod raw_code;
 pub use raw_code::RawCode;
+pub mod relaxed_rule;
+pub use relaxed_rule::RelaxedRule;
 pub mod rule_violation;
 pub use rule_violation::RuleViolation;
 

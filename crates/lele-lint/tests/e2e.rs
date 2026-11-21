@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+use lele_lint::Config;
 use lele_lint::Linter;
 use lele_lint::Project;
 use lele_lint::RelaxedRule;
@@ -71,6 +72,123 @@ fn test_crate_matches_expected(#[case] name: &str) -> Result<(), Box<dyn std::er
     Err(format!("{name}:\nmissing: {missing:#?}\nunexpected: {unexpected:#?}").into())
 }
 
+fn interactions_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../lele-lint-test-crates/lele-lint/interactions")
+}
+
+fn findings_with_config(
+    root: &PathBuf,
+    config_file: &PathBuf,
+) -> Result<BTreeSet<(String, String)>, Box<dyn std::error::Error>> {
+    let mut project = Project::try_from_start_dir_and_scan_folders(Some(root), None)?;
+    let config = Config::try_from(config_file.as_path())?;
+    project.apply_layout(&config)?;
+    Ok(Linter::default()
+        .rules
+        .iter()
+        .flat_map(|rule| rule.check(&project))
+        .map(|violation| {
+            let file = violation.file.strip_prefix(root).unwrap_or(&violation.file);
+            (file.display().to_string(), violation.code.to_string())
+        })
+        .collect())
+}
+
+fn expected_at(path: &PathBuf) -> Result<BTreeSet<(String, String)>, Box<dyn std::error::Error>> {
+    let text = std::fs::read_to_string(path)?;
+    let parsed: Expected = toml::from_str(&text)?;
+    Ok(parsed
+        .violations
+        .into_iter()
+        .map(|violation| (violation.file, violation.code))
+        .collect())
+}
+
+/// Every `interactions/*` crate lints to its `expected.toml` under every `lele*.toml`
+/// config present (`lele.toml` pairs with `expected.toml`, `lele.<variant>.toml`
+/// with `expected.<variant>.toml`).
+#[test]
+fn interaction_crates_match_expected() -> Result<(), Box<dyn std::error::Error>> {
+    let root = interactions_root();
+    let mut crates: Vec<PathBuf> = std::fs::read_dir(&root)?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| path.is_dir())
+        .collect();
+    crates.sort();
+    if crates.is_empty() {
+        return Err("no interaction crates under interactions/".into());
+    }
+    for crate_dir in &crates {
+        let mut configs: Vec<PathBuf> = std::fs::read_dir(crate_dir)?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| {
+                path.is_file()
+                    && path
+                        .file_name()
+                        .is_some_and(|name| name.to_string_lossy().starts_with("lele"))
+                    && path.extension().is_some_and(|ext| ext == "toml")
+            })
+            .collect();
+        configs.sort();
+        if configs.is_empty() {
+            return Err(format!("{}: no lele*.toml config", crate_dir.display()).into());
+        }
+        for config_path in &configs {
+            let config_name = config_path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("");
+            let variant = config_name
+                .strip_prefix("lele")
+                .and_then(|rest| rest.strip_suffix(".toml"))
+                .unwrap_or("");
+            let expected_path = crate_dir.join(format!("expected{variant}.toml"));
+            let found = findings_with_config(crate_dir, config_path)?;
+            let wanted = expected_at(&expected_path)?;
+            let missing: Vec<_> = wanted.difference(&found).collect();
+            let unexpected: Vec<_> = found.difference(&wanted).collect();
+            if !missing.is_empty() || !unexpected.is_empty() {
+                return Err(format!(
+                    "{} under {}:\nmissing: {missing:#?}\nunexpected: {unexpected:#?}",
+                    crate_dir
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or("?"),
+                    config_name,
+                )
+                .into());
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Every declared `Rule::relations` entry has an `interactions/<rule>__<defers_to>/` crate proving it.
+#[test]
+fn every_rule_relation_has_an_interaction_crate() -> Result<(), Box<dyn std::error::Error>> {
+    let root = interactions_root();
+    let missing: Vec<String> = Linter::default()
+        .rules
+        .iter()
+        .flat_map(|rule| {
+            rule.relations()
+                .iter()
+                .map(move |relation| (rule.name().to_string(), relation.defers_to.to_string()))
+        })
+        .filter(|(name, defers_to)| !root.join(format!("{name}__{defers_to}")).is_dir())
+        .map(|(name, defers_to)| format!("{name} × {defers_to}"))
+        .collect();
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "relations without an interaction crate:\n{}",
+            missing.join("\n")
+        )
+        .into())
+    }
+}
 /// The exemption crate: a `no_comments` exemption suppresses the comment in
 /// `src/legacy`, while the `src/vanished` exemption suppresses nothing and is
 /// reported as stale.

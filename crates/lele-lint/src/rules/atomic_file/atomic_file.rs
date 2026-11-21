@@ -5,6 +5,7 @@ use crate::Category;
 use crate::ExampleFile;
 use crate::Project;
 use crate::RuleDoc;
+use crate::RuleRelation;
 use crate::RuleViolation;
 use atomic_delegate_macros::atomic_delegate;
 use atomic_delegate_macros::atomic_delegates;
@@ -33,6 +34,8 @@ impl Rule for AtomicFile {
     fn name(&self) -> &'static str { Self::NAME }
     fn code(&self) -> &'static str { Self::CODE }
     fn doc(&self) -> RuleDoc { Self::DOC }
+    #[atomic_delegate(AtomicFile, Rule)]
+    fn relations(&self) -> &'static [RuleRelation] {}
     #[atomic_delegate(AtomicFile, Rule)]
     fn check(&self, project: &Project) -> Vec<RuleViolation> {}
 }

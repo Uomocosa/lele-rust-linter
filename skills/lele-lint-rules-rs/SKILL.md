@@ -11,6 +11,8 @@ This is the rule index: what each rule wants and how to fix it. For the design i
 the rules (domains, atomic files, delegates), load the `lele-syntax-rs` skill. Bevy rules
 (`LELEBEVY0xx`) are covered by the `bevy-ui-preview` skill.
 
+> **CRITICAL: NEVER change a repo's `lele.toml` unless the user specifically requested that change in this conversation.** Fix the code, not the config; if two rules seem to contradict each other, stop and show the user both diagnostics.
+
 ## How to clear lint errors
 
 1. Run the linter: `just lint`, or `lele-lint --config lele.toml <crate>`. Each error shows

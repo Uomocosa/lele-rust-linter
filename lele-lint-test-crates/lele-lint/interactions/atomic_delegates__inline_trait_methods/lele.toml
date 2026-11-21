@@ -1,0 +1,6 @@
+[lele.project]
+
+[[lele.project.inline_trait_methods]]
+trait = "crate::greeter::traits::Greet"
+methods = ["greet"]
+reason = "the framework reads greet in the impl"

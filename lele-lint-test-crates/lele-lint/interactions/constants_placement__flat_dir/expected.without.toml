@@ -1,0 +1,3 @@
+[[violations]]
+file = "src/limits.rs"
+code = "LELE019"

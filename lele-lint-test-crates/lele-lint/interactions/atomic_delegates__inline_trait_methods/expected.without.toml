@@ -1,0 +1,3 @@
+[[violations]]
+file = "src/greeter/greeter.rs"
+code = "LELECORE009"

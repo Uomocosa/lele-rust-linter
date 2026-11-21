@@ -27,7 +27,7 @@ pub use basic::structs::{
     AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, ConfigReportRow, DirFacts,
     EntryPoint, ExampleFile, FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry,
     LayoutSection, LeleSection, LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection,
-    Reexport, RuleDoc, RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
+    Reexport, RuleDoc, RuleRelation, RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

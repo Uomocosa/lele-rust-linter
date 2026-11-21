@@ -31,6 +31,8 @@ A constant lives in the nearest `constants.rs` (or `__basic__/constants.rs`) sha
 
 **Fix:** Move the constant into `constants.rs` (or `__basic__/constants.rs`) of the nearest folder that contains every file using it, creating the file if needed, and import it from there.
 
+**Defers to:** `flat_dir` (never moves a constant down into a declared flat dir; `clamp_flat_dir`); `testing_layout` (files under `src/testing/` are neither users nor checked; their placement follows the testing roles)
+
 **Bad** (reports LELE019):
 
 `src/constants.rs`
@@ -679,6 +681,8 @@ One public (`pub` or `pub(crate)`) item per file, and the file is named after it
 
 **Fix:** Give each extra public item its own file named after it (`pub struct Guest` → `guest.rs`), or rename the file to match its single item; then update the `mod`/`pub use` lines.
 
+**Defers to:** `bevy_folder` (files in `__bevy_systems__/` are not method files (no method-file inference))
+
 **Bad** (reports LELECORE001):
 
 `src/greeting.rs`
@@ -841,6 +845,8 @@ A `<type>_<method>.rs` file must sit in the same folder as `<type>.rs`. Files un
 **Why:** A method file that drifts away from its type is impossible to find from the type.
 
 **Fix:** Move `<type>_<method>.rs` into the folder that holds `<type>.rs`; if it is not a method of that type, rename it after its own item.
+
+**Defers to:** `bevy_folder` (a `__bevy_systems__/` file may start with a type's stem)
 
 **Bad** (reports LELECORE003):
 
@@ -2086,6 +2092,8 @@ Each hand-written method of an impl block (inherent or trait; `impl Default` and
 
 **Fix:** Write one-liners on one line in a `#[rustfmt::skip]` impl block. Write a single simple `match`/`if`/loop, or a method of 2 or 3 statements, in a plain `impl` block so rustfmt formats it. Move anything else (a statement rustfmt prints over several lines, a `match`/`if`/loop whose branches do more than one thing, more than 3 statements) to `__methods__/<type>/<method>.rs` (a trait method's file is named by its trait-prefixed stem, e.g. `rule_check.rs`) behind an empty shell in the type's `#[atomic_delegates]` block. Exemption: a crate listed in `[[lele.rules.lint.atomic_delegates.exempt]]` (the entry is the user's decision, never yours; it needs a reason and an existing crate path) may keep them in a plain `impl` block; justified only when the crate cannot depend on `atomic-delegate-macros`, which is the case for `lele-snake-case`.
 
+**Defers to:** `inline_trait_methods` (methods listed in `[[lele.project.inline_trait_methods]]` stay inline instead of delegated)
+
 **Bad** (reports LELECORE009):
 
 `src/lib.rs`
@@ -2399,6 +2407,8 @@ A `pub`/`pub(crate)` top-level `fn` in `src/` must be a method of a type: its ow
 **Why:** `src/` lists types; the `#[atomic_delegates]` block of each type says what it can do. A free function hides which type it works on, so nobody finds it from the type.
 
 **Fix:** Make the fn a method of its owner (the first argument's type, else the return type; wrap the argument in a newtype if neither is a crate type): add an empty shell to the owner's `#[atomic_delegates]` block, put the body in `__methods__/<owner>/<fn>.rs`, and run `lele-lint --sync-methods <crate>`. A real process entry point needs a `[[lele.project.entry_points]]` entry, which is the user's call; its `file` is relative to the lele.toml that holds it.
+
+**Defers to:** `bevy_folder` (Bevy systems in `__bevy_systems__/` are free functions by design)
 
 **Bad** (reports LELECORE016):
 

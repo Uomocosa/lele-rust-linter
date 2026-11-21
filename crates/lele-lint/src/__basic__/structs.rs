@@ -202,6 +202,12 @@ pub struct DirFacts {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct RuleRelation {
+    pub defers_to: &'static str,
+    pub context: &'static str,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct RuleDoc {
     pub category: basic::enums::Category,
     pub summary: &'static str,

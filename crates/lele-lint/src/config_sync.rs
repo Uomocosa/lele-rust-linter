@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use atomic_delegate_macros::atomic_delegates;
 
 use crate::traits::Rule;
+use crate::ConfigReportRow;
 use crate::Error;
 use crate::Project;
 use crate::RelaxedRule;
@@ -44,6 +45,7 @@ impl ConfigSync {
     ) -> Option<&'table mut toml_edit::Table> {
     }
     pub(crate) fn first_sentence(summary: &str, max_chars: usize) -> String {}
+    pub(crate) fn report_row(entry: &RuleSnapshot, relaxed: &[RelaxedRule]) -> ConfigReportRow {}
 }
 
 #[cfg(test)]

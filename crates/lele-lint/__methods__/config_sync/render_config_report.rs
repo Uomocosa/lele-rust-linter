@@ -1,43 +1,43 @@
-use std::fmt::Write as _;
-
+use crate::ConfigReportRow;
+use crate::ConfigSync;
 use crate::RelaxedRule;
 use crate::RuleSnapshot;
 
 pub fn render_config_report(snapshot: &[RuleSnapshot], relaxed: &[RelaxedRule]) -> String {
-    let mut out = String::from("CODE  NAME  NAMESPACE  LOCKED  LEVEL  EXEMPTS  REASON\n");
+    let mut rows: Vec<ConfigReportRow> = Vec::new();
     for entry in snapshot {
-        let off_reason = relaxed.iter().find_map(|rule| match rule {
-            RelaxedRule::Off { name, reason, .. } if name == &entry.name => Some(reason),
-            _ => None,
-        });
-        let exempt_reasons: Vec<&str> = relaxed
-            .iter()
-            .filter_map(|rule| match rule {
-                RelaxedRule::Exempt { name, reason, .. } if name == &entry.name => {
-                    Some(reason.as_str())
-                }
-                _ => None,
-            })
-            .collect();
-        let level = if off_reason.is_some() { "off" } else { "deny" };
-        let reason = off_reason
-            .map(String::as_str)
-            .or(exempt_reasons.first().copied())
-            .unwrap_or("");
-        let locked = if entry.is_locked { "locked" } else { "" };
-        let _ = write!(
-            out,
-            "{}  {}  {}  {locked}  {level}  {}",
-            entry.code,
-            entry.name,
-            entry.namespace,
-            exempt_reasons.len()
+        rows.push(ConfigSync::report_row(entry, relaxed));
+    }
+    let mut code_width = "CODE".len();
+    let mut name_width = "NAME".len();
+    let mut namespace_width = "NAMESPACE".len();
+    let mut locked_width = "LOCKED".len();
+    let mut level_width = "LEVEL".len();
+    let mut exempts_width = "EXEMPTS".len();
+    for row in &rows {
+        code_width = code_width.max(row.code.len());
+        name_width = name_width.max(row.name.len());
+        namespace_width = namespace_width.max(row.namespace.len());
+        locked_width = locked_width.max(row.locked.len());
+        level_width = level_width.max(row.level.len());
+        exempts_width = exempts_width.max(row.exempts.len());
+    }
+    let mut out = format!(
+        "{:<code_width$}  {:<name_width$}  {:<namespace_width$}  {:<locked_width$}  {:<level_width$}  {:<exempts_width$}  REASON\n",
+        "CODE", "NAME", "NAMESPACE", "LOCKED", "LEVEL", "EXEMPTS",
+    );
+    for row in &rows {
+        let mut line = format!(
+            "{:<code_width$}  {:<name_width$}  {:<namespace_width$}  {:<locked_width$}  {:<level_width$}  {:<exempts_width$}",
+            row.code, row.name, row.namespace, row.locked, row.level, row.exempts,
         );
-        if reason.is_empty() {
-            out.push('\n');
-        } else {
-            let _ = writeln!(out, "  {reason}");
+        if !row.reason.is_empty() {
+            line.push_str("  ");
+            line.push_str(&row.reason);
         }
+        line = line.trim_end().to_owned();
+        out.push_str(&line);
+        out.push('\n');
     }
     out
 }
@@ -65,9 +65,46 @@ mod tests {
             },
         ];
         let report = render_config_report(&snapshot, &[]);
-        assert!(report.starts_with("CODE  NAME  NAMESPACE  LOCKED  LEVEL  EXEMPTS  REASON\n"));
-        assert!(report.contains("LELE016  domain_import  lint    deny  0\n"));
-        assert!(report.contains("LELECORE015  no_comments  lint  locked  deny  0\n"));
+        let rows: Vec<&str> = report.lines().collect();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(
+            rows[0],
+            "CODE         NAME           NAMESPACE  LOCKED  LEVEL  EXEMPTS  REASON"
+        );
+        assert_eq!(
+            rows[1],
+            "LELE016      domain_import  lint               deny   0"
+        );
+        assert_eq!(
+            rows[2],
+            "LELECORE015  no_comments    lint       locked  deny   0"
+        );
+        assert_eq!(rows[1].find("lint"), rows[2].find("lint"));
+    }
+
+    #[test]
+    fn columns_line_up_across_rows() {
+        let snapshot = vec![
+            RuleSnapshot {
+                name: String::from("a"),
+                code: String::from("LELE1"),
+                namespace: String::from("lint"),
+                is_locked: false,
+            },
+            RuleSnapshot {
+                name: String::from("much_longer_name"),
+                code: String::from("LELECORE015"),
+                namespace: String::from("lint"),
+                is_locked: true,
+            },
+        ];
+        let report = render_config_report(&snapshot, &[]);
+        let rows: Vec<&str> = report.lines().collect();
+        assert_eq!(rows.len(), 3);
+        assert!(rows[1].starts_with("LELE1        a                 lint"));
+        assert!(rows[2].starts_with("LELECORE015  much_longer_name  lint"));
+        assert_eq!(rows[1].find("lint"), rows[2].find("lint"));
+        assert_eq!(rows[1].find("deny"), rows[2].find("deny"));
     }
 
     #[test]
@@ -84,7 +121,9 @@ mod tests {
             reason: String::from("legacy"),
         }];
         let report = render_config_report(&snapshot, &relaxed);
-        assert!(report.contains("LELE016  domain_import  lint    off  0  legacy\n"));
+        assert!(
+            report.contains("LELE016  domain_import  lint               off    0        legacy\n")
+        );
     }
 
     #[test]
@@ -112,6 +151,7 @@ mod tests {
             },
         ];
         let report = render_config_report(&snapshot, &relaxed);
-        assert!(report.contains("LELECORE015  no_comments  lint  locked  deny  2  mirror\n"));
+        assert!(report
+            .contains("LELECORE015  no_comments  lint       locked  deny   2        mirror\n"));
     }
 }

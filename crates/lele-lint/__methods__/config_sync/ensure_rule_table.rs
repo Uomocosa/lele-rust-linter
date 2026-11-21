@@ -24,7 +24,7 @@ pub fn ensure_rule_table(
     } else {
         format!("# {code} · ")
     };
-    let max_summary = 120usize.saturating_sub(head.chars().count()).min(100);
+    let max_summary = 119usize.saturating_sub(head.chars().count()).min(100);
     let summary = ConfigSync::first_sentence(rule.doc().summary, max_summary);
     let comment = format!("{head}{summary}");
     let qualified = format!("lele.rules.{}.{name}", rule.namespace(), name = rule.name());

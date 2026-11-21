@@ -171,6 +171,17 @@ pub struct SyncOutcome {
     pub is_header_added: bool,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ConfigReportRow {
+    pub code: String,
+    pub name: String,
+    pub namespace: String,
+    pub locked: String,
+    pub level: String,
+    pub exempts: String,
+    pub reason: String,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ExampleFile {
     pub path: &'static str,

@@ -22,10 +22,10 @@ pub use basic::enums::PlacementKind;
 pub use basic::enums::Requirement;
 pub use basic::enums::RuleLevel;
 pub use basic::structs::{
-    AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, EntryPoint, ExampleFile,
-    FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection, LeleSection,
-    LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection, Reexport, RuleDoc,
-    RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
+    AllowWhitelistEntry, BoundaryEntry, CollectionWrapperEntry, ConfigReportRow, EntryPoint,
+    ExampleFile, FlatDirEntry, GenericExemptEntry, InlineTraitMethodsEntry, LayoutSection,
+    LeleSection, LeleToml, ModDecl, NoDelegatesEntry, ParseFailure, ProjectSection, Reexport,
+    RuleDoc, RuleSnapshot, RuleTable, ScannedDir, SyncOutcome,
 };
 pub use basic::type_aliases::ModuleInfoMap;
 pub use basic::type_aliases::RustfmtKey;

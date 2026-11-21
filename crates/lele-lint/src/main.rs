@@ -137,7 +137,15 @@ fn main() {
     if args.common.config_report {
         let mut snapshot = snapshot;
         if let Some(codes) = &args.common.only {
-            let unknown = linter.retain_codes(codes);
+            let unknown: Vec<String> = codes
+                .iter()
+                .filter(|code| {
+                    !snapshot.iter().any(|entry| {
+                        entry.code.eq_ignore_ascii_case(code) || entry.name == code.as_str()
+                    })
+                })
+                .cloned()
+                .collect();
             if !unknown.is_empty() {
                 eprintln!(
                     "lele_lint: no rule with code or name `{}`",
@@ -145,7 +153,11 @@ fn main() {
                 );
                 process::exit(1);
             }
-            snapshot.retain(|entry| linter.rules.iter().any(|rule| rule.name() == entry.name));
+            snapshot.retain(|entry| {
+                codes.iter().any(|code| {
+                    entry.code.eq_ignore_ascii_case(code) || entry.name == code.as_str()
+                })
+            });
         }
         print!("{}", ConfigSync::render_config_report(&snapshot, &relaxed));
         return;
